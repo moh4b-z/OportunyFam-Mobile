@@ -56,4 +56,35 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    implementation("androidx.navigation:navigation-compose:2.8.0")
+    implementation("androidx.compose.material3:material3:1.1.2") // ou a versão mais recente
+    implementation("androidx.compose.material:material-icons-extended:1.5.4") // necessário para ícones
+
+    //Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    //COIL biblioteca para fazer chamada das img
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")//Banco de dados local (Room ou DataStore)
+
+    //cache de dados offline
+    implementation("androidx.room:room-runtime:2.6.1")
+    implementation("androidx.room:room-ktx:2.6.1")
+
+    implementation("com.google.firebase:firebase-messaging:24.0.0")//Notificações
+
+    //mapa
+    implementation("com.google.android.gms:play-services-maps:19.0.0")
+    implementation("com.google.maps.android:maps-compose:2.11.4") // integração com Jetpack Compose
+
+    implementation("org.osmdroid:osmdroid-android:6.1.18")//OpenStreetMap
+
+    implementation("com.google.android.gms:play-services-location:21.3.0")//Para obter a posição atual do usuário
+
+
+
+
 }
