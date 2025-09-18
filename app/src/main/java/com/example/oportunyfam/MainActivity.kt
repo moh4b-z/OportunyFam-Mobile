@@ -15,7 +15,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
-import com.example.tcc.HomeScreen
+import com.example.oportunyfam.Components.BarraTarefas
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,11 +31,9 @@ class MainActivity : ComponentActivity() {
 
                     NavHost(
                         navController = navController,
-                        startDestination = "HomeScreen"
+                        startDestination = "home"
                     ) {
-                        composable("HomeScreen") {
-                            HomeScreen(navController)
-                        }
+
                     }
                 }
             }
