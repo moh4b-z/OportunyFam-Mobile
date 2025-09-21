@@ -6,8 +6,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material.icons.filled.AddIcCall
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -28,12 +31,14 @@ import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
 
 @Composable
-fun LoginScreens(navController: NavHostController?) {
+fun RegistroScreens(navController: NavHostController?) {
 
+    val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
-    val senha = remember { mutableStateOf("") }
+    val number = remember { mutableStateOf("") }
+    val data = remember { mutableStateOf("") }
     val checked = remember { mutableStateOf(false) } // Estado do checkbox
-    val isLoginSelected = remember { mutableStateOf(true) } // Controle de seleção de botões (Login/Registrar-se)
+    val isRegisterSelected = remember { mutableStateOf(true) } // Controle de seleção de botões (Login/Registre-se)
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -53,7 +58,7 @@ fun LoginScreens(navController: NavHostController?) {
             modifier = Modifier
                 .fillMaxWidth(0.8f) // largura menor que a tela
                 .height(120.dp)
-                .offset(y = 170.dp), // mesma função que o padding
+                .offset(y = 140.dp), // mesma função que o padding
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0x8CFFA500)) // cor com transparência
         ) {
@@ -82,10 +87,13 @@ fun LoginScreens(navController: NavHostController?) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.65f) // ocupação da tela
+                .fillMaxHeight(0.68f) // ocupação da tela
                 .align(Alignment.BottomCenter),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+            shape = RoundedCornerShape(
+                topStart = 30.dp,
+                topEnd = 30.dp
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -100,7 +108,8 @@ fun LoginScreens(navController: NavHostController?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .background(Color(0xFFE0E0E0), shape = RoundedCornerShape(25.dp)) // fundo cinza claro
+                        .background(Color(0xFFE0E0E0),
+                            shape = RoundedCornerShape(25.dp))
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -111,15 +120,15 @@ fun LoginScreens(navController: NavHostController?) {
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(25.dp))
                             .background(
-                                if (isLoginSelected.value) Color.White else Color(0xFFE0E0E0)
+                                if (!isRegisterSelected.value) Color.White else Color(0xFFE0E0E0)
                             )
-                            .clickable { isLoginSelected.value = true },
+                            .clickable { isRegisterSelected.value = false },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Login",
                             fontSize = 16.sp,
-                            color = if (isLoginSelected.value) Color.Black else Color.Gray,
+                            color = if (!isRegisterSelected.value) Color.Black else Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -131,25 +140,48 @@ fun LoginScreens(navController: NavHostController?) {
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(25.dp))
                             .background(
-                                if (!isLoginSelected.value) Color.White else Color(0xFFE0E0E0)
+                                if (isRegisterSelected.value) Color.White else Color(0xFFE0E0E0)
                             )
-                            .clickable { isLoginSelected.value = false },
+                            .clickable { isRegisterSelected.value = true },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
                             text = "Registre-se",
                             fontSize = 16.sp,
-                            color = if (!isLoginSelected.value) Color.Black else Color.Gray,
+                            color = if (isRegisterSelected.value) Color.Black else Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                // Campos dinâmicos de acordo com a seleção (Login ou Registro)
-                if (isLoginSelected.value) {
-                    // Campos de login
+                // Condicional para mostrar os campos dependendo da seleção (Login ou Registro)
+                if (isRegisterSelected.value) {
+                    // Campos para o registro
+
+                    //name
+                    OutlinedTextField(
+                        value = nome.value,
+                        onValueChange = { nome.value = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.AccountCircle,
+                                contentDescription = "",
+                                tint = Color(0x9E000000)
+                            )
+                        },
+                        placeholder = {
+                            Text(text = "nome")
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(5.dp))
+
                     // Email
                     OutlinedTextField(
                         value = email.value,
@@ -170,12 +202,12 @@ fun LoginScreens(navController: NavHostController?) {
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    // Senha
+                    // number
                     OutlinedTextField(
-                        value = senha.value,
-                        onValueChange = { senha.value = it },
+                        value = number.value,
+                        onValueChange = { number.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
@@ -183,73 +215,66 @@ fun LoginScreens(navController: NavHostController?) {
                         visualTransformation = PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Lock,
+                                imageVector = Icons.Default.AddIcCall,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
                         },
                         placeholder = {
-                            Text(text = "Digite sua senha")
+                            Text(text = "(xx)xxxxx-xxxx")
                         }
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    // Checkbox e "Esqueceu sua senha?"
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Checkbox(
-                                checked = checked.value,
-                                onCheckedChange = { checked.value = it },
-                                colors = CheckboxDefaults.colors(
-                                    checkedColor = Color(0xFFFFA500),
-                                    uncheckedColor = Color.Gray
-                                )
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "Lembrar de mim",
-                                fontSize = 14.sp,
-                                color = Color.Black
-                            )
-                        }
-
-                        Text(
-                            text = "Esqueceu sua senha?",
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Botão Login
-                    Button(
-                        onClick = {},
+                    // data de nascimento ARRUMAR
+                    OutlinedTextField(
+                        value = data.value,
+                        onValueChange = { data.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFFA500)
-                        )
+                            .padding(top = 8.dp),
+                        shape = RoundedCornerShape(10.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "",
+                                tint = Color(0x9E000000)
+                            )
+                        },
+                        placeholder = {
+                            Text(text = "00/00/0000")
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.height(15.dp))
+
+                    // prosseguir
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 12.dp)
+                            .clickable {
+                                // Aqui você coloca a navegação para a próxima tela
+                                navController?.navigate("proximaTela")
+                            },
+                        horizontalArrangement = Arrangement.End, // alinhado à direita
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Login",
-                            color = Color.White,
-                            fontSize = 16.sp
+                            text = "Prosseguir",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFFA500) // mesma cor que o botão
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward, // seta para direita
+                            contentDescription = "Ir para próxima tela",
+                            tint = Color(0xFFFFA500)
                         )
                     }
-                } else {
-                    // Campos para o registro podem ser colocados aqui, como nome, telefone, etc.
-                    Text(
-                        text = "Aqui vão os campos para o registro",
-                        color = Color.Black,
-                        fontSize = 18.sp
-                    )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -265,7 +290,7 @@ fun LoginScreens(navController: NavHostController?) {
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "Ou entre com",
+                        text = "Or login with",
                         color = Color.Gray,
                         modifier = Modifier
                             .padding(horizontal = 8.dp)
@@ -277,9 +302,9 @@ fun LoginScreens(navController: NavHostController?) {
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(5.dp))
 
-                // Box criada para fazer o Botão Google
+                // Box criada para fazer o Botao Google
                 Box(
                     modifier = Modifier
                         .padding(16.dp)
@@ -324,8 +349,9 @@ fun LoginScreens(navController: NavHostController?) {
     }
 }
 
+
 @Preview(showSystemUi = true)
 @Composable
-fun LoginScreensPreview() {
-    LoginScreens(navController = null)
+fun RegistroScreensPreview() {
+    RegistroScreens(navController = null)
 }
