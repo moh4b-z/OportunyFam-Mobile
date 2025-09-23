@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AddIcCall
+import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Email
@@ -29,10 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
-import com.example.oportunyfam.Screens.RegistroScreens
 
 @Composable
-fun RegistroScreens(navController: NavHostController?) {
+fun RegistroOngScreen(navController: NavHostController?) {
 
     val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
@@ -177,7 +177,7 @@ fun RegistroScreens(navController: NavHostController?) {
                             )
                         },
                         placeholder = {
-                            Text(text = "nome")
+                            Text(text = "Nome da instituição")
                         }
                     )
 
@@ -199,7 +199,7 @@ fun RegistroScreens(navController: NavHostController?) {
                             )
                         },
                         placeholder = {
-                            Text(text = "Digite seu email")
+                            Text(text = "Email da instituição")
                         }
                     )
 
@@ -222,7 +222,7 @@ fun RegistroScreens(navController: NavHostController?) {
                             )
                         },
                         placeholder = {
-                            Text(text = "(xx)xxxxx-xxxx")
+                            Text(text = "Contato da instituição")
                         }
                     )
 
@@ -239,13 +239,13 @@ fun RegistroScreens(navController: NavHostController?) {
                         visualTransformation = PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.CalendarMonth,
+                                imageVector = Icons.Default.Apartment,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
                         },
                         placeholder = {
-                            Text(text = "00/00/0000")
+                            Text(text = "Tipo de instituição")
                         }
                     )
 
@@ -353,6 +353,6 @@ fun RegistroScreens(navController: NavHostController?) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun RegistroScreensPreview() {
-    RegistroScreens(navController = null)
+fun RegistroOngScreenPreview() {
+    RegistroOngScreen(navController = null)
 }

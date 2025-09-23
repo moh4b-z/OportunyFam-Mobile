@@ -229,7 +229,8 @@ fun LoginScreens(navController: NavHostController?) {
 
                     // Botão Login
                     Button(
-                        onClick = {},
+                        onClick = {
+                            navController?.navigate("HomeScreen")},
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp),
@@ -329,3 +330,5 @@ fun LoginScreens(navController: NavHostController?) {
 fun LoginScreensPreview() {
     LoginScreens(navController = null)
 }
+
+

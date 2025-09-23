@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -189,7 +190,7 @@ fun RegistroContinuacaoScreens(navController: NavHostController?) {
                         shape = RoundedCornerShape(10.dp),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Badge,
+                                imageVector = Icons.Default.LocationOn,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
@@ -296,11 +297,12 @@ fun RegistroContinuacaoScreens(navController: NavHostController?) {
                 // Box criada para fazer o Botao Google
                 Box(
                     modifier = Modifier
-                        .padding(16.dp)
+                        .padding(10.dp)
+
                         // fazer sombra do botão
                         .shadow(
                             elevation = 8.dp, // altura da sombra
-                            shape = RoundedCornerShape(50) // borda arredondada
+                            shape = RoundedCornerShape(50) 
                         )
                         .background(
                             color = Color.White,
@@ -344,4 +346,6 @@ fun RegistroContinuacaoScreens(navController: NavHostController?) {
 fun RegistroContinuacaoScreensPreview() {
     RegistroContinuacaoScreens(navController = null)
 }
+
+
 

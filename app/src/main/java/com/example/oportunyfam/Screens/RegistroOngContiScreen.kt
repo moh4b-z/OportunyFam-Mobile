@@ -6,11 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.AddIcCall
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -29,16 +27,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
-import com.example.oportunyfam.Screens.RegistroScreens
 
 @Composable
-fun RegistroScreens(navController: NavHostController?) {
+fun RegistroOngContiScreen(navController: NavHostController?) {
 
-    val nome = remember { mutableStateOf("") }
-    val email = remember { mutableStateOf("") }
-    val number = remember { mutableStateOf("") }
-    val data = remember { mutableStateOf("") }
-
+    val cpf = remember { mutableStateOf("") }
+    val cep = remember { mutableStateOf("") }
+    val senha = remember { mutableStateOf("") }
+    val confirmarSenha = remember { mutableStateOf("") }
+    val checked = remember { mutableStateOf(false) } // Estado do checkbox
     val isRegisterSelected = remember { mutableStateOf(true) } // Controle de seleção de botões (Login/Registre-se)
 
     Box(
@@ -161,54 +158,54 @@ fun RegistroScreens(navController: NavHostController?) {
                 if (isRegisterSelected.value) {
                     // Campos para o registro
 
-                    //name
+                    //cpf
                     OutlinedTextField(
-                        value = nome.value,
-                        onValueChange = { nome.value = it },
+                        value = cpf.value,
+                        onValueChange = { cpf.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
                         shape = RoundedCornerShape(10.dp),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.AccountCircle,
+                                imageVector = Icons.Default.Badge,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
                         },
                         placeholder = {
-                            Text(text = "nome")
+                            Text(text = "CNPJ")
                         }
                     )
 
                     Spacer(modifier = Modifier.height(5.dp))
 
-                    // Email
+                    // cep
                     OutlinedTextField(
-                        value = email.value,
-                        onValueChange = { email.value = it },
+                        value = cep.value,
+                        onValueChange = { cep.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
                         shape = RoundedCornerShape(10.dp),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Email,
+                                imageVector = Icons.Default.LocationOn,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
                         },
                         placeholder = {
-                            Text(text = "Digite seu email")
+                            Text(text = "CEP")
                         }
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // number
+                    // senha
                     OutlinedTextField(
-                        value = number.value,
-                        onValueChange = { number.value = it },
+                        value = senha.value,
+                        onValueChange = { senha.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
@@ -216,22 +213,22 @@ fun RegistroScreens(navController: NavHostController?) {
                         visualTransformation = PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.AddIcCall,
+                                imageVector = Icons.Default.Lock,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
                         },
                         placeholder = {
-                            Text(text = "(xx)xxxxx-xxxx")
+                            Text(text = "Digite seu senha")
                         }
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // data de nascimento ARRUMAR
+                    // confirmarSenha ARRUMAR
                     OutlinedTextField(
-                        value = data.value,
-                        onValueChange = { data.value = it },
+                        value = confirmarSenha.value,
+                        onValueChange = { confirmarSenha.value = it },
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 8.dp),
@@ -239,46 +236,38 @@ fun RegistroScreens(navController: NavHostController?) {
                         visualTransformation = PasswordVisualTransformation(),
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.CalendarMonth,
+                                imageVector = Icons.Default.Lock,
                                 contentDescription = "",
                                 tint = Color(0x9E000000)
                             )
                         },
                         placeholder = {
-                            Text(text = "00/00/0000")
+                            Text(text = "Confime sua senha ")
                         }
                     )
 
                     Spacer(modifier = Modifier.height(15.dp))
 
-                    // prosseguir
-                    Row(
+                    // Botão Prosseguir
+                    Button(
+                        onClick = {},
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp)
-                            .clickable {
-                                //
-                                navController?.navigate("")
-                            },
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFFA500)
+                        )
                     ) {
                         Text(
-                            text = "Prosseguir",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color(0xFFFFA500)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Icon(
-                            imageVector = Icons.Default.ArrowForward, // seta
-                            contentDescription = "Ir para próxima tela",
-                            tint = Color(0xFFFFA500)
+                            text = "Cadastrar",
+                            color = Color.White,
+                            fontSize = 16.sp
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Linha com texto no meio
                 Row(
@@ -308,11 +297,12 @@ fun RegistroScreens(navController: NavHostController?) {
                 // Box criada para fazer o Botao Google
                 Box(
                     modifier = Modifier
-                        .padding(16.dp)
+                        .padding(10.dp)
+
                         // fazer sombra do botão
                         .shadow(
                             elevation = 8.dp, // altura da sombra
-                            shape = RoundedCornerShape(50) // borda arredondada
+                            shape = RoundedCornerShape(50)
                         )
                         .background(
                             color = Color.White,
@@ -353,6 +343,9 @@ fun RegistroScreens(navController: NavHostController?) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun RegistroScreensPreview() {
-    RegistroScreens(navController = null)
+fun RegistroOngContiScreenPreview() {
+    RegistroOngContiScreen(navController = null)
 }
+
+
+

@@ -32,7 +32,7 @@ import com.example.oportunyfam.R
 import com.example.oportunyfam.Screens.RegistroScreens
 
 @Composable
-fun RegistroScreens(navController: NavHostController?) {
+fun RegistroCriancaScreens(navController: NavHostController?) {
 
     val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
@@ -177,7 +177,7 @@ fun RegistroScreens(navController: NavHostController?) {
                             )
                         },
                         placeholder = {
-                            Text(text = "nome")
+                            Text(text = "Nome")
                         }
                     )
 
@@ -199,7 +199,7 @@ fun RegistroScreens(navController: NavHostController?) {
                             )
                         },
                         placeholder = {
-                            Text(text = "Digite seu email")
+                            Text(text = "Digite o email do responsavel")
                         }
                     )
 
@@ -222,7 +222,7 @@ fun RegistroScreens(navController: NavHostController?) {
                             )
                         },
                         placeholder = {
-                            Text(text = "(xx)xxxxx-xxxx")
+                            Text(text = "Contato do Responsável")
                         }
                     )
 
@@ -353,6 +353,6 @@ fun RegistroScreens(navController: NavHostController?) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun RegistroScreensPreview() {
-    RegistroScreens(navController = null)
+fun RegistroCriancaScreensPreview() {
+    RegistroCriancaScreens(navController = null)
 }
