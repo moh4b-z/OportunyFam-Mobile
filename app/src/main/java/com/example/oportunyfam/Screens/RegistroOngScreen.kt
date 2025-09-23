@@ -10,7 +10,6 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.AddIcCall
 import androidx.compose.material.icons.filled.Apartment
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -24,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,11 +55,11 @@ fun RegistroOngScreen(navController: NavHostController?) {
         // Card sobre a imagem
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.8f) // largura menor que a tela
+                .fillMaxWidth(0.8f)
                 .height(120.dp)
-                .offset(y = 140.dp), // mesma função que o padding
+                .offset(y = 140.dp),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0x8CFFA500)) // cor com transparência
+            colors = CardDefaults.cardColors(containerColor = Color(0x8CFFA500))
         ) {
             Column(
                 modifier = Modifier
@@ -84,11 +82,11 @@ fun RegistroOngScreen(navController: NavHostController?) {
             }
         }
 
-        // Card para preencher login
+        // Card para preencher login/registro
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.68f) // ocupação da tela
+                .fillMaxHeight(0.68f)
                 .align(Alignment.BottomCenter),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(
@@ -109,8 +107,10 @@ fun RegistroOngScreen(navController: NavHostController?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .background(Color(0xFFE0E0E0),
-                            shape = RoundedCornerShape(25.dp))
+                        .background(
+                            Color(0xFFE0E0E0),
+                            shape = RoundedCornerShape(25.dp)
+                        )
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -157,97 +157,90 @@ fun RegistroOngScreen(navController: NavHostController?) {
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Condicional para mostrar os campos dependendo da seleção (Login ou Registro)
+                // Condicional para mostrar os campos dependendo da seleção
                 if (isRegisterSelected.value) {
-                    // Campos para o registro
+                    // Campos  registro
+                    Column(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Nome
+                        OutlinedTextField(
+                            value = nome.value,
+                            onValueChange = { nome.value = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.AccountCircle,
+                                    contentDescription = "",
+                                    tint = Color(0x9E000000)
+                                )
+                            },
+                            placeholder = { Text(text = "Nome da instituição") }
+                        )
 
-                    //name
-                    OutlinedTextField(
-                        value = nome.value,
-                        onValueChange = { nome.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.AccountCircle,
-                                contentDescription = "",
-                                tint = Color(0x9E000000)
-                            )
-                        },
-                        placeholder = {
-                            Text(text = "Nome da instituição")
-                        }
-                    )
+                        Spacer(modifier = Modifier.height(5.dp))
 
-                    Spacer(modifier = Modifier.height(5.dp))
+                        // Email
+                        OutlinedTextField(
+                            value = email.value,
+                            onValueChange = { email.value = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Email,
+                                    contentDescription = "",
+                                    tint = Color(0x9E000000)
+                                )
+                            },
+                            placeholder = { Text(text = "Email da instituição") }
+                        )
 
-                    // Email
-                    OutlinedTextField(
-                        value = email.value,
-                        onValueChange = { email.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Email,
-                                contentDescription = "",
-                                tint = Color(0x9E000000)
-                            )
-                        },
-                        placeholder = {
-                            Text(text = "Email da instituição")
-                        }
-                    )
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                        // Contato
+                        OutlinedTextField(
+                            value = number.value,
+                            onValueChange = { number.value = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.AddIcCall,
+                                    contentDescription = "",
+                                    tint = Color(0x9E000000)
+                                )
+                            },
+                            placeholder = { Text(text = "Contato da instituição") }
+                        )
 
-                    // number
-                    OutlinedTextField(
-                        value = number.value,
-                        onValueChange = { number.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        visualTransformation = PasswordVisualTransformation(),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.AddIcCall,
-                                contentDescription = "",
-                                tint = Color(0x9E000000)
-                            )
-                        },
-                        placeholder = {
-                            Text(text = "Contato da instituição")
-                        }
-                    )
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // data de nascimento ARRUMAR
-                    OutlinedTextField(
-                        value = data.value,
-                        onValueChange = { data.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp),
-                        shape = RoundedCornerShape(10.dp),
-                        visualTransformation = PasswordVisualTransformation(),
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Apartment,
-                                contentDescription = "",
-                                tint = Color(0x9E000000)
-                            )
-                        },
-                        placeholder = {
-                            Text(text = "Tipo de instituição")
-                        }
-                    )
+                        // Tipo de instituição
+                        OutlinedTextField(
+                            value = data.value,
+                            onValueChange = { data.value = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
+                            shape = RoundedCornerShape(10.dp),
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Apartment,
+                                    contentDescription = "",
+                                    tint = Color(0x9E000000)
+                                )
+                            },
+                            placeholder = { Text(text = "Tipo de instituição") }
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(15.dp))
 
@@ -257,7 +250,6 @@ fun RegistroOngScreen(navController: NavHostController?) {
                             .fillMaxWidth()
                             .padding(vertical = 12.dp)
                             .clickable {
-                                //
                                 navController?.navigate("")
                             },
                         horizontalArrangement = Arrangement.End,
@@ -271,8 +263,8 @@ fun RegistroOngScreen(navController: NavHostController?) {
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Icon(
-                            imageVector = Icons.Default.ArrowForward, // seta
-                            contentDescription = "Ir para próxima tela",
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = "",
                             tint = Color(0xFFFFA500)
                         )
                     }
@@ -293,8 +285,7 @@ fun RegistroOngScreen(navController: NavHostController?) {
                     Text(
                         text = "Or login with",
                         color = Color.Gray,
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
                     Divider(
                         color = Color.LightGray,
@@ -305,14 +296,13 @@ fun RegistroOngScreen(navController: NavHostController?) {
 
                 Spacer(modifier = Modifier.height(5.dp))
 
-                // Box criada para fazer o Botao Google
+                // Botão Google
                 Box(
                     modifier = Modifier
                         .padding(16.dp)
-                        // fazer sombra do botão
                         .shadow(
-                            elevation = 8.dp, // altura da sombra
-                            shape = RoundedCornerShape(50) // borda arredondada
+                            elevation = 8.dp,
+                            shape = RoundedCornerShape(50)
                         )
                         .background(
                             color = Color.White,
@@ -325,16 +315,11 @@ fun RegistroOngScreen(navController: NavHostController?) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
-                    ){ }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.google),
                             contentDescription = "",
-                            modifier = Modifier
-                                .size(24.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -349,7 +334,6 @@ fun RegistroOngScreen(navController: NavHostController?) {
         }
     }
 }
-
 
 @Preview(showSystemUi = true)
 @Composable

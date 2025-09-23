@@ -35,8 +35,7 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
     val cep = remember { mutableStateOf("") }
     val senha = remember { mutableStateOf("") }
     val confirmarSenha = remember { mutableStateOf("") }
-    val checked = remember { mutableStateOf(false) } // Estado do checkbox
-    val isRegisterSelected = remember { mutableStateOf(true) } // Controle de seleção de botões (Login/Registre-se)
+    val isRegisterSelected = remember { mutableStateOf(true) }
 
     Box(
         modifier = Modifier.fillMaxSize()
@@ -54,11 +53,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
         // Card sobre a imagem
         Card(
             modifier = Modifier
-                .fillMaxWidth(0.8f) // largura menor que a tela
+                .fillMaxWidth(0.8f)
                 .height(120.dp)
-                .offset(y = 140.dp), // mesma função que o padding
+                .offset(y = 140.dp),
             shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0x8CFFA500)) // cor com transparência
+            colors = CardDefaults.cardColors(containerColor = Color(0x8CFFA500))
         ) {
             Column(
                 modifier = Modifier
@@ -81,11 +80,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
             }
         }
 
-        // Card para preencher login
+        // Card para preencher login/registro
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.68f) // ocupação da tela
+                .fillMaxHeight(0.68f)
                 .align(Alignment.BottomCenter),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(
@@ -101,13 +100,15 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                 verticalArrangement = Arrangement.Top
             ) {
 
-                //Login/Registre-se
+                // Login / Registro toggle
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .background(Color(0xFFE0E0E0),
-                            shape = RoundedCornerShape(25.dp))
+                        .background(
+                            Color(0xFFE0E0E0),
+                            shape = RoundedCornerShape(25.dp)
+                        )
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -154,11 +155,8 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // Condicional para mostrar os campos dependendo da seleção (Login ou Registro)
                 if (isRegisterSelected.value) {
-                    // Campos para o registro
-
-                    //cpf
+                    // Campos de Registro
                     OutlinedTextField(
                         value = cpf.value,
                         onValueChange = { cpf.value = it },
@@ -173,14 +171,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                                 tint = Color(0x9E000000)
                             )
                         },
-                        placeholder = {
-                            Text(text = "CNPJ")
-                        }
+                        placeholder = { Text(text = "CNPJ/CPF") }
                     )
 
                     Spacer(modifier = Modifier.height(5.dp))
 
-                    // cep
                     OutlinedTextField(
                         value = cep.value,
                         onValueChange = { cep.value = it },
@@ -195,14 +190,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                                 tint = Color(0x9E000000)
                             )
                         },
-                        placeholder = {
-                            Text(text = "CEP")
-                        }
+                        placeholder = { Text(text = "CEP") }
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // senha
                     OutlinedTextField(
                         value = senha.value,
                         onValueChange = { senha.value = it },
@@ -218,14 +210,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                                 tint = Color(0x9E000000)
                             )
                         },
-                        placeholder = {
-                            Text(text = "Digite seu senha")
-                        }
+                        placeholder = { Text(text = "Digite sua senha") }
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    // confirmarSenha ARRUMAR
                     OutlinedTextField(
                         value = confirmarSenha.value,
                         onValueChange = { confirmarSenha.value = it },
@@ -241,14 +230,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                                 tint = Color(0x9E000000)
                             )
                         },
-                        placeholder = {
-                            Text(text = "Confime sua senha ")
-                        }
+                        placeholder = { Text(text = "Confirme sua senha") }
                     )
 
                     Spacer(modifier = Modifier.height(15.dp))
 
-                    // Botão Prosseguir
                     Button(
                         onClick = {},
                         modifier = Modifier
@@ -266,10 +252,9 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                     }
                 }
 
-
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Linha com texto no meio
+                // Divider com texto
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.fillMaxWidth()
@@ -282,8 +267,7 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                     Text(
                         text = "Or login with",
                         color = Color.Gray,
-                        modifier = Modifier
-                            .padding(horizontal = 8.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp)
                     )
                     Divider(
                         color = Color.LightGray,
@@ -294,14 +278,12 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
 
                 Spacer(modifier = Modifier.height(5.dp))
 
-                // Box criada para fazer o Botao Google
+                // Botão Google
                 Box(
                     modifier = Modifier
                         .padding(10.dp)
-
-                        // fazer sombra do botão
                         .shadow(
-                            elevation = 8.dp, // altura da sombra
+                            elevation = 8.dp,
                             shape = RoundedCornerShape(50)
                         )
                         .background(
@@ -315,16 +297,11 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Center
-                    ){ }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
                     ) {
                         Image(
                             painter = painterResource(id = R.drawable.google),
                             contentDescription = "",
-                            modifier = Modifier
-                                .size(24.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
@@ -340,12 +317,8 @@ fun RegistroOngContiScreen(navController: NavHostController?) {
     }
 }
 
-
 @Preview(showSystemUi = true)
 @Composable
 fun RegistroOngContiScreenPreview() {
     RegistroOngContiScreen(navController = null)
 }
-
-
-
