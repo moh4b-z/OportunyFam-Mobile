@@ -15,7 +15,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
-import com.example.oportunyfam.Components.BarraTarefas
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -27,14 +26,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    val navController = rememberNavController()
-
-                    NavHost(
-                        navController = navController,
-                        startDestination = "home"
-                    ) {
-
-                    }
+                    AppNavigator()
                 }
             }
         }
@@ -42,6 +34,16 @@ class MainActivity : ComponentActivity() {
 }
 
 
+@Composable
+fun AppNavigator() {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "greeting") {
+        composable("greeting") {
+            Greeting("Usuário")
+        }
+    }
+}
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
