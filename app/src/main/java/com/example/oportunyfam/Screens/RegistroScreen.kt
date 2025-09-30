@@ -1,5 +1,6 @@
 package com.example.oportunyfam.Screens
 
+import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -10,22 +11,24 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
+import java.util.Calendar
 
 @Composable
 fun RegistroScreen(navController: NavHostController?) {
@@ -40,6 +43,34 @@ fun RegistroScreen(navController: NavHostController?) {
     val confirmarSenha = remember { mutableStateOf("") }
     val isRegisterSelected = remember { mutableStateOf(true) }
     val currentStep = remember { mutableStateOf(1) }
+    var passwordVisible by remember { mutableStateOf(false) }
+
+    // Estados de erro por campo
+    var nomeError by remember { mutableStateOf<String?>(null) }
+    var emailError by remember { mutableStateOf<String?>(null) }
+    var senhaError by remember { mutableStateOf<String?>(null) }
+    var confirmSenhaError by remember { mutableStateOf<String?>(null) }
+    var dataError by remember { mutableStateOf<String?>(null) }
+    var cadastroError by remember { mutableStateOf<String?>(null) }
+
+    val calendar = Calendar.getInstance()
+    val year = calendar.get(Calendar.YEAR)
+    val month = calendar.get(Calendar.MONTH)
+    val day = calendar.get(Calendar.DAY_OF_MONTH)
+
+    val context = LocalContext.current
+    var dataNascimento by remember { mutableStateOf("") }
+
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, selectedYear, selectedMonth, selectedDay ->
+            dataNascimento = "$selectedDay/${selectedMonth + 1}/$selectedYear"
+            dataError = null
+        },
+        year,
+        month,
+        day
+    )
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Imagem topo
@@ -209,16 +240,32 @@ fun RegistroScreen(navController: NavHostController?) {
 
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        // Data de nascimento
+                        Text(text = "Data de nascimento", fontSize = 12.sp)
                         OutlinedTextField(
-                            value = data.value,
-                            onValueChange = { data.value = it },
+                            value = dataNascimento,
+                            onValueChange = {
+                                dataNascimento = it
+                                dataError = null
+                            },
+                            label = { Text("Data de nascimento") },
+                            placeholder = { Text("DD/MM/AAAA") },
+                            leadingIcon = {
+                                IconButton(onClick = { datePickerDialog.show() }) {
+                                    Icon(Icons.Default.DateRange, contentDescription = "Selecionar data")
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("00/00/0000") }
+                                .height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            isError = dataError != null
                         )
+
+                        dataError?.let {
+                            Text(it, color = Color.Red, fontSize = 12.sp)
+                        }
 
                         Spacer(modifier = Modifier.height(15.dp))
 
@@ -274,36 +321,85 @@ fun RegistroScreen(navController: NavHostController?) {
 
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        // Senha
                         OutlinedTextField(
                             value = senha.value,
-                            onValueChange = { senha.value = it },
+                            onValueChange = {
+                                senha.value = it
+                                senhaError = null
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("Digite sua senha") }
+                            shape = RoundedCornerShape(12.dp),
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                            trailingIcon = {
+                                val visibilityIcon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
+                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                                    Icon(visibilityIcon, contentDescription = null)
+                                }
+                            },
+                            label = { Text("Digite sua senha") },
+                            placeholder = { Text(stringResource(R.string.senha_digitar)) },
+                            singleLine = true,
+                            isError = senhaError != null
                         )
+                        senhaError?.let {
+                            Text(it, color = Color.Red, fontSize = 12.sp)
+                        }
 
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        // Confirmar Senha
+                        Text(text = "Confirmar senha", fontSize = 12.sp)
                         OutlinedTextField(
                             value = confirmarSenha.value,
                             onValueChange = { confirmarSenha.value = it },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("Confirme sua senha") }
+                            shape = RoundedCornerShape(12.dp),
+                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
+                            label = { Text("Confirme sua senha") },
+                            placeholder = { Text("Digite novamente a senha") },
+                            singleLine = true,
+                            isError = confirmSenhaError != null
                         )
 
                         Spacer(modifier = Modifier.height(15.dp))
 
                         Button(
-                            onClick = { /* Ação de cadastro */ },
+                            onClick = {
+                                //criando validação
+                                var valid = true
+
+                                    if (nome.value.length < 3) {
+                                        nomeError = context.getString(R.string.support_name)
+                                        valid = false
+                                    }
+
+                                    if (!email.value.contains("@") || email.value.length < 5) {
+                                        emailError = "Email inválido"
+                                        valid = false
+                                    }
+                                    if (senha.value.length < 6) {
+                                        senhaError = "A senha deve ter no mínimo 6 caracteres"
+                                        valid = false
+                                    }
+                                    if (confirmarSenha.value != senha.value) {
+                                        confirmSenhaError = "As senhas não coincidem"
+                                        valid = false
+                                    }
+
+                                    if (dataNascimento.isBlank()) {
+                                        dataError = "Escolha uma data"
+                                        valid = false
+                                    }
+                                navController?.navigate("tela_home")
+
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
@@ -315,56 +411,56 @@ fun RegistroScreen(navController: NavHostController?) {
                                 fontSize = 16.sp
                             )
                         }
-                    }
-                }
 
-                Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(10.dp))
 
-                // Divider "Or login with"
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
-                    Text(
-                        "Ou entre com",
-                        color = Color.Gray,
-                        modifier = Modifier.padding(horizontal = 8.dp)
-                    )
-                    Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
-                }
+                        // Divider "Ou login com"
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
+                            Text(
+                                "Ou entre com",
+                                color = Color.Gray,
+                                modifier = Modifier.padding(horizontal = 8.dp)
+                            )
+                            Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
+                        }
 
-                Spacer(modifier = Modifier.height(5.dp))
+                        Spacer(modifier = Modifier.height(5.dp))
 
-                // Botão Google
-                Box(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .background(Color.White)
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = LocalIndication.current
-                        ) { /* Ação Google */ },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.google),
-                            contentDescription = "",
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Google",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
+                        // Botão Google
+                        Box(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .background(Color.White)
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = LocalIndication.current
+                                ) {  },//fazer a acao do google
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.google),
+                                    contentDescription = "",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Google",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -377,4 +473,3 @@ fun RegistroScreen(navController: NavHostController?) {
 fun RegistroScreenPreview() {
     RegistroScreen(navController = null)
 }
-
