@@ -1,18 +1,17 @@
 package com.example.oportunyfam
 
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.oportunyfam.Screens.RegistroScreen
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
+import com.example.tcc.HomeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -20,11 +19,19 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OportunyFamTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                val navController = rememberNavController()
+
+                NavHost(
+                    navController = navController,
+                    startDestination = "tela_registro"
                 ) {
-                    AppNavigator()
+                    composable( "tela_registro") {
+                        RegistroScreen(navController)
+                    }
+                    composable ("tela_home"){
+                        HomeScreen(navController)
+
+                    }
                 }
             }
         }
@@ -32,17 +39,5 @@ class MainActivity : ComponentActivity() {
 }
 
 
-@Composable
-fun AppNavigator() {
-    val navController = rememberNavController()
 
-    NavHost(navController = navController,
-        startDestination = "Tela_login"
-    ){
-        composable(route = "tela_login") {
-            TelaLogin(navController)
-        }
-
-    }
-}
 

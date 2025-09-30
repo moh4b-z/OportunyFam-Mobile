@@ -1,8 +1,10 @@
 package com.example.oportunyfam.Screens
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -14,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -27,8 +28,7 @@ import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
 
 @Composable
-fun RegistroScreens(navController: NavHostController?) {
-
+fun RegistroScreen(navController: NavHostController?) {
 
     val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
@@ -39,13 +39,10 @@ fun RegistroScreens(navController: NavHostController?) {
     val senha = remember { mutableStateOf("") }
     val confirmarSenha = remember { mutableStateOf("") }
     val isRegisterSelected = remember { mutableStateOf(true) }
-
-    // aqui ele verifica em qual parte do cadastro o user esta
     val currentStep = remember { mutableStateOf(1) }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Imagem topo
         Image(
             painter = painterResource(id = R.drawable.imglogin),
             contentDescription = "",
@@ -93,10 +90,7 @@ fun RegistroScreens(navController: NavHostController?) {
                 .fillMaxHeight(0.68f)
                 .align(Alignment.BottomCenter),
             colors = CardDefaults.cardColors(containerColor = Color.White),
-            shape = RoundedCornerShape(
-                topStart = 30.dp,
-                topEnd = 30.dp
-            )
+            shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -111,12 +105,14 @@ fun RegistroScreens(navController: NavHostController?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(40.dp)
-                        .background(Color(0xFFE0E0E0),
+                        .background(
+                            Color(0xFFE0E0E0),
                             shape = RoundedCornerShape(25.dp)
                         )
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Botão Login
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -125,7 +121,12 @@ fun RegistroScreens(navController: NavHostController?) {
                             .background(
                                 if (!isRegisterSelected.value) Color.White else Color(0xFFE0E0E0)
                             )
-                            .clickable { isRegisterSelected.value = false },
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = LocalIndication.current
+                            ) {
+                                isRegisterSelected.value = false
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -136,6 +137,7 @@ fun RegistroScreens(navController: NavHostController?) {
                         )
                     }
 
+                    // Botão Registro
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -144,7 +146,12 @@ fun RegistroScreens(navController: NavHostController?) {
                             .background(
                                 if (isRegisterSelected.value) Color.White else Color(0xFFE0E0E0)
                             )
-                            .clickable { isRegisterSelected.value = true },
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = LocalIndication.current
+                            ) {
+                                isRegisterSelected.value = true
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
@@ -158,10 +165,10 @@ fun RegistroScreens(navController: NavHostController?) {
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // condicional de cadastro
+                // Condicional de cadastro
                 if (isRegisterSelected.value) {
 
-                    // cadastro
+                    // Passo 1
                     if (currentStep.value == 1) {
                         OutlinedTextField(
                             value = nome.value,
@@ -170,11 +177,7 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.AccountCircle,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("Nome") }
                         )
 
@@ -187,11 +190,7 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.Email,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("Digite o email do responsável") }
                         )
 
@@ -204,11 +203,7 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.AddIcCall,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.AddIcCall, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("Contato do Responsável") }
                         )
 
@@ -221,11 +216,7 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.CalendarMonth,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.CalendarMonth, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("00/00/0000") }
                         )
 
@@ -235,8 +226,10 @@ fun RegistroScreens(navController: NavHostController?) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 12.dp)
-                                //clickable faz passar os campos a ser preenchidos
-                                .clickable {
+                                .clickable(
+                                    interactionSource = remember { MutableInteractionSource() },
+                                    indication = LocalIndication.current
+                                ) {
                                     currentStep.value = 2
                                 },
                             horizontalArrangement = Arrangement.End,
@@ -249,13 +242,11 @@ fun RegistroScreens(navController: NavHostController?) {
                                 color = Color(0xFFFFA500)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Icon(Icons.Default.ArrowForward,
-                                contentDescription = "",
-                                tint = Color(0xFFFFA500))
+                            Icon(Icons.Default.ArrowForward, contentDescription = "", tint = Color(0xFFFFA500))
                         }
                     }
 
-                    // continuacao do cadastro
+                    // Passo 2
                     if (currentStep.value == 2) {
                         OutlinedTextField(
                             value = cpf.value,
@@ -264,11 +255,7 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.Badge,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.Badge, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("CPF") }
                         )
 
@@ -281,11 +268,7 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .fillMaxWidth()
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
-                            leadingIcon = {
-                                Icon(Icons.Default.LocationOn,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("CEP") }
                         )
 
@@ -295,15 +278,11 @@ fun RegistroScreens(navController: NavHostController?) {
                             value = senha.value,
                             onValueChange = { senha.value = it },
                             modifier = Modifier
-                                .fillMaxWidth().
-                                padding(top = 8.dp),
+                                .fillMaxWidth()
+                                .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
                             visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = {
-                                Icon(Icons.Default.Lock,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("Digite sua senha") }
                         )
 
@@ -317,33 +296,29 @@ fun RegistroScreens(navController: NavHostController?) {
                                 .padding(top = 8.dp),
                             shape = RoundedCornerShape(10.dp),
                             visualTransformation = PasswordVisualTransformation(),
-                            leadingIcon = {
-                                Icon(Icons.Default.Lock,
-                                    contentDescription = "",
-                                    tint = Color(0x9E000000))
-                            },
+                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = "", tint = Color(0x9E000000)) },
                             label = { Text("Confirme sua senha") }
                         )
 
                         Spacer(modifier = Modifier.height(15.dp))
 
                         Button(
-                            onClick = {},
+                            onClick = { /* Ação de cadastro */ },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA500))
                         ) {
-                            Text("Cadastrar",
+                            Text(
+                                "Cadastrar",
                                 color = Color.White,
-                                fontSize = 16.sp)
+                                fontSize = 16.sp
+                            )
                         }
                     }
                 }
 
-                Spacer(modifier = Modifier
-                    .height(10.dp)
-                )
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Divider "Or login with"
                 Row(
@@ -351,31 +326,45 @@ fun RegistroScreens(navController: NavHostController?) {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
-                    Text("Or login with", color = Color.Gray, modifier = Modifier.padding(horizontal = 8.dp))
+                    Text(
+                        "Ou entre com",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(horizontal = 8.dp)
+                    )
                     Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
                 }
 
-                Spacer(modifier = Modifier
-                    .height(5.dp)
-                )
+                Spacer(modifier = Modifier.height(5.dp))
 
                 // Botão Google
                 Box(
                     modifier = Modifier
                         .padding(16.dp)
-                        .background(Color.White,)
+                        .background(Color.White)
                         .fillMaxWidth()
-                        .height(50.dp),
+                        .height(50.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = LocalIndication.current
+                        ) { /* Ação Google */ },
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
                         Image(
                             painter = painterResource(id = R.drawable.google),
                             contentDescription = "",
                             modifier = Modifier.size(24.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Google", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text(
+                            "Google",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Black
+                        )
                     }
                 }
             }
@@ -385,6 +374,7 @@ fun RegistroScreens(navController: NavHostController?) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun RegistroScreensPreview() {
-    RegistroScreens(navController = null)
+fun RegistroScreenPreview() {
+    RegistroScreen(navController = null)
 }
+
