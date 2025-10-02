@@ -141,6 +141,7 @@ fun PerfilScreen(navController: NavHostController?) {
                 }
                 Divider(color = Color.LightGray, thickness = 1.dp)
 
+                Column {  }
             }
 
 
