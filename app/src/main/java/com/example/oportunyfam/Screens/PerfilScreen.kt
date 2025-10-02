@@ -4,10 +4,16 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Article
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -20,8 +26,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.oportunyfam.Components.BarraTarefas
+import com.example.Components.BarraTarefas
+
 import com.example.oportunyfam.R
 
 
@@ -59,8 +67,6 @@ fun PerfilScreen(navController: NavHostController?) {
             }
         }
 
-        Divider(color = Color.LightGray, thickness = 1.dp)
-
         // Conteúdo principal
         Box(
             modifier = Modifier
@@ -76,7 +82,67 @@ fun PerfilScreen(navController: NavHostController?) {
                     .align(Alignment.BottomCenter),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
-            ) {}
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(65.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Localização
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = "",
+                            tint = Color.Gray,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = "Osasco-SP",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    //horário
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "",
+                            tint = Color.Gray,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = "08:00 - 18:00",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp)) //
+                    //Descrição
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        Text(
+                            text = "A ONG Esporte para Todos tem como objetivo promover a inclusão social e o desenvolvimento de jovens por meio do esporte, incentivando disciplina, saúde e trabalho em equipe.",
+                            fontSize = 15.sp,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Black
+                        )
+                    }
+                }
+                Divider(color = Color.LightGray, thickness = 1.dp)
+
+            }
+
 
             // Texto acima da foto
             Text(
@@ -111,7 +177,7 @@ fun PerfilScreen(navController: NavHostController?) {
             }
         }
 
-        // Barra de tarefas deve ficar dentro do Column
+
         BarraTarefas()
     }
 }
