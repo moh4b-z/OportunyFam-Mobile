@@ -1,5 +1,6 @@
 package com.example.oportunyfam.Screens
 
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
@@ -30,6 +31,7 @@ import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
 import java.util.Calendar
 
+@SuppressLint("SuspiciousIndentation")
 @Composable
 fun RegistroScreen(navController: NavHostController?) {
 

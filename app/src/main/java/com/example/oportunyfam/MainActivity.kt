@@ -5,7 +5,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -23,11 +22,15 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = "tela_registro"
+                    startDestination = "tela_splash"
                 ) {
+                    composable( "tela_splash") {
+                        SplashScreen(navController)
+                    }
                     composable( "tela_registro") {
                         RegistroScreen(navController)
                     }
+
                     composable ("tela_home"){
                         HomeScreen(navController)
 
