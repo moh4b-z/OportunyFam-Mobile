@@ -31,7 +31,6 @@ import androidx.navigation.NavHostController
 import com.example.oportunyfam.R
 import java.util.Calendar
 
-@SuppressLint("SuspiciousIndentation")
 @Composable
 fun RegistroScreen(navController: NavHostController?) {
 
