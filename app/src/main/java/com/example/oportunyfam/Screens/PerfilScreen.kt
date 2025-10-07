@@ -1,3 +1,4 @@
+
 package com.example.Screens
 
 import androidx.compose.foundation.Image
@@ -220,7 +221,7 @@ fun PerfilScreen(navController: NavHostController?) {
         }
 
 
-        // CORREÇÃO: Passando o navController para a BarraTarefas
+
         BarraTarefas(navController = navController)
     }
 }

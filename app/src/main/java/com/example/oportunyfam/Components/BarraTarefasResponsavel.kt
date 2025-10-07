@@ -53,7 +53,7 @@ fun BarraTarefas(navController: NavHostController?) {
             onClick = {
                 selectedItem = "home"
                 navController?.navigate("tela_home") {
-                    // É importante garantir que o NavController não seja null antes de acessar graph.startDestinationId
+
                     if (navController != null) {
                         popUpTo(navController.graph.startDestinationId) { inclusive = false }
                     }
