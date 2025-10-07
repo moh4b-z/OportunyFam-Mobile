@@ -109,7 +109,7 @@ fun CpfTextField(
     }
 
     // Função que será chamada no ImeAction.Done (tecla Enter/Concluir)
-    val onImeActionDone: () -> Unit = {
+    val onImeActionDone: () -> Unit = onImeActionDone@{
         // 1. Verifica se os 11 dígitos foram digitados
         if (state.cpf.length < CPF_LENGTH) {
             state = state.copy(error = "O CPF deve conter 11 dígitos.")

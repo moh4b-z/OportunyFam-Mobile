@@ -109,7 +109,7 @@ fun CepTextField(
     }
 
     // Função de validação e chamada à API (Enter/Done)
-    val onImeActionDone: () -> Unit = {
+    val onImeActionDone: () -> Unit = onImeActionDone@{
         val cleanCep = state.cep
 
         // 1. Validação do formato (8 dígitos)

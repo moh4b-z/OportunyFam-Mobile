@@ -112,7 +112,7 @@ fun CnpjTextField(
     }
 
     // Função que será chamada no ImeAction.Done (tecla Enter/Concluir)
-    val onImeActionDone: () -> Unit = {
+    val onImeActionDone: () -> Unit = onImeActionDone@{
         // 1. Verifica se os 14 dígitos foram digitados
         if (state.cnpj.length < CNPJ_LENGTH) {
             state = state.copy(error = "O CNPJ deve conter 14 dígitos.")
