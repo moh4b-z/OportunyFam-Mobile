@@ -1,21 +1,16 @@
 package com.example.oportunyfam
 
+
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.oportunyfam.Screens.RegistroScreen
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
-import com.example.oportunyfam.Components.BarraTarefas
+import com.example.tcc.HomeScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,16 +18,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             OportunyFamTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val navController = rememberNavController()
+                val navController = rememberNavController()
 
-                    NavHost(
-                        navController = navController,
-                        startDestination = "home"
-                    ) {
+                NavHost(
+                    navController = navController,
+                    startDestination = "tela_splash"
+                ) {
+                    composable( "tela_splash") {
+                        SplashScreen(navController)
+                    }
+                    composable( "tela_registro") {
+                        RegistroScreen(navController)
+                    }
+
+                    composable ("tela_home"){
+                        HomeScreen(navController)
 
                     }
                 }
@@ -43,18 +43,4 @@ class MainActivity : ComponentActivity() {
 
 
 
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
 
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    OportunyFamTheme {
-        Greeting("Android")
-    }
-}
