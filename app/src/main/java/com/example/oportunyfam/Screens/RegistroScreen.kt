@@ -1,6 +1,5 @@
 package com.example.oportunyfam.Screens
 
-import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.LocalIndication
@@ -352,7 +351,6 @@ fun RegistroScreen(navController: NavHostController?) {
                         Spacer(modifier = Modifier.height(10.dp))
 
                         // Confirmar Senha
-                        Text(text = "Confirmar senha", fontSize = 12.sp)
                         OutlinedTextField(
                             value = confirmarSenha.value,
                             onValueChange = { confirmarSenha.value = it },
@@ -375,28 +373,28 @@ fun RegistroScreen(navController: NavHostController?) {
                                 //criando validação
                                 var valid = true
 
-                                    if (nome.value.length < 3) {
-                                        nomeError = context.getString(R.string.support_name)
-                                        valid = false
-                                    }
+                                if (nome.value.length < 3) {
+                                    nomeError = context.getString(R.string.support_name)
+                                    valid = false
+                                }
 
-                                    if (!email.value.contains("@") || email.value.length < 5) {
-                                        emailError = "Email inválido"
-                                        valid = false
-                                    }
-                                    if (senha.value.length < 6) {
-                                        senhaError = "A senha deve ter no mínimo 6 caracteres"
-                                        valid = false
-                                    }
-                                    if (confirmarSenha.value != senha.value) {
-                                        confirmSenhaError = "As senhas não coincidem"
-                                        valid = false
-                                    }
+                                if (!email.value.contains("@") || email.value.length < 5) {
+                                    emailError = "Email inválido"
+                                    valid = false
+                                }
+                                if (senha.value.length < 6) {
+                                    senhaError = "A senha deve ter no mínimo 6 caracteres"
+                                    valid = false
+                                }
+                                if (confirmarSenha.value != senha.value) {
+                                    confirmSenhaError = "As senhas não coincidem"
+                                    valid = false
+                                }
 
-                                    if (dataNascimento.isBlank()) {
-                                        dataError = "Escolha uma data"
-                                        valid = false
-                                    }
+                                if (dataNascimento.isBlank()) {
+                                    dataError = "Escolha uma data"
+                                    valid = false
+                                }
                                 navController?.navigate("tela_home")
 
                             },

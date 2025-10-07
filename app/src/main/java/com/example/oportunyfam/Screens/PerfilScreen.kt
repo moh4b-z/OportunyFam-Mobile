@@ -50,6 +50,7 @@ fun PerfilScreen(navController: NavHostController?) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // A seta de voltar funciona porque o navController é o mesmo da tela
             IconButton(onClick = { navController?.popBackStack() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
@@ -166,7 +167,6 @@ fun PerfilScreen(navController: NavHostController?) {
                                 Text(
                                     text = when (option) {
                                         "Sobre nós" -> "A ONG promove a inclusão social e desenvolvimento de jovens por meio do esporte."
-                                        "Faça parte" -> "Participe das nossas atividades e ajude a transformar vidas!"
                                         "Associados" -> "Informações sobre nossos associados e como se tornar um."
                                         else -> ""
                                     },
@@ -177,8 +177,14 @@ fun PerfilScreen(navController: NavHostController?) {
                         }
                     }
                 }
+                Divider(
+                    color = Color.Gray,
+                    thickness = 1.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 120.dp)
+                )
             }
-
             // Texto acima da foto
             Text(
                 text = "127\nFOLLOWING",
@@ -210,9 +216,12 @@ fun PerfilScreen(navController: NavHostController?) {
                     modifier = Modifier.fillMaxSize()
                 )
             }
+
         }
 
-        BarraTarefas()
+
+        // CORREÇÃO: Passando o navController para a BarraTarefas
+        BarraTarefas(navController = navController)
     }
 }
 
