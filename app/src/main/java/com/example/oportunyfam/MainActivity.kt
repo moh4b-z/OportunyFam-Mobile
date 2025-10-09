@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.chatapp.ChatScreen
 import com.example.oportunyfam.Screens.PerfilOngScreen
 import com.example.oportunyfam.Screens.RegistroScreen
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
@@ -39,6 +40,9 @@ class MainActivity : ComponentActivity() {
                     composable("tela_perfil") {
                         PerfilOngScreen(navController)
 
+                    }
+                    composable ("tela_chat"){
+                        ChatScreen(navController)
                     }
                 }
             }

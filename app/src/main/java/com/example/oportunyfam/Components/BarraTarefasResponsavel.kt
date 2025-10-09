@@ -83,6 +83,7 @@ fun BarraTarefas(navController: NavHostController?) {
             selected = selectedItem == "atividades",
             onClick = {
                 selectedItem = "atividades"
+                navController?.navigate("tela_chat")
             },
             icon = {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
