@@ -25,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.Components.BarraTarefas
 import com.example.oportunyfam.R
+import com.example.oportunyfam.model.Oportunidade
+import kotlinx.coroutines.launch
 
 @Composable
 fun PerfilScreen(navController: NavHostController?) {
@@ -158,7 +160,7 @@ fun PerfilScreen(navController: NavHostController?) {
                                             "A ONG promove a inclusão social e desenvolvimento de jovens por meio do esporte.",
                                             color = Color.Black
                                         )
-                                        "Faça parte" -> CheckboxSingleOptionExample()
+                                        "Faça parte" -> CheckboxOportunidade()
                                         "Associados" -> Text(
                                             "Informações sobre nossos associados e como se tornar um.",
                                             color = Color.Black
@@ -212,55 +214,60 @@ fun PerfilScreen(navController: NavHostController?) {
 }
 
 @Composable
-fun CheckboxSingleOptionExample() {
-    var oportunidades = remember { mutableStateListOf<Oportunidade>() }
+//fazendo uma simulação pois nao esta consumindo da api
+fun CheckboxOportunidade() {
+    // Lista de oportunidades (mock)
+    val oportunidades = remember { mutableStateListOf<Oportunidade>() }
     var selectedIndex by remember { mutableStateOf(-1) }
+    val scope = rememberCoroutineScope()
 
-    // Carregar dados da API
+    // Simulando carregamento das oportunidades
     LaunchedEffect(Unit) {
         try {
-            val response = RetrofitClient.api.getOportunidades()
+            val response = listOf(
+                Oportunidade(id = 1, nome = "Oportunidade 1", vagas = 5),
+                Oportunidade(id = 2, nome = "Oportunidade 2", vagas = 3),
+                Oportunidade(id = 3, nome = "Oportunidade 3", vagas = 2)
+            )
             oportunidades.addAll(response)
         } catch (e: Exception) {
-            // Tratar erro (ex: Toast)
+            // Tratar erro, se quiser
         }
     }
 
     Column {
         oportunidades.forEachIndexed { index, opcao ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${opcao.nome} (${opcao.vagas} vagas)", modifier = Modifier.weight(1f))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+            ) {
+                Text(
+                    "${opcao.nome} (${opcao.vagas} vagas)",
+                    modifier = Modifier.weight(1f)
+                )
                 RadioButton(
                     selected = selectedIndex == index,
                     onClick = {
                         if (opcao.vagas > 0) {
-                            // Atualiza localmente a quantidade
+                            // Diminuir vagas localmente
                             oportunidades[index] = opcao.copy(vagas = opcao.vagas - 1)
                             selectedIndex = index
 
-                            // Atualiza no servidor (chamada assíncrona)
-                            LaunchedEffect(opcao.id) {
-                                try {
-                                    RetrofitClient.api.selecionarOportunidade(opcao.id)
-                                } catch (e: Exception) {
-                                    // Tratar erro
-                                }
+                            // Aqui você ainda pode deixar o launch vazio ou só um comentário
+                            scope.launch {
+                                // Quando a API estiver pronta, você fará a requisição:
+                                // OportunidadeService.api.selecionarOportunidade(opcao.id)
                             }
                         }
                     }
                 )
             }
         }
-
-        // Texto da opção selecionada
-        if (selectedIndex != -1) {
-            Text(
-                text = "Selecionado: ${oportunidades[selectedIndex].nome}",
-                color = Color.Gray
-            )
-        }
     }
 }
+
 
 
 @Preview(showSystemUi = true)
