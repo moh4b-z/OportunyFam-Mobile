@@ -7,7 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.oportunyfam.Screens.PerfilScreen
+import com.example.oportunyfam.Screens.PerfilOngScreen
 import com.example.oportunyfam.Screens.RegistroScreen
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
 import com.example.tcc.HomeScreen
@@ -37,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     }
 
                     composable("tela_perfil") {
-                        PerfilScreen(navController)
+                        PerfilOngScreen(navController)
 
                     }
                 }

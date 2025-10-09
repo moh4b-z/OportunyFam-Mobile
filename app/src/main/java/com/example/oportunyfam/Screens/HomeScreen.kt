@@ -94,7 +94,6 @@ fun SimpleSearchBar(
     searchResults: List<String>,
     modifier: Modifier = Modifier
 ) {
-    // 🔧 Alterado: trocado de rememberSaveable para remember
     var expanded by remember { mutableStateOf(false) }
 
     Box(
@@ -107,7 +106,7 @@ fun SimpleSearchBar(
             onQueryChange = onQueryChange,
             onSearch = {
                 onSearch(query)
-                expanded = false // 🔧 fecha antes de recompor
+                expanded = false //fecha antes de recompor
             },
             active = expanded,
             onActiveChange = { expanded = it },
