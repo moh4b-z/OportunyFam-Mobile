@@ -2,10 +2,31 @@ package com.example.oportunyfam.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+val OrangeGold = Color(0xFFC16512)
+val BrightOrangeGold = Color(0xFFFFB301)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+val PureWhite = Color(0xFFFFFFFF)
+val DarkText = Color(0xFF1C1B20)
+
+val primaryLight = Color(0xFFC16512)
+val onPrimaryLight = Color(0xFFFFFFFF)
+val primaryContainerLight = Color(0xFFFFB301)
+val onPrimaryContainerLight = Color(0xFF363534)
+val secondaryLight = Color(0xFFFFA000)
+val onSecondaryLight = Color(0xFFFFFFFF)
+val backgroundLight = Color(0xFFFFFFFF)
+val onBackgroundLight = Color(0xFF1C1B20)
+val surfaceLight = Color(0xFFFFFFFF)
+val onSurfaceLight = Color(0xFF1C1B20)
+
+// Tema Escuro (Dark)
+val primaryDark = Color(0xFFFFB301)
+val onPrimaryDark = Color(0xFF1C1B20)
+val primaryContainerDark = Color(0xFFC16512)
+val onPrimaryContainerDark = Color(0xFFFFFFFF)
+val secondaryDark = Color(0xFFB35220)
+val onSecondaryDark = Color(0xFFFFFFFF)
+val backgroundDark = Color(0xFF141318)
+val onBackgroundDark = Color(0xFFFFFFFF)
+val surfaceDark = Color(0xFF1C1B20)
+val onSurfaceDark = Color(0xFFFFFFFF)

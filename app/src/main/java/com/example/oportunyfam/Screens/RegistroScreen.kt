@@ -1,17 +1,17 @@
 package com.example.oportunyfam.Screens
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,62 +21,77 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.example.data.AuthDataStore
+import androidx.compose.ui.text.input.VisualTransformation
+import br.senai.sp.jandira.oportunyfam.service.RetrofitFactory
+import com.example.Components.LoginContent
+import com.example.Components.RegistroContent
+import com.example.oportunyfam.model.Instituicao
+import kotlinx.coroutines.launch
 import com.example.oportunyfam.R
-import java.util.Calendar
+
+val PrimaryColor = Color(0xFFFFA500)
+val BackgroundGray = Color(0xFFE0E0E0)
+
+object NavRoutes {
+    const val REGISTRO = "tela_registro"
+    const val HOME = "tela_home"
+}
 
 @Composable
 fun RegistroScreen(navController: NavHostController?) {
 
+    val context = LocalContext.current
+    val authDataStore = remember { AuthDataStore(context) }
+
     val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
-    val number = remember { mutableStateOf("") }
-    val data = remember { mutableStateOf("") }
-    val cpf = remember { mutableStateOf("") }
+    val phone = remember { mutableStateOf("") }
+    val selectedTypeIds = remember { mutableStateOf(emptyList<Int>()) }
+    val selectedTypeNames = remember { mutableStateOf("") }
+    val cnpj = remember { mutableStateOf("") }
+
+
     val cep = remember { mutableStateOf("") }
+    val logradouro = remember { mutableStateOf("") }
+    val numero = remember { mutableStateOf("") }
+    val complemento = remember { mutableStateOf("") }
+    val bairro = remember { mutableStateOf("") }
+    val cidade = remember { mutableStateOf("") }
+    val estado = remember { mutableStateOf("") }
     val senha = remember { mutableStateOf("") }
     val confirmarSenha = remember { mutableStateOf("") }
+    val concordaTermos = remember { mutableStateOf(false) }
+
+
     val isRegisterSelected = remember { mutableStateOf(true) }
     val currentStep = remember { mutableStateOf(1) }
-    var passwordVisible by remember { mutableStateOf(false) }
+    val isLoading = remember { mutableStateOf(false) }
+    val errorMessage = remember { mutableStateOf<String?>(null) }
+    val scope = rememberCoroutineScope()
 
-    // Estados de erro por campo
-    var nomeError by remember { mutableStateOf<String?>(null) }
-    var emailError by remember { mutableStateOf<String?>(null) }
-    var senhaError by remember { mutableStateOf<String?>(null) }
-    var confirmSenhaError by remember { mutableStateOf<String?>(null) }
-    var dataError by remember { mutableStateOf<String?>(null) }
-    var cadastroError by remember { mutableStateOf<String?>(null) }
+    val instituicaoService = remember { RetrofitFactory().getInstituicaoService() }
 
-    val calendar = Calendar.getInstance()
-    val year = calendar.get(Calendar.YEAR)
-    val month = calendar.get(Calendar.MONTH)
-    val day = calendar.get(Calendar.DAY_OF_MONTH)
 
-    val context = LocalContext.current
-    var dataNascimento by remember { mutableStateOf("") }
+    val onAuthSuccess: (Instituicao) -> Unit = { instituicaoLogada ->
+        scope.launch {
+            authDataStore.saveInstituicao(instituicaoLogada)
+            navController?.navigate(NavRoutes.HOME) {
+                popUpTo(NavRoutes.REGISTRO) { inclusive = true }
+            }
+            isLoading.value = false
+        }
+    }
 
-    val datePickerDialog = DatePickerDialog(
-        context,
-        { _, selectedYear, selectedMonth, selectedDay ->
-            dataNascimento = "$selectedDay/${selectedMonth + 1}/$selectedYear"
-            dataError = null
-        },
-        year,
-        month,
-        day
-    )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Imagem topo
         Image(
             painter = painterResource(id = R.drawable.imglogin),
-            contentDescription = "",
+            contentDescription = stringResource(R.string.desc_icon_name),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -84,37 +99,31 @@ fun RegistroScreen(navController: NavHostController?) {
                 .align(Alignment.TopCenter)
         )
 
-        // Card sobre a imagem
-        Card(
+        Box(
             modifier = Modifier
-                .fillMaxWidth(0.8f)
-                .height(120.dp)
-                .offset(y = 140.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0x8CFFA500))
+                .align(Alignment.TopCenter)
+                .padding(top = 150.dp)
+                .width(IntrinsicSize.Max)
+                .height(IntrinsicSize.Max)
+                .padding(horizontal = 40.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = "Crie sua conta e junte-se a nós!",
-                    fontSize = 28.sp,
+                    text = if (isRegisterSelected.value) stringResource(R.string.title_register) else stringResource(R.string.title_welcome_back),
+                    fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black
+                    color = Color.White
                 )
-                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Estamos felizes em ter você por aqui!",
+                    text = if (isRegisterSelected.value) stringResource(R.string.subtitle_register) else stringResource(R.string.subtitle_login),
                     fontSize = 14.sp,
-                    color = Color.Black
+                    color = Color.White
                 )
             }
         }
 
-        // Card principal
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -131,339 +140,163 @@ fun RegistroScreen(navController: NavHostController?) {
                 verticalArrangement = Arrangement.Top
             ) {
 
-                // Botões Login / Registro
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(40.dp)
+                        .height(48.dp)
                         .background(
-                            Color(0xFFE0E0E0),
+                            BackgroundGray,
                             shape = RoundedCornerShape(25.dp)
                         )
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Botão Login
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(25.dp))
-                            .background(
-                                if (!isRegisterSelected.value) Color.White else Color(0xFFE0E0E0)
-                            )
+                            .background(if (!isRegisterSelected.value) Color.White else BackgroundGray)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = LocalIndication.current
+                                indication = null
                             ) {
                                 isRegisterSelected.value = false
+                                errorMessage.value = null
+                                currentStep.value = 1
                             },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Login",
+                            text = stringResource(R.string.button_login),
                             fontSize = 16.sp,
-                            color = Color.Gray,
+                            color = if (!isRegisterSelected.value) PrimaryColor else Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    // Botão Registro
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
                             .clip(RoundedCornerShape(25.dp))
-                            .background(
-                                if (isRegisterSelected.value) Color.White else Color(0xFFE0E0E0)
-                            )
+                            .background(if (isRegisterSelected.value) Color.White else BackgroundGray)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
-                                indication = LocalIndication.current
+                                indication = null
                             ) {
                                 isRegisterSelected.value = true
+                                errorMessage.value = null
                             },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "Registre-se",
+                            text = stringResource(R.string.button_register),
                             fontSize = 16.sp,
-                            color = Color.Black,
+                            color = if (isRegisterSelected.value) PrimaryColor else Color.Gray,
                             fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(20.dp))
 
-                // Condicional de cadastro
-                if (isRegisterSelected.value) {
-
-                    // Passo 1
-                    if (currentStep.value == 1) {
-                        OutlinedTextField(
-                            value = nome.value,
-                            onValueChange = { nome.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("Nome") }
+                errorMessage.value?.let { error ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = error,
+                            color = Color(0xFFD32F2F),
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(12.dp)
                         )
-
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        OutlinedTextField(
-                            value = email.value,
-                            onValueChange = { email.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            leadingIcon = { Icon(Icons.Default.Email, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("Digite o email do responsável") }
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedTextField(
-                            value = number.value,
-                            onValueChange = { number.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            leadingIcon = { Icon(Icons.Default.AddIcCall, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("Contato do Responsável") }
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Data de nascimento
-                        OutlinedTextField(
-                            value = dataNascimento,
-                            onValueChange = {
-                                dataNascimento = it
-                                dataError = null
-                            },
-                            label = { Text("Data de nascimento") },
-                            placeholder = { Text("DD/MM/AAAA") },
-                            leadingIcon = {
-                                IconButton(onClick = { datePickerDialog.show() }) {
-                                    Icon(Icons.Default.DateRange, contentDescription = "Selecionar data")
-                                }
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true,
-                            isError = dataError != null
-                        )
-
-                        dataError?.let {
-                            Text(it, color = Color.Red, fontSize = 12.sp)
-                        }
-
-                        Spacer(modifier = Modifier.height(15.dp))
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 12.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = LocalIndication.current
-                                ) {
-                                    currentStep.value = 2
-                                },
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Prosseguir",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFA500)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Icon(Icons.Default.ArrowForward, contentDescription = "", tint = Color(0xFFFFA500))
-                        }
                     }
+                }
 
-                    // Passo 2
-                    if (currentStep.value == 2) {
-                        OutlinedTextField(
-                            value = cpf.value,
-                            onValueChange = { cpf.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            leadingIcon = { Icon(Icons.Default.Badge, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("CPF") }
-                        )
-
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        OutlinedTextField(
-                            value = cep.value,
-                            onValueChange = { cep.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(10.dp),
-                            leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = "", tint = Color(0x9E000000)) },
-                            label = { Text("CEP") }
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Senha
-                        OutlinedTextField(
-                            value = senha.value,
-                            onValueChange = {
-                                senha.value = it
-                                senhaError = null
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                            trailingIcon = {
-                                val visibilityIcon = if (passwordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility
-                                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                                    Icon(visibilityIcon, contentDescription = null)
-                                }
-                            },
-                            label = { Text("Digite sua senha") },
-                            placeholder = { Text(stringResource(R.string.senha_digitar)) },
-                            singleLine = true,
-                            isError = senhaError != null
-                        )
-                        senhaError?.let {
-                            Text(it, color = Color.Red, fontSize = 12.sp)
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Confirmar Senha
-                        OutlinedTextField(
-                            value = confirmarSenha.value,
-                            onValueChange = { confirmarSenha.value = it },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
-                            label = { Text("Confirme sua senha") },
-                            placeholder = { Text("Digite novamente a senha") },
-                            singleLine = true,
-                            isError = confirmSenhaError != null
-                        )
-
-                        Spacer(modifier = Modifier.height(15.dp))
-
-                        Button(
-                            onClick = {
-                                //criando validação
-                                var valid = true
-
-                                if (nome.value.length < 3) {
-                                    nomeError = context.getString(R.string.support_name)
-                                    valid = false
-                                }
-
-                                if (!email.value.contains("@") || email.value.length < 5) {
-                                    emailError = "Email inválido"
-                                    valid = false
-                                }
-                                if (senha.value.length < 6) {
-                                    senhaError = "A senha deve ter no mínimo 6 caracteres"
-                                    valid = false
-                                }
-                                if (confirmarSenha.value != senha.value) {
-                                    confirmSenhaError = "As senhas não coincidem"
-                                    valid = false
-                                }
-
-                                if (dataNascimento.isBlank()) {
-                                    dataError = "Escolha uma data"
-                                    valid = false
-                                }
-                                navController?.navigate("tela_home")
-
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA500))
-                        ) {
-                            Text(
-                                "Cadastrar",
-                                color = Color.White,
-                                fontSize = 16.sp
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        // Divider "Ou login com"
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
-                            Text(
-                                "Ou entre com",
-                                color = Color.Gray,
-                                modifier = Modifier.padding(horizontal = 8.dp)
-                            )
-                            Divider(color = Color.LightGray, thickness = 1.dp, modifier = Modifier.weight(1f))
-                        }
-
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        // Botão Google
-                        Box(
-                            modifier = Modifier
-                                .padding(16.dp)
-                                .background(Color.White)
-                                .fillMaxWidth()
-                                .height(50.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = LocalIndication.current
-                                ) {  },//fazer a acao do google
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.google),
-                                    contentDescription = "",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    "Google",
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                            }
-                        }
-                    }
+                if (!isRegisterSelected.value) {
+                    LoginContent(
+                        navController = navController,
+                        email = email,
+                        senha = senha,
+                        isLoading = isLoading,
+                        errorMessage = errorMessage,
+                        instituicaoService = instituicaoService,
+                        scope = scope,
+                        onAuthSuccess = onAuthSuccess
+                    )
+                } else {
+                    RegistroContent(
+                        navController = navController,
+                        // Passo 1
+                        nome = nome,
+                        email = email,
+                        phone = phone,
+                        selectedTypeIds = selectedTypeIds,
+                        selectedTypeNames = selectedTypeNames,
+                        cnpj = cnpj,
+                        // Passo 2
+                        cep = cep,
+                        logradouro = logradouro,
+                        numero = numero,
+                        complemento = complemento,
+                        bairro = bairro,
+                        cidade = cidade,
+                        estado = estado,
+                        senha = senha,
+                        confirmarSenha = confirmarSenha,
+                        concordaTermos = concordaTermos,
+                        // Controles
+                        currentStep = currentStep,
+                        isLoading = isLoading,
+                        errorMessage = errorMessage,
+                        instituicaoService = instituicaoService,
+                        scope = scope,
+                        onAuthSuccess = onAuthSuccess
+                    )
                 }
             }
         }
     }
+}
+
+@Composable
+fun RegistroOutlinedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    leadingIcon: @Composable () -> Unit = {},
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingIcon: @Composable() (() -> Unit)? = null,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    readOnly: Boolean,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        shape = RoundedCornerShape(10.dp),
+        leadingIcon = leadingIcon.takeIf { it != {} },
+        trailingIcon = trailingIcon,
+        label = { Text(label, color = Color.Gray) },
+        visualTransformation = visualTransformation,
+        readOnly = readOnly,
+        keyboardOptions = keyboardOptions,
+        enabled = !readOnly,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = PrimaryColor,
+            unfocusedBorderColor = Color.LightGray,
+            disabledBorderColor = Color.LightGray,
+            cursorColor = PrimaryColor,
+            focusedLabelColor = PrimaryColor,
+            unfocusedLabelColor = Color.Gray
+        )
+    )
 }
 
 @Preview(showSystemUi = true)

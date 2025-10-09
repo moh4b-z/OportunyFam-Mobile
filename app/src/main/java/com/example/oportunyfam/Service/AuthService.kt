@@ -9,6 +9,6 @@ import retrofit2.http.POST
 interface AuthService {
 
     // POST - Login Universal (Endpoint: /v1/auth/login)
-    @POST("auth/login")
+    @POST("/login")
     fun loginUniversal(@Body request: LoginRequest): Call<LoginResponse>
 }
