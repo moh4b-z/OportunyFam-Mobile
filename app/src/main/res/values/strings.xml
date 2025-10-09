@@ -1,15 +1,60 @@
 <resources>
+    <!-- GERAL -->
     <string name="app_name">OportunyFam</string>
-    <!-- Login -->
-    <string name="senha">Senha</string>
-    <string name="senha_digitar">Digite sua senha</string>
-    <!-- Cadastro -->
-    <string name="cadastro_user">Cadastro</string>
-    <string name="complement_name">Nome completo</string>
-    <string name="Digite_name">Digite seu nome completo</string>
-    <string name="support_name">O nome deve ter pelo menos 3 caracteres.</string>
-    <string name="ja_tem_conta">Já tem uma conta?</string>
-    <string name="Entre">Entre</string>
-    <string name="ImagemDeCadastro">https://lncimg.lance.com.br/uploads/2025/01/Lucas-Moura-Bragantino-x-Sao-Paulo-scaled-aspect-ratio-512-320.jpg</string>
+    <string name="title_welcome_back">Bem-vindo de volta!</string>
+    <string name="subtitle_login">Faça login para continuar.</string>
+    <string name="title_register">Crie sua conta e\njunte-se a nós!</string>
+    <string name="subtitle_register">Estamos felizes em ter você por aqui!</string>
 
+    <!-- BOTÕES GERAIS -->
+    <string name="button_login">Login</string>
+    <string name="button_register">Registre-se</string>
+    <string name="button_back">← Voltar</string>
+    <string name="button_next">Avançar →</string>
+    <string name="button_submit_register">Cadastrar →</string>
+
+    <!-- CAMPOS - PASSO 1 -->
+    <string name="label_institution_name">Nome da Instituição</string>
+    <string name="label_email">Email</string>
+    <string name="label_phone">Telefone (ex: 11999999999)</string>
+    <string name="label_institution_type">Tipo(s) de Instituição</string>
+    <string name="label_cnpj">CNPJ</string>
+    <string name="desc_icon_name">Ícone Nome</string>
+    <string name="desc_icon_email">Ícone Email</string>
+    <string name="desc_icon_phone">Ícone Telefone</string>
+    <string name="desc_icon_institution">Ícone Instituição</string>
+    <string name="desc_icon_cnpj">Ícone CNPJ</string>
+
+    <!-- CAMPOS - PASSO 2 -->
+    <string name="label_cep">CEP</string>
+    <string name="label_street">Logradouro (Rua, Avenida)</string>
+    <string name="label_number_optional">Nº (Opcional)</string>
+    <string name="label_complement_optional">Compl. (Opcional)</string>
+    <string name="label_neighborhood">Bairro</string>
+    <string name="label_city">Cidade</string>
+    <string name="label_state_uf">Estado (UF)</string>
+    <string name="label_password">Senha</string>
+    <string name="label_confirm_password">Confirmar senha</string>
+    <string name="label_terms_agreement">Concorda com os </string>
+    <string name="label_terms_link">termos de serviço</string>
+    <string name="desc_icon_location">Ícone Localização</string>
+    <string name="desc_icon_lock">Ícone Cadeado</string>
+
+    <!-- MENSAGENS DE ERRO E VALIDAÇÃO -->
+    <string name="error_fill_all_step_1">Preencha todos os campos obrigatórios do Passo 1.</string>
+    <string name="error_fill_all_step_2">Preencha todos os campos obrigatórios do Passo 2.</string>
+    <string name="error_password_mismatch">As senhas não coincidem.</string>
+    <string name="error_accept_terms">Você precisa concordar com os termos de serviço.</string>
+    <string name="error_select_institution_type">Selecione pelo menos um Tipo de Instituição.</string>
+    <string name="error_connection_failed">Erro ao conectar: </string>
+    <string name="error_registration_failed">Falha no Cadastro. Verifique os dados. Erro: </string>
+    <string name="desc_icon_dropdown">Seta de Dropdown</string>
+
+
+
+    <string name="label_remember_me">Lembrar-me</string>
+    <string name="button_forgot_password">Esqueceu sua senha?</string>
+    <string name="text_or_login_with">Ou entre com</string>
+    <string name="label_google">Google</string>
+    <string name="desc_icon_google">Ícone do Google</string>
 </resources>
