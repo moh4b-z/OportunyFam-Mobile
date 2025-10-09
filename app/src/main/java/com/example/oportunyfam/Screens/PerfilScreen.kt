@@ -1,4 +1,3 @@
-
 package com.example.Screens
 
 import androidx.compose.foundation.Image
@@ -51,7 +50,6 @@ fun PerfilScreen(navController: NavHostController?) {
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // A seta de voltar funciona porque o navController é o mesmo da tela
             IconButton(onClick = { navController?.popBackStack() }) {
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
@@ -88,50 +86,37 @@ fun PerfilScreen(navController: NavHostController?) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Localização
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = "",
                             tint = Color.Gray,
                             modifier = Modifier.padding(end = 4.dp)
                         )
-                        Text(
-                            text = "Osasco-SP",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Black
-                        )
+                        Text("Osasco-SP", color = Color.Black)
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
                     // Horário
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.Notifications,
                             contentDescription = "",
                             tint = Color.Gray,
                             modifier = Modifier.padding(end = 4.dp)
                         )
-                        Text(
-                            text = "08:00 - 18:00",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Black
-                        )
+                        Text("08:00 - 18:00", color = Color.Black)
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // card de opções
+                    // Card de opções
                     Column(
                         modifier = Modifier
                             .padding(6.dp)
                             .fillMaxWidth()
                             .background(Color(0xFFFFD580), RoundedCornerShape(16.dp))
-
                     ) {
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -149,9 +134,11 @@ fun PerfilScreen(navController: NavHostController?) {
                                         .weight(1f)
                                         .padding(horizontal = 4.dp)
                                 ) {
-                                    Text(text = label,
+                                    Text(
+                                        text = label,
                                         color = Color.White,
-                                        fontSize = 13.sp)
+                                        fontSize = 13.sp
+                                    )
                                 }
                             }
                         }
@@ -165,15 +152,19 @@ fun PerfilScreen(navController: NavHostController?) {
                                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE0B2)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                    text = when (option) {
-                                        "Sobre nós" -> "A ONG promove a inclusão social e desenvolvimento de jovens por meio do esporte."
-                                        "Associados" -> "Informações sobre nossos associados e como se tornar um."
-                                        else -> ""
-                                    },
-                                    modifier = Modifier.padding(16.dp),
-                                    color = Color.Black
-                                )
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    when (option) {
+                                        "Sobre nós" -> Text(
+                                            "A ONG promove a inclusão social e desenvolvimento de jovens por meio do esporte.",
+                                            color = Color.Black
+                                        )
+                                        "Faça parte" -> CheckboxSingleOptionExample()
+                                        "Associados" -> Text(
+                                            "Informações sobre nossos associados e como se tornar um.",
+                                            color = Color.Black
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -186,6 +177,7 @@ fun PerfilScreen(navController: NavHostController?) {
                         .padding(vertical = 120.dp)
                 )
             }
+
             // Texto acima da foto
             Text(
                 text = "127\nFOLLOWING",
@@ -203,11 +195,7 @@ fun PerfilScreen(navController: NavHostController?) {
                     .size(100.dp)
                     .align(Alignment.TopCenter)
                     .offset(y = 60.dp)
-                    .border(
-                        width = 3.dp,
-                        color = Color.White,
-                        shape = CircleShape
-                    ),
+                    .border(3.dp, Color.White, CircleShape),
                 shape = CircleShape,
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
@@ -217,14 +205,63 @@ fun PerfilScreen(navController: NavHostController?) {
                     modifier = Modifier.fillMaxSize()
                 )
             }
-
         }
-
-
 
         BarraTarefas(navController = navController)
     }
 }
+
+@Composable
+fun CheckboxSingleOptionExample() {
+    var oportunidades = remember { mutableStateListOf<Oportunidade>() }
+    var selectedIndex by remember { mutableStateOf(-1) }
+
+    // Carregar dados da API
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.api.getOportunidades()
+            oportunidades.addAll(response)
+        } catch (e: Exception) {
+            // Tratar erro (ex: Toast)
+        }
+    }
+
+    Column {
+        oportunidades.forEachIndexed { index, opcao ->
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("${opcao.nome} (${opcao.vagas} vagas)", modifier = Modifier.weight(1f))
+                RadioButton(
+                    selected = selectedIndex == index,
+                    onClick = {
+                        if (opcao.vagas > 0) {
+                            // Atualiza localmente a quantidade
+                            oportunidades[index] = opcao.copy(vagas = opcao.vagas - 1)
+                            selectedIndex = index
+
+                            // Atualiza no servidor (chamada assíncrona)
+                            LaunchedEffect(opcao.id) {
+                                try {
+                                    RetrofitClient.api.selecionarOportunidade(opcao.id)
+                                } catch (e: Exception) {
+                                    // Tratar erro
+                                }
+                            }
+                        }
+                    }
+                )
+            }
+        }
+
+        // Texto da opção selecionada
+        if (selectedIndex != -1) {
+            Text(
+                text = "Selecionado: ${oportunidades[selectedIndex].nome}",
+                color = Color.Gray
+            )
+        }
+    }
+}
+
 
 @Preview(showSystemUi = true)
 @Composable
