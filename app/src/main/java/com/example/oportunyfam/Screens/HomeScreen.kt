@@ -2,19 +2,25 @@ package com.example.tcc
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,6 +30,10 @@ import com.example.oportunyfam.R
 
 @Composable
 fun HomeScreen(navController: NavHostController?) {
+
+    var query by rememberSaveable { mutableStateOf("") }
+    val searchResults = listOf("Jiu Jitsu", "Centro Cultural", "Biblioteca", "T.I")
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -34,33 +44,20 @@ fun HomeScreen(navController: NavHostController?) {
             contentScale = ContentScale.Crop
         )
 
-        Box(
+        SimpleSearchBar(
+            query = query,
+            onQueryChange = { query = it },
+            onSearch = { println("Buscando por: $it") },
+            searchResults = searchResults,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(16.dp)
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(50.dp))
-                .background(Color(0xFFFFA000))
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = "Pesquise aqui",
-                color = Color.White,
-                fontSize = 18.sp,
-                modifier = Modifier.align(Alignment.CenterStart)
-            )
-            Icon(
-                imageVector = Icons.Default.Notifications,
-                contentDescription = "Notificação",
-                modifier = Modifier.align(Alignment.CenterEnd),
-                tint = Color.Red
-            )
-        }
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+        )
 
         Row(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 80.dp)
+                .padding(top = 120.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
@@ -84,6 +81,63 @@ fun HomeScreen(navController: NavHostController?) {
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
             BarraTarefas(navController = navController)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SimpleSearchBar(
+    query: String,
+    onQueryChange: (String) -> Unit,
+    onSearch: (String) -> Unit,
+    searchResults: List<String>,
+    modifier: Modifier = Modifier
+) {
+    // 🔧 Alterado: trocado de rememberSaveable para remember
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(
+        modifier
+            .fillMaxWidth()
+            .semantics { isTraversalGroup = true }
+    ) {
+        SearchBar(
+            query = query,
+            onQueryChange = onQueryChange,
+            onSearch = {
+                onSearch(query)
+                expanded = false // 🔧 fecha antes de recompor
+            },
+            active = expanded,
+            onActiveChange = { expanded = it },
+            placeholder = { Text("Pesquise aqui...") },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .semantics { traversalIndex = 0f },
+            colors = SearchBarDefaults.colors(
+                containerColor = Color(0xFFFFA000),
+                inputFieldColors = TextFieldDefaults.textFieldColors(
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                )
+            )
+        ) {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                searchResults
+                    .filter { it.contains(query, ignoreCase = true) }
+                    .forEach { result ->
+                        ListItem(
+                            headlineContent = { Text(result) },
+                            modifier = Modifier
+                                .clickable {
+                                    onQueryChange(result)
+                                    expanded = false
+                                }
+                                .fillMaxWidth()
+                        )
+                    }
+            }
         }
     }
 }

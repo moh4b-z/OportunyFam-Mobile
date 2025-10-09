@@ -1,4 +1,4 @@
-package com.example.Screens
+package com.example.oportunyfam.Screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,7 +29,7 @@ import com.example.oportunyfam.model.Oportunidade
 import kotlinx.coroutines.launch
 
 @Composable
-fun PerfilScreen(navController: NavHostController?) {
+fun PerfilOngScreen(navController: NavHostController?) {
 
     var selectedOption by remember { mutableStateOf<String?>(null) }
 
@@ -272,6 +272,6 @@ fun CheckboxOportunidade() {
 
 @Preview(showSystemUi = true)
 @Composable
-fun PerfilScreenPreview() {
-    PerfilScreen(navController = null)
+fun PerfilOngScreenPreview() {
+    PerfilOngScreen(navController = null)
 }
