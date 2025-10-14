@@ -72,6 +72,10 @@ dependencies {
     //COIL biblioteca para fazer chamada das img
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    implementation("org.osmdroid:osmdroid-android:6.1.18")//OpenStreetMap
+
+    implementation("com.google.android.gms:play-services-location:21.3.0")//Para obter a posição atual do usuário
+
     implementation("androidx.datastore:datastore-preferences:1.1.1")//Banco de dados local (Room ou DataStore)
 
     //cache de dados offline
@@ -84,9 +88,7 @@ dependencies {
     implementation("com.google.android.gms:play-services-maps:19.0.0")
     implementation("com.google.maps.android:maps-compose:2.11.4") // integração com Jetpack Compose
 
-    implementation("org.osmdroid:osmdroid-android:6.1.18")//OpenStreetMap
 
-    implementation("com.google.android.gms:play-services-location:21.3.0")//Para obter a posição atual do usuário
 
 
 
