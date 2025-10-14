@@ -23,6 +23,7 @@
     <!-- CAMPOS - PASSO 1 -->
     <string name="label_institution_name">Nome da Instituição</string>
     <string name="label_email">Email</string>
+    <string name="label_user_name">Nome</string>
     <string name="label_phone">Telefone (ex: 11999999999)</string>
     <string name="label_institution_type">Tipo(s) de Instituição</string>
     <string name="label_cnpj">CNPJ</string>

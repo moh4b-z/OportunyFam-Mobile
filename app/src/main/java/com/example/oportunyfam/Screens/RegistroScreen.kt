@@ -1,4 +1,4 @@
-package com.example.screens
+package com.example.oportunyfam.Screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,9 +29,7 @@ import com.example.data.AuthDataStore
 import androidx.compose.ui.text.input.VisualTransformation
 import br.senai.sp.jandira.oportunyfam.service.RetrofitFactory
 import com.example.Components.LoginContent
-import com.example.Components.RegistroContent
-import com.example.oportunyfam.Service.UsuarioService
-import com.example.oportunyfam.Service.SexoService
+import com.example.oportunyfam.Components.RegistroContent
 import com.example.oportunyfam.model.Usuario
 import com.example.oportunyfam.model.Crianca
 import kotlinx.coroutines.launch
@@ -141,6 +139,16 @@ fun RegistroScreen(navController: NavHostController?) {
             }
             isLoading.value = false
         }
+    }
+
+    // =================================================================
+    // ✨ NOVO CALLBACK DE SUCESSO DO REGISTRO
+    // =================================================================
+    // Esta função será chamada pelo RegistroContent após o registro na API
+    val onRegistrationSuccess: (Usuario) -> Unit = { novoUsuario ->
+        // No sucesso do registro, salvamos o novo usuário e navegamos.
+        // Reutilizamos a lógica de AuthSuccess (como se fosse um login automático após o registro)
+        onAuthSuccess(novoUsuario, null)
     }
 
 
@@ -290,7 +298,8 @@ fun RegistroScreen(navController: NavHostController?) {
                         onAuthSuccess = onAuthSuccess
                     )
                 } else {
-                    RegistroContent(
+                    // ✨ CORRIGIDO: O parâmetro onRegistrationSuccess foi adicionado aqui.
+                    RegistroContent (
                         navController = navController,
                         // Passo 1 (Dados Pessoais)
                         nome = nome,
@@ -317,7 +326,8 @@ fun RegistroScreen(navController: NavHostController?) {
                         errorMessage = errorMessage,
                         usuarioService = usuarioService,
                         sexoService = sexoService,
-                        scope = scope
+                        scope = scope,
+                        onRegistrationSuccess = onRegistrationSuccess // ✨ Novo parâmetro
                     )
                 }
             }

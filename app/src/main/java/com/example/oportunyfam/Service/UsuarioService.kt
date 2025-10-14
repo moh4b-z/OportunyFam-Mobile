@@ -11,7 +11,7 @@ interface UsuarioService {
 
     // POST /v1/usuario - Envia o Request, retorna o Response
     @POST("usuario")
-    fun criar(@Body usuario: UsuarioRequest): Call<UsuarioResponse>
+    suspend fun criar(@Body request: UsuarioRequest): Call<UsuarioResponse>
 
     // PUT /v1/usuario/:id - Envia o Request, retorna o Response
     @PUT("usuario/{id}")

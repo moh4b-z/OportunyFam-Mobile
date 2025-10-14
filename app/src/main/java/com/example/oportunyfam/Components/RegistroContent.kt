@@ -1,4 +1,4 @@
-package com.example.Components
+package com.example.oportunyfam.Components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -27,162 +27,20 @@ import com.example.oportunyfam.Service.SexoService
 import com.example.oportunyfam.model.UsuarioRequest
 import com.example.oportunyfam.model.Usuario
 import com.example.oportunyfam.model.Sexo
-import com.example.screens.PrimaryColor
-import com.example.screens.RegistroOutlinedTextField
+import com.example.oportunyfam.Screens.PrimaryColor
+import com.example.oportunyfam.Screens.RegistroOutlinedTextField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import retrofit2.Response
 import com.example.oportunyfam.R
-import com.example.data.AuthDataStore
 import com.example.oportunyfam.model.UsuarioResponse
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
-// =================================================================
-// 1. COMPONENTE E VALIDADOR DE CPF (CÓDIGO FORNECIDO PELO USUÁRIO)
-// =================================================================
-
-data class CpfState(
-    val cpf: String = "",
-    val error: String? = null
-)
-
 private const val CPF_LENGTH = 11
 private const val MAX_INPUT_LENGTH = 14
 
-class CpfMaskTransformation : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        val trimmed = if (text.text.length >= CPF_LENGTH) text.text.substring(0..CPF_LENGTH - 1) else text.text
-        var out = ""
-
-        for (i in trimmed.indices) {
-            out += trimmed[i]
-            if (i == 2 || i == 5) out += "."
-            if (i == 8) out += "-"
-        }
-
-        val offsetTranslator = object : OffsetMapping {
-            override fun originalToTransformed(offset: Int): Int {
-                if (offset <= 3) return offset
-                if (offset <= 6) return offset + 1
-                if (offset <= 9) return offset + 2
-                if (offset <= 11) return offset + 3
-                return MAX_INPUT_LENGTH
-            }
-
-            override fun transformedToOriginal(offset: Int): Int {
-                if (offset <= 3) return offset
-                if (offset <= 7) return offset - 1
-                if (offset <= 11) return offset - 2
-                if (offset <= 14) return offset - 3
-                return CPF_LENGTH
-            }
-        }
-
-        return TransformedText(
-            text = AnnotatedString(out),
-            offsetMapping = offsetTranslator
-        )
-    }
-}
-
-@Composable
-fun CpfTextField(
-    modifier: Modifier = Modifier,
-    readOnly: Boolean = false,
-    onValidationSuccess: (cpf: String) -> Unit = {}
-) {
-    var state by remember { mutableStateOf(CpfState()) }
-    val focusManager = LocalFocusManager.current
-
-    val onValueChange: (String) -> Unit = { newText ->
-        val digitsOnly = newText.filter { it.isDigit() }
-        val limitedDigits = if (digitsOnly.length > CPF_LENGTH) digitsOnly.substring(0, CPF_LENGTH) else digitsOnly
-        state = state.copy(cpf = limitedDigits, error = null)
-    }
-
-    val onImeActionDone: () -> Unit = onImeActionDone@{
-        if (state.cpf.length < CPF_LENGTH) {
-            state = state.copy(error = "O CPF deve conter 11 dígitos.")
-            return@onImeActionDone
-        }
-
-        if (!CpfValidator.isCpfValid(state.cpf)) {
-            state = state.copy(error = "O CPF digitado é inválido (erro de cálculo).")
-            return@onImeActionDone
-        }
-
-        onValidationSuccess(state.cpf)
-        focusManager.moveFocus(FocusDirection.Next)
-    }
-
-    OutlinedTextField(
-        value = state.cpf,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        label = { Text("CPF") },
-        readOnly = readOnly,
-        isError = state.error != null,
-        supportingText = {
-            if (state.error != null) {
-                Text(
-                    text = state.error!!,
-                    color = MaterialTheme.colorScheme.error
-                )
-            } else {
-                Text(text = "Digite o CPF (apenas números)")
-            }
-        },
-        leadingIcon = {
-            Icon(Icons.Filled.Badge, contentDescription = "Ícone CPF")
-        },
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(
-            onDone = { onImeActionDone() }
-        ),
-        visualTransformation = CpfMaskTransformation()
-    )
-}
-
-object CpfValidator {
-    fun isCpfValid(cpf: String): Boolean {
-        if (cpf.length != CPF_LENGTH) return false
-        if (cpf.toSet().size == 1) return false
-
-        try {
-            val numbers = cpf.map { it.toString().toInt() }.toIntArray()
-
-            var sum = 0
-            for (i in 0..8) {
-                sum += numbers[i] * (10 - i)
-            }
-            var remainder = sum % 11
-            val dv1 = if (remainder < 2) 0 else 11 - remainder
-
-            if (numbers[9] != dv1) return false
-
-            sum = 0
-            for (i in 0..9) {
-                sum += numbers[i] * (11 - i)
-            }
-            remainder = sum % 11
-            val dv2 = if (remainder < 2) 0 else 11 - remainder
-
-            return numbers[10] == dv2
-        } catch (e: Exception) {
-            return false
-        }
-    }
-}
-
-
-// =================================================================
-// 2. FUNÇÕES DE VALIDAÇÃO
-// =================================================================
 
 /**
  * Verifica se todos os campos obrigatórios do Passo 1 (Usuário) estão preenchidos.
@@ -190,10 +48,13 @@ object CpfValidator {
 fun isStep1Valid(nome: String, email: String, phone: String, cpf: String, dataNascimento: String, selectedSexoId: Int?): Boolean {
     val isBasicValid = nome.isNotBlank() && email.isNotBlank() && phone.isNotBlank()
     val isCpfValid = cpf.length == CPF_LENGTH
-    val isDateValid = dataNascimento.isNotBlank() && dataNascimento.length == 10 // dd/MM/yyyy
+
+    // Validação da Data (verifica se o formato dd/MM/yyyy está preenchido)
+    val isDateFilled = dataNascimento.length == 10 && dataNascimento.count { it == '/' } == 2
+
     val isSexoSelected = selectedSexoId != null && selectedSexoId > 0
 
-    return isBasicValid && isCpfValid && isDateValid && isSexoSelected
+    return isBasicValid && isCpfValid && isDateFilled && isSexoSelected
 }
 
 /**
@@ -204,7 +65,7 @@ fun isStep2Valid(
     senha: String, confirmarSenha: String, concordaTermos: Boolean
 ): Boolean {
     val isAddressValid = logradouro.isNotBlank() && bairro.isNotBlank() && cidade.isNotBlank() && estado.isNotBlank()
-    val isPasswordValid = senha.isNotBlank() && confirmarSenha.isNotBlank() && senha == confirmarSenha
+    val isPasswordValid = senha.isNotBlank() && senha.length >= 6 && confirmarSenha.isNotBlank() && senha == confirmarSenha // Adiciona validação de tamanho da senha
     return isAddressValid && isPasswordValid && concordaTermos
 }
 
@@ -212,6 +73,7 @@ fun isStep2Valid(
 // 3. COMPONENTE AUXILIAR: Seleção de Sexo
 // =================================================================
 
+@OptIn(ExperimentalMaterial3Api::class) // ✨ Adiciona o OptIn para componentes experimentais
 @Composable
 fun SexoSelector(
     selectedSexoId: MutableState<Int?>,
@@ -233,6 +95,7 @@ fun SexoSelector(
                     sexosList = response.body()!!.sexos
                 }
             } catch (e: Exception) {
+                // Em um app real, aqui você mostraria uma mensagem de erro na UI
                 println("Erro ao carregar sexos: ${e.message}")
             }
         }
@@ -308,7 +171,9 @@ fun RegistroContent(
     errorMessage: MutableState<String?>,
     usuarioService: UsuarioService,
     sexoService: SexoService,
-    scope: CoroutineScope
+    scope: CoroutineScope,
+    // ✨ NOVO CALLBACK: Passa a responsabilidade de salvar e navegar para a Screen
+    onRegistrationSuccess: (Usuario) -> Unit
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
@@ -318,6 +183,8 @@ fun RegistroContent(
         contentPadding = PaddingValues(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
+        // ... (Seu código existente do Passo 1) ...
+
         // =================================================================
         // ITENS DO PASSO 1 (REGISTRO DO USUÁRIO)
         // =================================================================
@@ -597,6 +464,8 @@ fun RegistroContent(
                         },
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = stringResource(R.string.button_back), tint = PrimaryColor)
+                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.button_back),
                             fontSize = 16.sp,
@@ -639,7 +508,7 @@ fun RegistroContent(
                                 isLoading.value = true
                                 scope.launch {
                                     try {
-                                        // MONTAGEM DA REQUISIÇÃO DO USUÁRIO
+
                                         val request = UsuarioRequest(
                                             nome = nome.value,
                                             foto_perfil = null,
@@ -660,12 +529,15 @@ fun RegistroContent(
                                             estado = estado.value
                                         )
 
-                                        val response: Response<UsuarioResponse> = usuarioService.criar(request)
+                                        val response: Response<UsuarioResponse> = usuarioService.criar(request).execute()
 
                                         if (response.isSuccessful && response.body() != null) {
-                                            // 1. Navegar para a tela de Home (Sucesso)
-                                            navController?.navigate("tela_home") {
-                                                popUpTo("tela_registro") { inclusive = true }
+                                            val novoUsuario = response.body()!!.usuario // Assume que UsuarioResponse tem o campo 'usuario'
+                                            // ✨ CHAMA O CALLBACK DE SUCESSO
+                                            if (novoUsuario != null) {
+                                                onRegistrationSuccess(novoUsuario)
+                                            } else {
+                                                errorMessage.value = context.getString(R.string.error_registration_failed) + "\nDetalhe: Resposta de sucesso sem objeto Usuário."
                                             }
 
                                         } else {
@@ -695,6 +567,8 @@ fun RegistroContent(
                                 color = if (isSubmitEnabled) PrimaryColor else Color.LightGray
                             )
                         }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Icon(Icons.Default.Send, contentDescription = stringResource(R.string.button_submit_register), tint = if (isSubmitEnabled) PrimaryColor else Color.LightGray)
                     }
                 }
             }

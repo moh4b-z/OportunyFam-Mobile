@@ -27,14 +27,13 @@ import com.example.oportunyfam.Service.LoginUniversalService
 import com.example.oportunyfam.model.LoginRequest
 import com.example.oportunyfam.model.Usuario
 import com.example.oportunyfam.model.Crianca
-import com.example.oportunyfam.model.LoginResponse // ✨ NOVO IMPORT
-import com.example.oportunyfam.model.ResultLogin  // ✨ NOVO IMPORT
+import com.example.oportunyfam.model.LoginResponse
 import com.example.oportunyfam.R
-import com.example.screens.PrimaryColor
-import com.example.screens.RegistroOutlinedTextField
+import com.example.oportunyfam.Screens.PrimaryColor
+import com.example.oportunyfam.Screens.RegistroOutlinedTextField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import retrofit2.Response // ✨ Certificando que o import do Retrofit está aqui
+import retrofit2.Response
 
 @Composable
 fun LoginContent(
