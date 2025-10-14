@@ -60,6 +60,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
     implementation("androidx.navigation:navigation-compose:2.8.0")
     implementation("androidx.compose.material3:material3:1.2.0") // ou a versão mais recente
     implementation("androidx.compose.material:material-icons-extended:1.5.4") // necessário para ícones

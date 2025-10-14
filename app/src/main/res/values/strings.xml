@@ -1,10 +1,11 @@
 <resources>
     <!-- GERAL -->
-    <string name="app_name">OportunyFam</string>
+    <string name="app_name">OportunyFam Instituição</string>
     <string name="title_welcome_back">Bem-vindo de volta!</string>
     <string name="subtitle_login">Faça login para continuar.</string>
     <string name="title_register">Crie sua conta e\njunte-se a nós!</string>
     <string name="subtitle_register">Estamos felizes em ter você por aqui!</string>
+    <string name="subtitle_register_user">Estamos felizes em ter você por aqui!</string>
 
     <!-- BOTÕES GERAIS -->
     <string name="button_login">Login</string>
@@ -12,6 +13,12 @@
     <string name="button_back">← Voltar</string>
     <string name="button_next">Avançar →</string>
     <string name="button_submit_register">Cadastrar →</string>
+
+    <string name="button_login_submit">Entrar</string>
+    <string name="error_fill_all_login">Preencha o e-mail e a senha para continuar.</string>
+    <string name="error_login_failed">Erro inesperado ao realizar o login. Tente novamente.</string>
+    <string name="error_login_invalid_credentials">Credenciais inválidas. Verifique seu e-mail e senha.</string>
+    <string name="error_not_responsible_app">Esta é a área para Responsáveis. Use o aplicativo de Instituições para o login de Organizações.</string>
 
     <!-- CAMPOS - PASSO 1 -->
     <string name="label_institution_name">Nome da Instituição</string>

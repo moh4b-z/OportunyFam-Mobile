@@ -22,13 +22,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.OffsetMapping
 
-/**
- * -------------------------------------------
- * 1. CLASSE DE ESTADO E LÓGICA DE MÁSCARA
- * -------------------------------------------
- */
-
-// Classe para gerenciar o estado do campo e as mensagens de erro
 data class CpfState(
     val cpf: String = "",
     val error: String? = null

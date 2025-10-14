@@ -14,6 +14,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -22,15 +23,18 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.oportunyfam.Screens.PrimaryColor
-import com.example.oportunyfam.Screens.RegistroOutlinedTextField
-import com.example.oportunyfam.Service.InstituicaoService
-import com.example.oportunyfam.model.Instituicao
+import com.example.oportunyfam.Service.LoginUniversalService
 import com.example.oportunyfam.model.LoginRequest
+import com.example.oportunyfam.model.Usuario
+import com.example.oportunyfam.model.Crianca
+import com.example.oportunyfam.model.LoginResponse // ✨ NOVO IMPORT
+import com.example.oportunyfam.model.ResultLogin  // ✨ NOVO IMPORT
 import com.example.oportunyfam.R
+import com.example.screens.PrimaryColor
+import com.example.screens.RegistroOutlinedTextField
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import retrofit2.Response
+import retrofit2.Response // ✨ Certificando que o import do Retrofit está aqui
 
 @Composable
 fun LoginContent(
@@ -39,12 +43,13 @@ fun LoginContent(
     senha: MutableState<String>,
     isLoading: MutableState<Boolean>,
     errorMessage: MutableState<String?>,
-    instituicaoService: InstituicaoService,
+    loginUniversalService: LoginUniversalService,
     scope: CoroutineScope,
-    // REMOVIDO: authDataStore: AuthDataStore
-    // Adicionado o callback que a tela principal irá usar para salvar e navegar
-    onAuthSuccess: (Instituicao) -> Unit
+    // Callback que agora trata Usuario ou Crianca (o resultado do Login Universal)
+    onAuthSuccess: (Usuario?, Crianca?) -> Unit
 ) {
+    val context = LocalContext.current
+
     // Email
     RegistroOutlinedTextField(
         value = email.value,
@@ -101,7 +106,7 @@ fun LoginContent(
             errorMessage.value = null
 
             if (email.value.isBlank() || senha.value.isBlank()) {
-                errorMessage.value = "Preencha todos os campos"
+                errorMessage.value = context.getString(R.string.error_fill_all_login)
                 return@Button
             }
 
@@ -114,27 +119,52 @@ fun LoginContent(
                         senha = senha.value
                     )
 
-                    // Chamada ao serviço
-                    val response: Response<Instituicao> = instituicaoService.loginInstituicao(request)
+                    // Renomeado para 'response' e usando 'loginUniversal'
+                    val response: Response<LoginResponse> = loginUniversalService.loginUniversal(request)
 
-                    // Acessando propriedades da Response
-                    if (response.isSuccessful && response.body() != null) {
-                        val instituicaoLogada = response.body()!!
+                    if (response.isSuccessful) {
+                        val loginResponse = response.body()
+                        val resultLogin = loginResponse?.result // Acessa o objeto ResultLogin
 
-                        onAuthSuccess(instituicaoLogada)
+                        if (resultLogin != null) {
+                            // 1. Verificar se é uma Instituição (e bloquear)
+                            if (resultLogin.instituicao != null) {
+                                errorMessage.value = context.getString(R.string.error_not_responsible_app)
+                                isLoading.value = false
+                                return@launch
+                            }
 
+                            // 2. Logado como Usuário ou Criança
+                            val usuarioLogado = resultLogin.usuario
+                            val criancaLogada = resultLogin.crianca
+
+                            if (usuarioLogado != null || criancaLogada != null) {
+                                onAuthSuccess(usuarioLogado, criancaLogada) // Sucesso no login, chama o callback da tela principal
+                            } else {
+                                // A API retornou 200, mas sem dados válidos para este app
+                                errorMessage.value = context.getString(R.string.error_login_invalid_credentials)
+                                isLoading.value = false
+                            }
+                        } else {
+                            // Body é nulo ou ResultLogin é nulo
+                            errorMessage.value = context.getString(R.string.error_login_failed)
+                            isLoading.value = false
+                        }
+
+                    } else if (response.code() == 401) {
+                        errorMessage.value = context.getString(R.string.error_login_invalid_credentials)
+                        isLoading.value = false
                     } else {
+                        // Erro genérico
                         val errorBody = response.errorBody()?.string() ?: response.message()
-                        errorMessage.value = "Falha no Login. Verifique suas credenciais. Erro: $errorBody"
-                        isLoading.value = false // Para o loading em caso de erro
+                        errorMessage.value = context.getString(R.string.error_login_failed) + "\nDetalhe: $errorBody"
+                        isLoading.value = false
                     }
+
                 } catch (e: Exception) {
-                    errorMessage.value = "Erro ao conectar com o servidor: ${e.message}"
-                    isLoading.value = false // Para o loading em caso de exceção
+                    errorMessage.value = context.getString(R.string.error_login_failed) + "\nDetalhe: ${e.message}"
+                    isLoading.value = false
                 }
-                // O bloco finally foi removido ou modificado, pois o onAuthSuccess
-                // irá resetar o isLoading em caso de sucesso no RegistroScreen.kt.
-                // Mantemos o reset do isLoading nos blocos 'else' e 'catch'.
             }
         },
         modifier = Modifier
@@ -150,14 +180,13 @@ fun LoginContent(
                 modifier = Modifier.size(24.dp)
             )
         } else {
-            Text(stringResource(R.string.button_login), color = Color.White, fontSize = 16.sp)
+            Text(stringResource(R.string.button_login_submit), color = Color.White, fontSize = 16.sp)
         }
     }
 
     Spacer(modifier = Modifier.height(15.dp))
 
     // Divider "Ou entre com"
-    HorizontalDivider(thickness = 1.dp, color = Color.LightGray) // Usando HorizontalDivider diretamente
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth()

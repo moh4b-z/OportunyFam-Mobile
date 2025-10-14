@@ -1,4 +1,4 @@
-package com.example.oportunyfam.Screens
+package com.example.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -30,16 +30,50 @@ import androidx.compose.ui.text.input.VisualTransformation
 import br.senai.sp.jandira.oportunyfam.service.RetrofitFactory
 import com.example.Components.LoginContent
 import com.example.Components.RegistroContent
-import com.example.oportunyfam.model.Instituicao
+import com.example.oportunyfam.Service.UsuarioService
+import com.example.oportunyfam.Service.SexoService
+import com.example.oportunyfam.model.Usuario
+import com.example.oportunyfam.model.Crianca
 import kotlinx.coroutines.launch
 import com.example.oportunyfam.R
 
 val PrimaryColor = Color(0xFFFFA500)
 val BackgroundGray = Color(0xFFE0E0E0)
 
-object NavRoutes {
-    const val REGISTRO = "tela_registro"
-    const val HOME = "tela_home"
+// Componente para o campo de texto Outline padrão do registro
+@Composable
+fun RegistroOutlinedTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    leadingIcon: @Composable () -> Unit = {},
+    visualTransformation: VisualTransformation = VisualTransformation.None,
+    trailingIcon: @Composable() (() -> Unit)? = null,
+    modifier: Modifier = Modifier.fillMaxWidth(),
+    readOnly: Boolean,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        shape = RoundedCornerShape(10.dp),
+        leadingIcon = leadingIcon.takeIf { it != {} },
+        trailingIcon = trailingIcon,
+        label = { Text(label, color = Color.Gray) },
+        visualTransformation = visualTransformation,
+        readOnly = readOnly,
+        keyboardOptions = keyboardOptions,
+        enabled = !readOnly,
+        colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = PrimaryColor,
+            unfocusedBorderColor = Color.LightGray,
+            disabledBorderColor = Color.LightGray,
+            cursorColor = PrimaryColor,
+            focusedLabelColor = PrimaryColor,
+            unfocusedLabelColor = Color.Gray
+        )
+    )
 }
 
 @Composable
@@ -48,14 +82,19 @@ fun RegistroScreen(navController: NavHostController?) {
     val context = LocalContext.current
     val authDataStore = remember { AuthDataStore(context) }
 
+    // =================================================================
+    // ESTADOS DO REGISTRO (Usuário Responsável)
+    // =================================================================
     val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
     val phone = remember { mutableStateOf("") }
-    val selectedTypeIds = remember { mutableStateOf(emptyList<Int>()) }
-    val selectedTypeNames = remember { mutableStateOf("") }
-    val cnpj = remember { mutableStateOf("") }
+    // Campos de Usuário
+    val cpf = remember { mutableStateOf("") }
+    val dataNascimento = remember { mutableStateOf("") } // dd/MM/yyyy
+    val selectedSexoId = remember { mutableStateOf<Int?>(null) }
+    val selectedSexoName = remember { mutableStateOf("") }
 
-
+    // =ESTADOS DO ENDEREÇO E SENHA
     val cep = remember { mutableStateOf("") }
     val logradouro = remember { mutableStateOf("") }
     val numero = remember { mutableStateOf("") }
@@ -67,21 +106,38 @@ fun RegistroScreen(navController: NavHostController?) {
     val confirmarSenha = remember { mutableStateOf("") }
     val concordaTermos = remember { mutableStateOf(false) }
 
-
+    // =================================================================
+    // ESTADOS DE CONTROLE DE TELA
+    // =================================================================
     val isRegisterSelected = remember { mutableStateOf(true) }
     val currentStep = remember { mutableStateOf(1) }
     val isLoading = remember { mutableStateOf(false) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    val instituicaoService = remember { RetrofitFactory().getInstituicaoService() }
+    // =================================================================
+    // SERVIÇOS
+    // =================================================================
+    val retrofitFactory = remember { RetrofitFactory() }
+    val usuarioService = remember { retrofitFactory.getUsuarioService() }
+    val sexoService = remember { retrofitFactory.getSexoService() }
+    val loginUniversalService = remember { retrofitFactory.getLoginUniversalService() }
 
 
-    val onAuthSuccess: (Instituicao) -> Unit = { instituicaoLogada ->
+    // =================================================================
+    // CALLBACK DE AUTENTICAÇÃO (Sucesso no Login ou Registro)
+    // =================================================================
+    val onAuthSuccess: (Usuario?, Crianca?) -> Unit = { usuarioLogado, criancaLogada ->
         scope.launch {
-            authDataStore.saveInstituicao(instituicaoLogada)
-            navController?.navigate(NavRoutes.HOME) {
-                popUpTo(NavRoutes.REGISTRO) { inclusive = true }
+            if (usuarioLogado != null) {
+                authDataStore.saveUsuario(usuarioLogado)
+            } else if (criancaLogada != null) {
+                authDataStore.saveCrianca(criancaLogada)
+            }
+
+            // Navegar para a tela de Home (Rota: "tela_home")
+            navController?.navigate("tela_home") {
+                popUpTo("tela_registro") { inclusive = true }
             }
             isLoading.value = false
         }
@@ -91,7 +147,7 @@ fun RegistroScreen(navController: NavHostController?) {
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
             painter = painterResource(id = R.drawable.imglogin),
-            contentDescription = stringResource(R.string.desc_icon_name),
+            contentDescription = stringResource(R.string.desc_icon_lock),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -117,7 +173,7 @@ fun RegistroScreen(navController: NavHostController?) {
                     color = Color.White
                 )
                 Text(
-                    text = if (isRegisterSelected.value) stringResource(R.string.subtitle_register) else stringResource(R.string.subtitle_login),
+                    text = if (isRegisterSelected.value) stringResource(R.string.subtitle_register_user) else stringResource(R.string.subtitle_login),
                     fontSize = 14.sp,
                     color = Color.White
                 )
@@ -140,6 +196,7 @@ fun RegistroScreen(navController: NavHostController?) {
                 verticalArrangement = Arrangement.Top
             ) {
 
+                // --- Toggle Login/Registro ---
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -187,6 +244,7 @@ fun RegistroScreen(navController: NavHostController?) {
                             ) {
                                 isRegisterSelected.value = true
                                 errorMessage.value = null
+                                currentStep.value = 1
                             },
                         contentAlignment = Alignment.Center
                     ) {
@@ -201,6 +259,7 @@ fun RegistroScreen(navController: NavHostController?) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
+                // --- Mensagens de Erro ---
                 errorMessage.value?.let { error ->
                     Card(
                         modifier = Modifier
@@ -218,6 +277,7 @@ fun RegistroScreen(navController: NavHostController?) {
                     }
                 }
 
+                // --- Conteúdo Principal (Login/Registro) ---
                 if (!isRegisterSelected.value) {
                     LoginContent(
                         navController = navController,
@@ -225,21 +285,22 @@ fun RegistroScreen(navController: NavHostController?) {
                         senha = senha,
                         isLoading = isLoading,
                         errorMessage = errorMessage,
-                        instituicaoService = instituicaoService,
+                        loginUniversalService = loginUniversalService,
                         scope = scope,
                         onAuthSuccess = onAuthSuccess
                     )
                 } else {
                     RegistroContent(
                         navController = navController,
-                        // Passo 1
+                        // Passo 1 (Dados Pessoais)
                         nome = nome,
                         email = email,
                         phone = phone,
-                        selectedTypeIds = selectedTypeIds,
-                        selectedTypeNames = selectedTypeNames,
-                        cnpj = cnpj,
-                        // Passo 2
+                        cpf = cpf,
+                        dataNascimento = dataNascimento,
+                        selectedSexoId = selectedSexoId,
+                        selectedSexoName = selectedSexoName,
+                        // Passo 2 (Endereço e Senha)
                         cep = cep,
                         logradouro = logradouro,
                         numero = numero,
@@ -254,49 +315,14 @@ fun RegistroScreen(navController: NavHostController?) {
                         currentStep = currentStep,
                         isLoading = isLoading,
                         errorMessage = errorMessage,
-                        instituicaoService = instituicaoService,
-                        scope = scope,
-                        onAuthSuccess = onAuthSuccess
+                        usuarioService = usuarioService,
+                        sexoService = sexoService,
+                        scope = scope
                     )
                 }
             }
         }
     }
-}
-
-@Composable
-fun RegistroOutlinedTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    label: String,
-    leadingIcon: @Composable () -> Unit = {},
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-    trailingIcon: @Composable() (() -> Unit)? = null,
-    modifier: Modifier = Modifier.fillMaxWidth(),
-    readOnly: Boolean,
-    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
-) {
-    OutlinedTextField(
-        value = value,
-        onValueChange = onValueChange,
-        modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
-        leadingIcon = leadingIcon.takeIf { it != {} },
-        trailingIcon = trailingIcon,
-        label = { Text(label, color = Color.Gray) },
-        visualTransformation = visualTransformation,
-        readOnly = readOnly,
-        keyboardOptions = keyboardOptions,
-        enabled = !readOnly,
-        colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = PrimaryColor,
-            unfocusedBorderColor = Color.LightGray,
-            disabledBorderColor = Color.LightGray,
-            cursorColor = PrimaryColor,
-            focusedLabelColor = PrimaryColor,
-            unfocusedLabelColor = Color.Gray
-        )
-    )
 }
 
 @Preview(showSystemUi = true)

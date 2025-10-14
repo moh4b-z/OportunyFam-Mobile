@@ -15,6 +15,52 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import retrofit2.http.GET
+import retrofit2.http.Path
+import android.util.Log // Import para logging no Android
+import androidx.compose.ui.text.AnnotatedString
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor // Import para logging HTTP
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
+// --------------------------------------------------------------------------
+// INTERFACE DE SERVIÇO VIA CEP
+// --------------------------------------------------------------------------
+interface ViaCepService {
+    // URL completa: https://viacep.com.br/ws/01001000/json/
+    @GET("ws/{cep}/json/")
+    suspend fun buscarCep(@Path("cep") cep: String): ViaCepData
+}
+
+// --------------------------------------------------------------------------
+// FACTORY RETROFIT COM INTERCEPTOR DE LOGGING
+// --------------------------------------------------------------------------
+object ViaCepRetrofitFactory {
+    // URL Base do ViaCEP
+    private const val VIA_CEP_BASE_URL = "https://viacep.com.br/"
+
+    // 1. Configuração do Interceptor de Logging para OkHttpClient
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        // Define o nível de logging para BODY para ver headers, request e response body no Logcat
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    // 2. Cliente HTTP com o interceptor de logging
+    private val client = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
+        .build()
+
+    private fun getRetrofit(): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(VIA_CEP_BASE_URL)
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    val viaCepService: ViaCepService = getRetrofit().create(ViaCepService::class.java)
+}
 
 // Constantes
 private const val CEP_LENGTH = 8 // 8 dígitos
@@ -22,6 +68,7 @@ private const val MAX_INPUT_LENGTH = 9 // 8 dígitos + 1 caractere de máscara
 
 // Classe de dados para a resposta do ViaCEP (atributos principais)
 data class ViaCepData(
+    val cep: String = "",
     val logradouro: String = "",
     val bairro: String = "",
     val localidade: String = "", // Cidade
@@ -41,7 +88,7 @@ data class CepState(
  * VisualTransformation para aplicar a máscara 99999-999 no CEP.
  */
 class CepMaskTransformation : VisualTransformation {
-    override fun filter(text: androidx.compose.ui.text.AnnotatedString): TransformedText {
+    override fun filter(text: AnnotatedString): TransformedText {
         // Limita e garante que apenas os 8 dígitos brutos sejam considerados
         val trimmed = if (text.text.length >= CEP_LENGTH) text.text.substring(0..CEP_LENGTH - 1) else text.text
         var out = ""
@@ -125,8 +172,9 @@ fun CepTextField(
             state = state.copy(isLoading = false)
 
             if (result.erro) {
-                // Erro do ViaCEP (CEP não encontrado)
-                state = state.copy(error = "CEP não encontrado. Digite o endereço manualmente ou verifique o número.", data = null)
+                // Erro do ViaCEP (CEP não encontrado ou erro de rede/API)
+                // Usamos a mensagem mais geral, já que a lógica de busca retorna 'erro=true' para qualquer falha
+                state = state.copy(error = "CEP não encontrado ou falha de conexão. Verifique o número.", data = null)
             } else if (result.logradouro.isEmpty() && result.localidade.isEmpty()) {
                 // Outro erro de formato/retorno vazio (para tratamento mais robusto)
                 state = state.copy(error = "Falha ao buscar endereço, tente novamente.", data = null)
@@ -174,8 +222,9 @@ fun CepTextField(
             visualTransformation = CepMaskTransformation()
         )
 
-
+        // ----------------------------------------------------
         // Campos Adicionais do ViaCEP (Aparecem após a consulta)
+        // ----------------------------------------------------
         if (state.data != null) {
             Spacer(modifier = Modifier.height(8.dp))
             Text("Dados do Endereço", style = MaterialTheme.typography.titleSmall)
@@ -220,48 +269,46 @@ fun CepTextField(
                 modifier = Modifier.fillMaxWidth(0.3f), // Campo menor para UF
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 // Limita a entrada a 2 caracteres para UF
-                supportingText = { if (uf.length > 2) uf = uf.substring(0, 2) },
+                supportingText = {
+                    // Limita a entrada de forma reativa para 2 caracteres
+                    if (uf.length > 2) uf = uf.substring(0, 2)
+                },
             )
         }
     }
 }
 
+// --------------------------------------------------------------------------
+// VALIDADOR E CHAMADOR DA API COM LOGGING
+// --------------------------------------------------------------------------
 object CepValidator {
 
+    private const val TAG = "ViaCEP_API"
+
     /**
-     * Simula a chamada à API ViaCEP.
+     * Faz a chamada real à API ViaCEP e loga o resultado.
      */
     suspend fun fetchViaCep(cep: String): ViaCepData = withContext(Dispatchers.IO) {
-        // Remove a máscara
         val cleanCep = cep.replace("-", "")
 
-        // Simulação de delay de rede
-        kotlinx.coroutines.delay(1000)
+        Log.d(TAG, "Iniciando busca por CEP: $cleanCep") // LOG: Início da requisição
 
-        // SIMULAÇÃO DE RESPOSTAS COM BASE NO CEP:
-        return@withContext when (cleanCep) {
-            "01001000" -> ViaCepData(
-                logradouro = "Praça da Sé",
-                bairro = "Sé",
-                localidade = "São Paulo",
-                uf = "SP"
-            )
-            // Simulação de CEP válido, mas sem logradouro
-            "01002000" -> ViaCepData(
-                logradouro = "",
-                bairro = "Centro",
-                localidade = "São Paulo",
-                uf = "SP"
-            )
-            // Simulação de erro
-            "99999999" -> ViaCepData(erro = true)
-            // Padrão para qualquer outro CEP
-            else -> ViaCepData(
-                logradouro = "Rua Exemplo, 123",
-                bairro = "Bairro Teste",
-                localidade = "Cidade Fictícia",
-                uf = "RJ"
-            )
+        try {
+            // Chama a API.
+            val response = ViaCepRetrofitFactory.viaCepService.buscarCep(cleanCep)
+
+            if (response.erro) {
+                Log.w(TAG, "Busca finalizada. CEP '$cleanCep' não encontrado ou inválido (erro=true na resposta).") // LOG: Erro lógico do ViaCEP
+                return@withContext ViaCepData(erro = true)
+            }
+
+            Log.i(TAG, "Busca finalizada com sucesso para CEP: $cleanCep. Endereço: ${response.logradouro}, ${response.localidade}/${response.uf}") // LOG: Sucesso
+            return@withContext response
+
+        } catch (e: Exception) {
+            // Loga o erro de rede (Ex: Falha de DNS, Timeout, sem conexão, JSON malformado)
+            Log.e(TAG, "Erro de rede/API ao buscar CEP $cleanCep: ${e.message}", e) // LOG: Erro de exceção
+            return@withContext ViaCepData(erro = true)
         }
     }
 }

@@ -9,25 +9,18 @@ import retrofit2.http.*
 
 interface AtividadeService {
 
-    // --- ROTAS DE ATIVIDADE (CRUD) ---
-
-    // POST /v1/atividades/
     @POST("atividades")
     fun criarAtividade(@Body atividade: AtividadeRequest): Call<AtividadeResponse>
 
-    // PUT /v1/atividades/:id
     @PUT("atividades/{id}")
     fun atualizarAtividade(@Path("id") id: Int, @Body atividade: AtividadeRequest): Call<AtividadeResponse>
 
-    // DELETE /v1/atividades/:id
     @DELETE("atividades/{id}")
     fun deletarAtividade(@Path("id") id: Int): Call<Unit>
 
-    // GET /v1/atividades/ (Busca todas, possivelmente com filtros)
     @GET("atividades")
     fun buscarTodasAtividades(): Call<List<AtividadeResponse>> // Retorna detalhes da View
 
-    // GET /v1/atividades/:id (Busca por ID)
     @GET("atividades/{id}")
     fun buscarAtividadePorId(@Path("id") id: Int): Call<AtividadeResponse>
 
