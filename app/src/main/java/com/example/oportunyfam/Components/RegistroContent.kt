@@ -518,7 +518,7 @@ fun RegistroContent(
                                             cpf = cpf.value,
                                             id_sexo = idSexoFinal,
                                             sexo = selectedSexoName.value,
-                                            id_tipo_nivel = 1, // Fixado como 1 (Padrão)
+                                            id_tipo_nivel = 1,
                                             nivel_usuario = null,
                                             cep = cep.value,
                                             logradouro = logradouro.value,

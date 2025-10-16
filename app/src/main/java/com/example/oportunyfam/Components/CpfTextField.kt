@@ -110,8 +110,6 @@ fun CpfTextField(
                     text = state.error!!,
                     color = MaterialTheme.colorScheme.error
                 )
-            } else {
-                Text(text = "Digite o CPF (apenas números)")
             }
         },
         leadingIcon = {

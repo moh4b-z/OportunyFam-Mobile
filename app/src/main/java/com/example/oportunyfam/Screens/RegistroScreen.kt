@@ -29,6 +29,7 @@ import com.example.data.AuthDataStore
 import androidx.compose.ui.text.input.VisualTransformation
 import br.senai.sp.jandira.oportunyfam.service.RetrofitFactory
 import com.example.Components.LoginContent
+import com.example.oportunyfam.Components.Login.LoginRegistro
 import com.example.oportunyfam.Components.RegistroContent
 import com.example.oportunyfam.model.Usuario
 import com.example.oportunyfam.model.Crianca
@@ -38,7 +39,9 @@ import com.example.oportunyfam.R
 val PrimaryColor = Color(0xFFFFA500)
 val BackgroundGray = Color(0xFFE0E0E0)
 
-// Componente para o campo de texto Outline padrão do registro
+// ==========================================================
+// COMPONENTE PADRÃO DE CAMPO DE TEXTO DO REGISTRO
+// ==========================================================
 @Composable
 fun RegistroOutlinedTextField(
     value: String,
@@ -74,25 +77,24 @@ fun RegistroOutlinedTextField(
     )
 }
 
+// ==========================================================
+// TELA DE REGISTRO
+// ==========================================================
 @Composable
 fun RegistroScreen(navController: NavHostController?) {
 
     val context = LocalContext.current
     val authDataStore = remember { AuthDataStore(context) }
 
-    // =================================================================
-    // ESTADOS DO REGISTRO (Usuário Responsável)
-    // =================================================================
+    // Estados do registro
     val nome = remember { mutableStateOf("") }
     val email = remember { mutableStateOf("") }
     val phone = remember { mutableStateOf("") }
-    // Campos de Usuário
     val cpf = remember { mutableStateOf("") }
-    val dataNascimento = remember { mutableStateOf("") } // dd/MM/yyyy
+    val dataNascimento = remember { mutableStateOf("") }
     val selectedSexoId = remember { mutableStateOf<Int?>(null) }
     val selectedSexoName = remember { mutableStateOf("") }
 
-    // =ESTADOS DO ENDEREÇO E SENHA
     val cep = remember { mutableStateOf("") }
     val logradouro = remember { mutableStateOf("") }
     val numero = remember { mutableStateOf("") }
@@ -104,27 +106,20 @@ fun RegistroScreen(navController: NavHostController?) {
     val confirmarSenha = remember { mutableStateOf("") }
     val concordaTermos = remember { mutableStateOf(false) }
 
-    // =================================================================
-    // ESTADOS DE CONTROLE DE TELA
-    // =================================================================
+    // Controle de tela
     val isRegisterSelected = remember { mutableStateOf(true) }
     val currentStep = remember { mutableStateOf(1) }
     val isLoading = remember { mutableStateOf(false) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    // =================================================================
-    // SERVIÇOS
-    // =================================================================
+    // Serviços
     val retrofitFactory = remember { RetrofitFactory() }
     val usuarioService = remember { retrofitFactory.getUsuarioService() }
     val sexoService = remember { retrofitFactory.getSexoService() }
     val loginUniversalService = remember { retrofitFactory.getLoginUniversalService() }
 
-
-    // =================================================================
-    // CALLBACK DE AUTENTICAÇÃO (Sucesso no Login ou Registro)
-    // =================================================================
+    // Callback de autenticação
     val onAuthSuccess: (Usuario?, Crianca?) -> Unit = { usuarioLogado, criancaLogada ->
         scope.launch {
             if (usuarioLogado != null) {
@@ -133,7 +128,6 @@ fun RegistroScreen(navController: NavHostController?) {
                 authDataStore.saveCrianca(criancaLogada)
             }
 
-            // Navegar para a tela de Home (Rota: "tela_home")
             navController?.navigate("tela_home") {
                 popUpTo("tela_registro") { inclusive = true }
             }
@@ -141,18 +135,16 @@ fun RegistroScreen(navController: NavHostController?) {
         }
     }
 
-    // =================================================================
-    // ✨ NOVO CALLBACK DE SUCESSO DO REGISTRO
-    // =================================================================
-    // Esta função será chamada pelo RegistroContent após o registro na API
+    // Callback de sucesso do registro
     val onRegistrationSuccess: (Usuario) -> Unit = { novoUsuario ->
-        // No sucesso do registro, salvamos o novo usuário e navegamos.
-        // Reutilizamos a lógica de AuthSuccess (como se fosse um login automático após o registro)
         onAuthSuccess(novoUsuario, null)
     }
 
-
+    // ==========================================================
+    // UI PRINCIPAL
+    // ==========================================================
     Box(modifier = Modifier.fillMaxSize()) {
+
         Image(
             painter = painterResource(id = R.drawable.imglogin),
             contentDescription = stringResource(R.string.desc_icon_lock),
@@ -171,17 +163,21 @@ fun RegistroScreen(navController: NavHostController?) {
                 .height(IntrinsicSize.Max)
                 .padding(horizontal = 40.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = if (isRegisterSelected.value) stringResource(R.string.title_register) else stringResource(R.string.title_welcome_back),
+                    text = if (isRegisterSelected.value)
+                        stringResource(R.string.title_register)
+                    else
+                        stringResource(R.string.title_welcome_back),
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
                 Text(
-                    text = if (isRegisterSelected.value) stringResource(R.string.subtitle_register_user) else stringResource(R.string.subtitle_login),
+                    text = if (isRegisterSelected.value)
+                        stringResource(R.string.subtitle_register_user)
+                    else
+                        stringResource(R.string.subtitle_login),
                     fontSize = 14.sp,
                     color = Color.White
                 )
@@ -204,67 +200,6 @@ fun RegistroScreen(navController: NavHostController?) {
                 verticalArrangement = Arrangement.Top
             ) {
 
-                // --- Toggle Login/Registro ---
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .background(
-                            BackgroundGray,
-                            shape = RoundedCornerShape(25.dp)
-                        )
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(25.dp))
-                            .background(if (!isRegisterSelected.value) Color.White else BackgroundGray)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                isRegisterSelected.value = false
-                                errorMessage.value = null
-                                currentStep.value = 1
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.button_login),
-                            fontSize = 16.sp,
-                            color = if (!isRegisterSelected.value) PrimaryColor else Color.Gray,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .clip(RoundedCornerShape(25.dp))
-                            .background(if (isRegisterSelected.value) Color.White else BackgroundGray)
-                            .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null
-                            ) {
-                                isRegisterSelected.value = true
-                                errorMessage.value = null
-                                currentStep.value = 1
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.button_register),
-                            fontSize = 16.sp,
-                            color = if (isRegisterSelected.value) PrimaryColor else Color.Gray,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-
                 Spacer(modifier = Modifier.height(20.dp))
 
                 // --- Mensagens de Erro ---
@@ -285,23 +220,10 @@ fun RegistroScreen(navController: NavHostController?) {
                     }
                 }
 
-                // --- Conteúdo Principal (Login/Registro) ---
+                // --- Conteúdo Principal (Registro) ---
                 if (!isRegisterSelected.value) {
-                    LoginContent(
+                    RegistroContent(
                         navController = navController,
-                        email = email,
-                        senha = senha,
-                        isLoading = isLoading,
-                        errorMessage = errorMessage,
-                        loginUniversalService = loginUniversalService,
-                        scope = scope,
-                        onAuthSuccess = onAuthSuccess
-                    )
-                } else {
-                    // ✨ CORRIGIDO: O parâmetro onRegistrationSuccess foi adicionado aqui.
-                    RegistroContent (
-                        navController = navController,
-                        // Passo 1 (Dados Pessoais)
                         nome = nome,
                         email = email,
                         phone = phone,
@@ -309,7 +231,6 @@ fun RegistroScreen(navController: NavHostController?) {
                         dataNascimento = dataNascimento,
                         selectedSexoId = selectedSexoId,
                         selectedSexoName = selectedSexoName,
-                        // Passo 2 (Endereço e Senha)
                         cep = cep,
                         logradouro = logradouro,
                         numero = numero,
@@ -320,18 +241,24 @@ fun RegistroScreen(navController: NavHostController?) {
                         senha = senha,
                         confirmarSenha = confirmarSenha,
                         concordaTermos = concordaTermos,
-                        // Controles
                         currentStep = currentStep,
                         isLoading = isLoading,
                         errorMessage = errorMessage,
                         usuarioService = usuarioService,
                         sexoService = sexoService,
                         scope = scope,
-                        onRegistrationSuccess = onRegistrationSuccess // ✨ Novo parâmetro
+                        onRegistrationSuccess = onRegistrationSuccess
                     )
                 }
             }
         }
+        LoginRegistro(
+            navController = navController!!,
+            isRegisterSelected = isRegisterSelected,
+            errorMessage = errorMessage,
+            currentStep = currentStep
+        )
+
     }
 }
 
