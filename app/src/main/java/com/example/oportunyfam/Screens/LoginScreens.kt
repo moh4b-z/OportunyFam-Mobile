@@ -1,10 +1,29 @@
 package com.example.oportunyfam.Screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,27 +36,24 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import com.example.data.AuthDataStore
-import androidx.compose.ui.text.input.VisualTransformation
+import androidx.navigation.compose.rememberNavController
 import br.senai.sp.jandira.oportunyfam.service.RetrofitFactory
-import com.example.oportunyfam.Components.RegistroContent
-import com.example.oportunyfam.model.Usuario
-import com.example.oportunyfam.model.Crianca
-import kotlinx.coroutines.launch
+import com.example.Components.LoginContent
+import com.example.data.AuthDataStore
 import com.example.oportunyfam.R
+import com.example.oportunyfam.model.Crianca
+import com.example.oportunyfam.model.Usuario
 
-val PrimaryColor = Color(0xFFFFA500)
-val BackgroundGray = Color(0xFFE0E0E0)
 
 
-// COMPONENTE PADRÃO DE CAMPO DE TEXTO DO REGISTRO
-
+// COMPONENTE PADRÃO DE CAMPO DE TEXTO DO LOGIN
 @Composable
-fun RegistroOutlinedTextField(
+fun LoginOutlinedTextField(
     value: String,
     onValueChange: (String) -> Unit,
     label: String,
@@ -71,12 +87,9 @@ fun RegistroOutlinedTextField(
     )
 }
 
-
-// TELA DE REGISTRO
-
+//TELA DE LOGIN
 @Composable
-fun RegistroScreen(navController: NavHostController?) {
-
+fun LoginScreen(navController: NavHostController?) {
     val context = LocalContext.current
     val authDataStore = remember { AuthDataStore(context) }
 
@@ -101,7 +114,7 @@ fun RegistroScreen(navController: NavHostController?) {
     val concordaTermos = remember { mutableStateOf(false) }
 
     // Controle de tela
-    val isRegisterSelected = remember { mutableStateOf(true) }
+    val isRegisterSelected = remember { mutableStateOf(false) }
     val currentStep = remember { mutableStateOf(1) }
     val isLoading = remember { mutableStateOf(false) }
     val errorMessage = remember { mutableStateOf<String?>(null) }
@@ -113,32 +126,8 @@ fun RegistroScreen(navController: NavHostController?) {
     val sexoService = remember { retrofitFactory.getSexoService() }
     val loginUniversalService = remember { retrofitFactory.getLoginUniversalService() }
 
-    // Callback de autenticação
-    val onAuthSuccess: (Usuario?, Crianca?) -> Unit = { usuarioLogado, criancaLogada ->
-        scope.launch {
-            if (usuarioLogado != null) {
-                authDataStore.saveUsuario(usuarioLogado)
-            } else if (criancaLogada != null) {
-                authDataStore.saveCrianca(criancaLogada)
-            }
-
-            navController?.navigate("tela_home") {
-                popUpTo("tela_registro") { inclusive = true }
-            }
-            isLoading.value = false
-        }
-    }
-
-    // Callback de sucesso do registro
-    val onRegistrationSuccess: (Usuario) -> Unit = { novoUsuario ->
-        onAuthSuccess(novoUsuario, null)
-    }
-
-    // ==========================================================
-    // UI PRINCIPAL
-    // ==========================================================
     Box(modifier = Modifier.fillMaxSize()) {
-
+        // Imagem de topo
         Image(
             painter = painterResource(id = R.drawable.imglogin),
             contentDescription = stringResource(R.string.desc_icon_lock),
@@ -149,6 +138,7 @@ fun RegistroScreen(navController: NavHostController?) {
                 .align(Alignment.TopCenter)
         )
 
+        // Box do conteúdo principal
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -157,6 +147,7 @@ fun RegistroScreen(navController: NavHostController?) {
                 .height(IntrinsicSize.Max)
                 .padding(horizontal = 40.dp)
         ) {
+            // Título
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = if (isRegisterSelected.value)
@@ -167,7 +158,7 @@ fun RegistroScreen(navController: NavHostController?) {
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
-                ///////////////////////////// usar ////////////////////
+                // ADICIONANDO SUBTÍTULO (igual ao registro)
                 Text(
                     text = if (isRegisterSelected.value)
                         stringResource(R.string.subtitle_register_user)
@@ -179,6 +170,7 @@ fun RegistroScreen(navController: NavHostController?) {
             }
         }
 
+        // Card com o conteúdo do login
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -194,8 +186,46 @@ fun RegistroScreen(navController: NavHostController?) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Top
             ) {
-
                 Spacer(modifier = Modifier.height(20.dp))
+
+                // Toggle Login/Register
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(vertical = 8.dp)
+                        .background(Color(0xFFF0F0F0), RoundedCornerShape(25.dp)),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(
+                                if (!isRegisterSelected.value) Color.White else Color.Transparent,
+                                RoundedCornerShape(25.dp)
+                            )
+                            .clickable { isRegisterSelected.value = false },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Login", fontWeight = FontWeight.Bold)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .background(
+                                if (isRegisterSelected.value) Color.White else Color.Transparent,
+                                RoundedCornerShape(25.dp)
+                            )
+                            .clickable { isRegisterSelected.value = true },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("Register", color = Color.Gray)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // --- Mensagens de Erro ---
                 errorMessage.value?.let { error ->
@@ -215,35 +245,75 @@ fun RegistroScreen(navController: NavHostController?) {
                     }
                 }
 
-                // --- Conteúdo Principal (Registro) ---
+                // --- Conteúdo Principal ---
                 if (!isRegisterSelected.value) {
-                    RegistroContent(
+                    // Callback para login bem-sucedido
+                    val onAuthSuccess: () -> Unit = {
+                        navController?.navigate("home")
+                    }
+
+                    LoginContent(
                         navController = navController,
-                        nome = nome,
                         email = email,
-                        phone = phone,
-                        cpf = cpf,
-                        dataNascimento = dataNascimento,
-                        selectedSexoId = selectedSexoId,
-                        selectedSexoName = selectedSexoName,
-                        cep = cep,
-                        logradouro = logradouro,
-                        numero = numero,
-                        complemento = complemento,
-                        bairro = bairro,
-                        cidade = cidade,
-                        estado = estado,
                         senha = senha,
-                        confirmarSenha = confirmarSenha,
-                        concordaTermos = concordaTermos,
-                        currentStep = currentStep,
                         isLoading = isLoading,
                         errorMessage = errorMessage,
-                        usuarioService = usuarioService,
-                        sexoService = sexoService,
+                        loginUniversalService = loginUniversalService,
                         scope = scope,
-                        onRegistrationSuccess = onRegistrationSuccess
+                        onAuthSuccess = onAuthSuccess as (Usuario?, Crianca?) -> Unit
                     )
+                } else {
+                    // Conteúdo para Register
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            "Formulário de Registro",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray,
+                            modifier = Modifier.padding(bottom = 16.dp)
+                        )
+
+                        // Campos do formulário de registro
+                        LoginOutlinedTextField(
+                            value = nome.value,
+                            onValueChange = { nome.value = it },
+                            label = "Nome Completo",
+                            readOnly = false
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LoginOutlinedTextField(
+                            value = email.value,
+                            onValueChange = { email.value = it },
+                            label = "Email",
+                            readOnly = false
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        LoginOutlinedTextField(
+                            value = senha.value,
+                            onValueChange = { senha.value = it },
+                            label = "Senha",
+                            readOnly = false
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                // Lógica de registro aqui
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+                        ) {
+                            Text("Registrar", color = Color.White)
+                        }
+                    }
                 }
             }
         }
@@ -252,6 +322,6 @@ fun RegistroScreen(navController: NavHostController?) {
 
 @Preview(showSystemUi = true)
 @Composable
-fun RegistroScreenPreview() {
-    RegistroScreen(navController = null)
+fun LoginScreenPreview(){
+    LoginScreen(navController = null)
 }
