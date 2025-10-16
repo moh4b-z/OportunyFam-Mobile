@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -21,6 +22,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -42,14 +44,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import br.senai.sp.jandira.oportunyfam.service.RetrofitFactory
-import com.example.Components.LoginContent
-import com.example.data.AuthDataStore
 import com.example.oportunyfam.R
-import com.example.oportunyfam.model.Crianca
-import com.example.oportunyfam.model.Usuario
 
+// CORES
 
+val LightPurple = Color(0xFFEFECFF)
+val DarkGray = Color(0xFF333333)
+val MediumGray = Color(0xFF666666)
+val LightGray = Color(0xFF999999)
 
 // COMPONENTE PADRÃO DE CAMPO DE TEXTO DO LOGIN
 @Composable
@@ -61,76 +63,214 @@ fun LoginOutlinedTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable() (() -> Unit)? = null,
     modifier: Modifier = Modifier.fillMaxWidth(),
-    readOnly: Boolean,
+    readOnly: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(15.dp),
         leadingIcon = leadingIcon.takeIf { it != {} },
         trailingIcon = trailingIcon,
-        label = { Text(label, color = Color.Gray) },
+        label = { Text(label, color = LightGray) },
         visualTransformation = visualTransformation,
         readOnly = readOnly,
         keyboardOptions = keyboardOptions,
         enabled = !readOnly,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = PrimaryColor,
-            unfocusedBorderColor = Color.LightGray,
-            disabledBorderColor = Color.LightGray,
+            unfocusedBorderColor = Color(0xFFE5E5E5),
+            disabledBorderColor = Color(0xFFE5E5E5),
             cursorColor = PrimaryColor,
             focusedLabelColor = PrimaryColor,
-            unfocusedLabelColor = Color.Gray
+            unfocusedLabelColor = LightGray,
+            focusedTextColor = DarkGray,
+            unfocusedTextColor = DarkGray
         )
     )
 }
 
-//TELA DE LOGIN
+// COMPONENTE DE BOTÃO DE LOGIN SOCIAL
 @Composable
-fun LoginScreen(navController: NavHostController?) {
-    val context = LocalContext.current
-    val authDataStore = remember { AuthDataStore(context) }
+fun SocialLoginButton(
+    icon: Int,
+    text: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(50.dp),
+        shape = RoundedCornerShape(15.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color.White,
+            contentColor = DarkGray
+        ),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 1.dp
+        )
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Image(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = text, color = DarkGray)
+        }
+    }
+}
 
-    // Estados do registro
-    val nome = remember { mutableStateOf("") }
-    val email = remember { mutableStateOf("") }
-    val phone = remember { mutableStateOf("") }
-    val cpf = remember { mutableStateOf("") }
-    val dataNascimento = remember { mutableStateOf("") }
-    val selectedSexoId = remember { mutableStateOf<Int?>(null) }
-    val selectedSexoName = remember { mutableStateOf("") }
+// CONTEÚDO DA TELA DE LOGIN
+@Composable
+fun LoginContent(
+    navController: NavHostController,
+    email: String,
+    onEmailChange: (String) -> Unit,
+    senha: String,
+    onSenhaChange: (String) -> Unit,
+    rememberMe: Boolean,
+    onRememberMeChange: (Boolean) -> Unit,
+    onLoginClick: () -> Unit,
+    onForgotPasswordClick: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Campo Email
+        LoginOutlinedTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            label = "Email",
+            readOnly = false
+        )
 
-    val cep = remember { mutableStateOf("") }
-    val logradouro = remember { mutableStateOf("") }
-    val numero = remember { mutableStateOf("") }
-    val complemento = remember { mutableStateOf("") }
-    val bairro = remember { mutableStateOf("") }
-    val cidade = remember { mutableStateOf("") }
-    val estado = remember { mutableStateOf("") }
-    val senha = remember { mutableStateOf("") }
-    val confirmarSenha = remember { mutableStateOf("") }
-    val concordaTermos = remember { mutableStateOf(false) }
+        Spacer(modifier = Modifier.height(16.dp))
 
-    // Controle de tela
+        // Campo Senha
+        LoginOutlinedTextField(
+            value = senha,
+            onValueChange = onSenhaChange,
+            label = "Senha",
+            readOnly = false
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Lembrar de mim e Esqueci a senha
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = rememberMe,
+                    onCheckedChange = onRememberMeChange,
+                    colors = androidx.compose.material3.CheckboxDefaults.colors(
+                        checkedColor = PrimaryColor
+                    )
+                )
+                Text(
+                    text = "Lembrar de mim",
+                    color = MediumGray,
+                    fontSize = 14.sp
+                )
+            }
+
+            Text(
+                text = "Esqueci a senha?",
+                color = PrimaryColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.clickable { onForgotPasswordClick() }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Botão de Login
+        Button(
+            onClick = onLoginClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            shape = RoundedCornerShape(15.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
+        ) {
+            Text("Login", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Divisor "Ou login com"
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(1.dp)
+                    .background(Color(0xFFE5E5E5))
+            )
+            Text(
+                text = "Ou login com",
+                color = LightGray,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            androidx.compose.foundation.layout.Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(1.dp)
+                    .background(Color(0xFFE5E5E5))
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Botões de Login Social
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            SocialLoginButton(
+                icon = R.drawable.google, // Adicione seus ícones
+                text = "Google",
+                onClick = { /* TODO: Google login */ }
+            )
+
+        }
+    }
+}
+
+// TELA DE LOGIN COMPLETA
+@Composable
+fun LoginScreen(
+    navController: NavHostController,
+    onAuthSuccess: () -> Unit = {}
+) {
     val isRegisterSelected = remember { mutableStateOf(false) }
-    val currentStep = remember { mutableStateOf(1) }
-    val isLoading = remember { mutableStateOf(false) }
-    val errorMessage = remember { mutableStateOf<String?>(null) }
+    val email = remember { mutableStateOf("") }
+    val senha = remember { mutableStateOf("") }
+    val nome = remember { mutableStateOf("") }
+    val rememberMe = remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
-
-    // Serviços
-    val retrofitFactory = remember { RetrofitFactory() }
-    val usuarioService = remember { retrofitFactory.getUsuarioService() }
-    val sexoService = remember { retrofitFactory.getSexoService() }
-    val loginUniversalService = remember { retrofitFactory.getLoginUniversalService() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Imagem de topo
         Image(
             painter = painterResource(id = R.drawable.imglogin),
-            contentDescription = stringResource(R.string.desc_icon_lock),
+            contentDescription = "Login background",
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -138,7 +278,7 @@ fun LoginScreen(navController: NavHostController?) {
                 .align(Alignment.TopCenter)
         )
 
-        // Box do conteúdo principal
+        // Box do conteúdo principal (título e subtítulo)
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -147,23 +287,19 @@ fun LoginScreen(navController: NavHostController?) {
                 .height(IntrinsicSize.Max)
                 .padding(horizontal = 40.dp)
         ) {
-            // Título
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
                 Text(
-                    text = if (isRegisterSelected.value)
-                        stringResource(R.string.title_register)
-                    else
-                        stringResource(R.string.title_welcome_back),
+                    text = if (isRegisterSelected.value) "Criar Conta" else "Seja bem-vindo novamente",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
-                // ADICIONANDO SUBTÍTULO (igual ao registro)
+                Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = if (isRegisterSelected.value)
-                        stringResource(R.string.subtitle_register_user)
-                    else
-                        stringResource(R.string.subtitle_login),
+                    text = if (isRegisterSelected.value) "Preencha seus dados" else "Guie em seu 80% para usar os nossos serviços.",
                     fontSize = 14.sp,
                     color = Color.White
                 )
@@ -174,7 +310,7 @@ fun LoginScreen(navController: NavHostController?) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.68f)
+                .fillMaxHeight(0.75f)
                 .align(Alignment.BottomCenter),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
@@ -193,90 +329,78 @@ fun LoginScreen(navController: NavHostController?) {
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(50.dp)
-                        .padding(vertical = 8.dp)
-                        .background(Color(0xFFF0F0F0), RoundedCornerShape(25.dp)),
+                        .background(LightPurple, RoundedCornerShape(25.dp))
+                        .padding(4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // Botão Login
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
                             .background(
-                                if (!isRegisterSelected.value) Color.White else Color.Transparent,
+                                if (!isRegisterSelected.value) PrimaryColor else Color.Transparent,
                                 RoundedCornerShape(25.dp)
                             )
                             .clickable { isRegisterSelected.value = false },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Login", fontWeight = FontWeight.Bold)
+                        Text(
+                            "Login",
+                            color = if (!isRegisterSelected.value) Color.White else MediumGray,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
+
+                    // Botão Register
                     Box(
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxHeight()
                             .background(
-                                if (isRegisterSelected.value) Color.White else Color.Transparent,
+                                if (isRegisterSelected.value) PrimaryColor else Color.Transparent,
                                 RoundedCornerShape(25.dp)
                             )
                             .clickable { isRegisterSelected.value = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Register", color = Color.Gray)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // --- Mensagens de Erro ---
-                errorMessage.value?.let { error ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 8.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color(0xFFFFEBEE)),
-                        shape = RoundedCornerShape(8.dp)
-                    ) {
                         Text(
-                            text = error,
-                            color = Color(0xFFD32F2F),
-                            fontSize = 14.sp,
-                            modifier = Modifier.padding(12.dp)
+                            "Register",
+                            color = if (isRegisterSelected.value) Color.White else MediumGray,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                // --- Conteúdo Principal ---
-                if (!isRegisterSelected.value) {
-                    // Callback para login bem-sucedido
-                    val onAuthSuccess: () -> Unit = {
-                        navController?.navigate("home")
-                    }
+                Spacer(modifier = Modifier.height(32.dp))
 
+                if (!isRegisterSelected.value) {
+                    // Conteúdo Login
                     LoginContent(
                         navController = navController,
-                        email = email,
-                        senha = senha,
-                        isLoading = isLoading,
-                        errorMessage = errorMessage,
-                        loginUniversalService = loginUniversalService,
-                        scope = scope,
-                        onAuthSuccess = onAuthSuccess as (Usuario?, Crianca?) -> Unit
+                        email = email.value,
+                        onEmailChange = { email.value = it },
+                        senha = senha.value,
+                        onSenhaChange = { senha.value = it },
+                        rememberMe = rememberMe.value,
+                        onRememberMeChange = { rememberMe.value = it },
+                        onLoginClick = { /* TODO: Implement login */ },
+                        onForgotPasswordClick = { /* TODO: Navigate to forgot password */ }
                     )
                 } else {
-                    // Conteúdo para Register
+                    // Conteúdo Register
                     Column(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Formulário de Registro",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Gray,
-                            modifier = Modifier.padding(bottom = 16.dp)
+                            "Email as safras Pavilionas Trata novamente!",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MediumGray,
+                            modifier = Modifier.padding(bottom = 24.dp)
                         )
 
-                        // Campos do formulário de registro
                         LoginOutlinedTextField(
                             value = nome.value,
                             onValueChange = { nome.value = it },
@@ -284,7 +408,7 @@ fun LoginScreen(navController: NavHostController?) {
                             readOnly = false
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         LoginOutlinedTextField(
                             value = email.value,
@@ -293,7 +417,7 @@ fun LoginScreen(navController: NavHostController?) {
                             readOnly = false
                         )
 
-                        Spacer(modifier = Modifier.height(8.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         LoginOutlinedTextField(
                             value = senha.value,
@@ -302,16 +426,17 @@ fun LoginScreen(navController: NavHostController?) {
                             readOnly = false
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(24.dp))
 
                         Button(
-                            onClick = {
-                                // Lógica de registro aqui
-                            },
-                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { /* TODO: Implement register */ },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(50.dp),
+                            shape = RoundedCornerShape(15.dp),
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryColor)
                         ) {
-                            Text("Registrar", color = Color.White)
+                            Text("Registrar", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -320,8 +445,9 @@ fun LoginScreen(navController: NavHostController?) {
     }
 }
 
-@Preview(showSystemUi = true)
+@Preview(showSystemUi = true, showBackground = true)
 @Composable
-fun LoginScreenPreview(){
-    LoginScreen(navController = null)
+fun LoginScreenPreview() {
+    val navController = rememberNavController()
+    LoginScreen(navController = navController)
 }

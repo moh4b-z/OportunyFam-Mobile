@@ -23,7 +23,7 @@ fun SplashScreen(navController: NavController) {
     SplashScreenContent(
         onAnimationEnd = {
 
-            navController.navigate("tela_registro") {
+            navController.navigate("tela_login") {
                 popUpTo("SplashScreen") { inclusive = true }
             }
         }

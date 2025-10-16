@@ -8,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.chatapp.ChatScreen
+import com.example.oportunyfam.Screens.LoginScreen
 import com.example.oportunyfam.Screens.PerfilOngScreen
 import com.example.oportunyfam.ui.theme.OportunyFamTheme
 import com.example.oportunyfam.Screens.RegistroScreen
@@ -27,6 +28,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     composable("tela_splash") {
                         SplashScreen(navController)
+                    }
+                    composable ("tela_login"){
+                        LoginScreen(navController)
                     }
 
                     composable("tela_registro") {
