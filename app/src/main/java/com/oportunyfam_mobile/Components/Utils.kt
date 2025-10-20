@@ -12,9 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 
-// =================================================================
-// CONSTANTES DE TELA
-// =================================================================
 val PrimaryColor = Color(0xFFFFA500)
 val BackgroundGray = Color(0xFFE0E0E0)
 const val CPF_LENGTH = 11
@@ -57,7 +54,7 @@ fun RegistroOutlinedTextField(
     modifier: Modifier = Modifier.fillMaxWidth(),
     readOnly: Boolean,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    supportingText: () -> Unit
+    supportingText: @Composable () -> Unit
 ) {
     OutlinedTextField(
         value = value,

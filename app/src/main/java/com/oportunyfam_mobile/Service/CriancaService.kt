@@ -5,25 +5,26 @@ import com.oportunyfam_mobile.model.CriancaResponse
 import com.oportunyfam_mobile.model.LoginRequest
 import com.oportunyfam_mobile.model.LoginResponse
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.*
 
 interface CriancaService {
-
+    @Headers("Content-Type: application/json")
     @POST("crianca")
-    fun criar(@Body crianca: CriancaRequest): Call<CriancaResponse>
+    suspend fun criar(@Body crianca: CriancaRequest): Response<CriancaResponse>
 
     @PUT("crianca/{id}")
-    fun atualizar(@Path("id") id: Int, @Body crianca: CriancaRequest): Call<CriancaResponse>
+    suspend fun atualizar(@Path("id") id: Int, @Body crianca: CriancaRequest): Response<CriancaResponse>
 
     @GET("crianca")
-    fun listarTodas(): Call<List<CriancaResponse>>
+    suspend fun listarTodas(): Response<CriancaResponse>
 
     @GET("crianca/{id}")
-    fun buscarPorId(@Path("id") id: Int): Call<CriancaResponse>
+    suspend fun buscarPorId(@Path("id") id: Int): Response<CriancaResponse>
 
     @POST("crianca/login")
-    fun loginCrianca(@Body request: LoginRequest): Call<LoginResponse>
+    suspend fun loginCrianca(@Body request: LoginRequest): Response<LoginResponse>
 
     @DELETE("crianca/{id}")
-    fun deletar(@Path("id") id: Int): Call<Unit>
+    suspend fun deletar(@Path("id") id: Int): Response<Unit>
 }

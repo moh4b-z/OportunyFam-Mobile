@@ -20,7 +20,7 @@ import com.oportunyfam_mobile.model.Sexo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class) // ✨ Adiciona o OptIn para componentes experimentais
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SexoSelector(
     selectedSexoId: MutableState<Int?>,
@@ -36,8 +36,7 @@ fun SexoSelector(
     LaunchedEffect(Unit) {
         scope.launch {
             try {
-                // Executar a chamada de forma síncrona dentro da coroutine
-                val response = sexoService.listarTodos().execute()
+                val response = sexoService.listarTodos()
                 if (response.isSuccessful && response.body()?.sexos != null) {
                     sexosList = response.body()!!.sexos
                 }

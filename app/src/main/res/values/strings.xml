@@ -84,5 +84,6 @@
     <string name="button_forgot_password">Esqueceu sua senha?</string>
     <string name="text_or_login_with">Ou entre com</string>
     <string name="label_google">Google</string>
+    <string name="error_connection_failed_generic">Não foi possível conectar. Por favor, verifique sua conexão e tente novamente.</string>
     <string name="desc_icon_google">Ícone do Google</string>
 </resources>

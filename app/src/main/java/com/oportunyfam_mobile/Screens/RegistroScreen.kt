@@ -13,7 +13,7 @@ import com.oportunyfam_mobile.Components.LoginContent
 import com.oportunyfam_mobile.R
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
-import com.oportunyfam_mobile.Components.RegistroContent // Usando o nome RegistroContent
+import com.oportunyfam_mobile.Components.RegistroContent
 import com.oportunyfam_mobile.model.Usuario
 import androidx.compose.foundation.layout.Column
 
@@ -27,6 +27,9 @@ fun RegistroScreen(navController: NavHostController) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val authDataStore = remember { AuthDataStore(context) }
+
+    // CORREÇÃO: Variável de estado para o controle das etapas de registro (1, 2, 3)
+    val currentStep = remember { mutableStateOf(1) } // <-- NOVO: Inicializa na Etapa 1
 
     // --- Variáveis de Estado do Formulário de Registro (TODOS OS CAMPOS) ---
     val nome = remember { mutableStateOf("") }
@@ -83,6 +86,10 @@ fun RegistroScreen(navController: NavHostController) {
             email.value = ""
             senha.value = ""
         }
+        // Novo: Se estiver voltando para o registro, reseta a etapa para 1
+        if (isRegister) {
+            currentStep.value = 1
+        }
     }
 
     // --- Determina Textos do Container ---
@@ -93,15 +100,13 @@ fun RegistroScreen(navController: NavHostController) {
     AuthContainer(
         title = title,
         subtitle = subtitle,
-        // CORREÇÃO MAIS SEGURA: Passar 'content' de forma EXPLICITA e NOMEADA
         content = {
-            // O AuthContainer agora exibe o errorMessage, então a linha Text(it,...) foi removida
-            // da lógica da tela para evitar duplicação, mas o conteúdo principal permanece.
-
-            Column { // Mantemos a Column para estruturar o conteúdo
+            Column {
                 if (isRegisterSelected.value) {
                     RegistroContent (
                         navController = navController,
+                        // ...
+                        // PARÂMETROS EXISTENTES
                         nome = nome,
                         email = email,
                         phone = phone,
@@ -119,6 +124,10 @@ fun RegistroScreen(navController: NavHostController) {
                         senha = senha,
                         confirmarSenha = confirmarSenha,
                         concordaTermos = concordaTermos,
+
+                        // PARÂMETRO CORRIGIDO
+                        currentStep = currentStep, // <-- Passando o novo estado
+
                         isLoading = isLoading,
                         errorMessage = errorMessage,
                         usuarioService = usuarioService,
@@ -141,7 +150,7 @@ fun RegistroScreen(navController: NavHostController) {
         },
         isRegisterSelected = isRegisterSelected.value,
         onToggle = onToggle,
-        errorMessage = errorMessage.value // O `errorMessage` é o último parâmetro
+        errorMessage = errorMessage.value
     )
 }
 

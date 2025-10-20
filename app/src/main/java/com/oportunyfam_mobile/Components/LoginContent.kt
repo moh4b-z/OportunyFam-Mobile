@@ -25,10 +25,14 @@ import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
 import com.oportunyfam_mobile.Service.LoginUniversalService
 import com.oportunyfam_mobile.model.LoginRequest
+import com.oportunyfam_mobile.model.ResultData // Importa a sealed class
+import com.oportunyfam_mobile.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import com.oportunyfam_mobile.R
+import android.util.Log // Importa Log para logging
 
+// Define a tag para o Logcat (ajuste conforme necessário)
+private const val TAG = "LoginContent"
 
 @Composable
 fun LoginContent(
@@ -125,36 +129,31 @@ fun LoginContent(
                             senha = senha.value
                         )
 
-                        // NOTA: Assumimos que loginUniversalService.loginUniversal é uma função suspend
-                        // que retorna Response<LoginResponse>
                         val response = loginUniversalService.loginUniversal(request)
 
                         if (response.isSuccessful) {
                             val resultLogin = response.body()
 
                             if (resultLogin != null) {
-                                // 1. Verificar se é uma Instituição (e bloquear)
-                                if (resultLogin.instituicao != null) {
-                                    errorMessage.value = context.getString(R.string.error_not_responsible_app)
-                                    isLoading.value = false
-                                    return@launch
+
+                                // ** LÓGICA DE NAVEGAÇÃO E AUTENTICAÇÃO USANDO SEALED CLASS **
+                                when (val resultData = resultLogin.result) {
+                                    is ResultData.UsuarioResult -> {
+                                        authDataStore.saveAuthUser(resultData.data, AuthType.USUARIO)
+                                        // O login deu certo, navega para a home
+                                        onAuthSuccess("tela_home")
+                                    }
+                                    is ResultData.CriancaResult -> {
+                                        authDataStore.saveAuthUser(resultData.data, AuthType.CRIANCA)
+                                        // O login deu certo, navega para a home
+                                        onAuthSuccess("tela_home")
+                                    }
+                                    is ResultData.InstituicaoResult -> {
+                                        // Bloqueia se for uma Instituição logando no App de Família
+                                        errorMessage.value = context.getString(R.string.error_not_responsible_app)
+                                    }
                                 }
 
-                                // 2. Logado como Usuário ou Criança
-                                val usuarioLogado = resultLogin.usuario
-                                val criancaLogada = resultLogin.crianca
-
-                                if (usuarioLogado != null) {
-                                    // CORREÇÃO: Usando o método saveAuthUser com o tipo AuthType.USUARIO
-                                    authDataStore.saveAuthUser(usuarioLogado, AuthType.USUARIO)
-                                    onAuthSuccess("home")
-                                } else if (criancaLogada != null) {
-                                    // CORREÇÃO: Usando o método saveAuthUser com o tipo AuthType.CRIANCA
-                                    authDataStore.saveAuthUser(criancaLogada, AuthType.CRIANCA)
-                                    onAuthSuccess("home")
-                                } else {
-                                    errorMessage.value = context.getString(R.string.error_login_invalid_credentials)
-                                }
                             } else {
                                 errorMessage.value = context.getString(R.string.error_login_failed)
                             }
@@ -162,12 +161,18 @@ fun LoginContent(
                         } else if (response.code() == 401) {
                             errorMessage.value = context.getString(R.string.error_login_invalid_credentials)
                         } else {
+                            // Erros HTTP não planejados (diferentes de 401)
                             val errorBody = response.errorBody()?.string() ?: response.message()
-                            errorMessage.value = context.getString(R.string.error_login_failed) + "\nDetalhe: $errorBody"
+                            // ** REGRA: Loga o detalhe no Logcat, mostra apenas mensagem genérica para o usuário **
+                            Log.e(TAG, "Erro HTTP inesperado (${response.code()}): $errorBody")
+                            errorMessage.value = context.getString(R.string.error_login_failed)
                         }
 
                     } catch (e: Exception) {
-                        errorMessage.value = context.getString(R.string.error_connection_failed) + "\nDetalhe: ${e.message}"
+                        // Erro de conexão, parse JSON (erro da sealed class), etc.
+                        // ** REGRA: Loga o detalhe no Logcat, mostra apenas mensagem genérica para o usuário **
+                        Log.e(TAG, "Erro de Conexão/Deserialização: ${e.message}", e)
+                        errorMessage.value = context.getString(R.string.error_connection_failed)
                     } finally {
                         isLoading.value = false
                     }

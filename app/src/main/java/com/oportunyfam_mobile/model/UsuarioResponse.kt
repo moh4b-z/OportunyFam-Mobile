@@ -29,7 +29,7 @@ data class UsuarioRequest(
     val foto_perfil: String?,
     val email: String,
     val senha: String,
-    val data_nascimento: LocalDate,
+    val data_nascimento: String,
     val telefone: String?,
     val cpf: String,
     val id_sexo: Int,
