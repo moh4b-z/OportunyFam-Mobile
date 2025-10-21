@@ -14,9 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -94,6 +96,7 @@ fun RegistroContent(
 
     // Etapa 2: Telefone, Data de Nascimento, Endereço completo (TODOS OBRIGATÓRIOS)
     val isStep2Valid = phone.value.isNotBlank() && isBirthDateValid && isAddressValid
+
 
     // Etapa 3: Senhas e Termos
     val isPasswordMatch = senha.value.length >= 6 && senha.value == confirmarSenha.value
@@ -210,21 +213,48 @@ fun RegistroContent(
                     supportingText = { Text(stringResource(R.string.label_phone)) }
                 )
             }
+            // --- CAMPO DE DATA DE NASCIMENTO (APENAS DATE PICKER) ---
             item {
+                val context = LocalContext.current
+                val calendar = remember { java.util.Calendar.getInstance() }
+
+                var dataNascimentoValue by remember { mutableStateOf(dataNascimento.value) }
+
+                val datePickerDialog = remember {
+                    android.app.DatePickerDialog(
+                        context,
+                        { _, year, month, dayOfMonth ->
+                            val selectedDate = String.format("%02d/%02d/%04d", dayOfMonth, month + 1, year)
+                            dataNascimentoValue = selectedDate
+                            dataNascimento.value = selectedDate
+                        },
+                        calendar.get(java.util.Calendar.YEAR),
+                        calendar.get(java.util.Calendar.MONTH),
+                        calendar.get(java.util.Calendar.DAY_OF_MONTH)
+                    )
+                }
+
                 Column {
                     RegistroOutlinedTextField(
-                        value = dataNascimento.value,
-                        // Este onValueChange usa a máscara. Se a digitação estiver ruim,
-                        // é necessário implementar controle de cursor via TextFieldValue.
-                        onValueChange = { newValue ->
-                            dataNascimento.value = aplicarMascaraDataNascimento(newValue)
-                        },
+                        value = dataNascimentoValue,
+                        onValueChange = {}, // Não permite digitar nada
                         label = "Data de Nascimento (DD/MM/AAAA)",
-                        leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null, tint = Color(0x9E000000)) },
-                        readOnly = isLoading.value,
+                        leadingIcon = {
+                            IconButton(
+                                onClick = { datePickerDialog.show() }
+                            ) {
+                                Icon(
+                                    Icons.Default.DateRange,
+                                    contentDescription = "Selecionar data",
+                                    tint = Color(0x9E000000)
+                                )
+                            }
+                        },
+                        readOnly = true, // Campo só leitura
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         supportingText = {}
                     )
+
                     if (dataNascimento.value.length == 10 && !isBirthDateValid && !isLoading.value) {
                         Text(
                             text = "Data inválida (formato ou futura). Use DD/MM/AAAA.",
