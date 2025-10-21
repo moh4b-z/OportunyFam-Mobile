@@ -101,9 +101,7 @@ fun PerfilUserScreen(
                 Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = {
-                navController?.navigate("tela_registro")
-            }) {
+            IconButton(onClick = { onLogout() }) {
                 Icon(Icons.Filled.ExitToApp, contentDescription = "Sair", tint = Color.Black)
             }
             IconButton(onClick = { }) {
