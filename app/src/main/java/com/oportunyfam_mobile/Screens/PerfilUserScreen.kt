@@ -28,10 +28,8 @@ import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.R
 
 
-
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PerfilScreen(
+fun PerfilUserScreen(
     navController: NavHostController?,
     instituicaoNome: String, // Dado dinâmico: Nome da Instituição
     instituicaoEmail: String, // Dado dinâmico: Email da Instituição
@@ -217,11 +215,13 @@ fun PerfilScreen(
 
 @Preview(showSystemUi = true)
 @Composable
-fun PerfilScreenPreview() {
-    PerfilScreen(
+fun PerfilUserScreenPreview() {
+    PerfilUserScreen(
         navController = null,
         instituicaoNome = "Mohammad ONG (Preview)",
         instituicaoEmail = "mohammadsalim10000@gmail.com",
         onLogout = {}
     )
 }
+
+

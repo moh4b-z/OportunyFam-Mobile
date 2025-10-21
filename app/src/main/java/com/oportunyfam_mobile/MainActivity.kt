@@ -9,6 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.oportunyfam_mobile.Screens.ChatScreen
+import com.oportunyfam_mobile.Screens.PerfilUserScreen
 import com.oportunyfam_mobile.Screens.PerfilOngScreen
 import com.oportunyfam_mobile.Screens.SplashScreen
 import com.oportunyfam_mobile.Screens.RegistroScreen
@@ -39,7 +40,12 @@ class MainActivity : ComponentActivity() {
                         HomeScreen(navController)
                     }
 
-                    composable("tela_perfil") {
+                    composable("tela_perfiluser") {
+                        PerfilUserScreen(navController)
+
+                    }
+
+                    composable("tela_perfilOng") {
                         PerfilOngScreen(navController)
 
                     }

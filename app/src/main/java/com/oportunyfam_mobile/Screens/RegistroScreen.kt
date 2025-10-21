@@ -70,7 +70,7 @@ fun RegistroScreen(navController: NavHostController) {
     val onRegistrationSuccess: (Usuario) -> Unit = { usuario ->
         scope.launch {
             authDataStore.saveAuthUser(usuario, AuthType.USUARIO)
-            navController.navigate("home") {
+            navController.navigate("tela_home") {
                 popUpTo("tela_registro") { inclusive = true }
             }
             isLoading.value = false

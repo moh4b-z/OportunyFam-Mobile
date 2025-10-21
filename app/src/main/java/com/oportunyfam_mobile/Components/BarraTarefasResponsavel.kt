@@ -107,9 +107,9 @@ fun BarraTarefas(navController: NavHostController?) {
             selected = selectedItem == "perfil",
             onClick = {
                 selectedItem = "perfil"
-                navController?.navigate("tela_perfil") {
+                navController?.navigate("tela_perfiluser") {
 
-                    popUpTo("tela_perfil") { inclusive = true }
+                    popUpTo("tela_perfiluser") { inclusive = true }
                     launchSingleTop = true
                 }
             },

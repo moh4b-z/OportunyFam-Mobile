@@ -12,8 +12,8 @@
     <string name="button_login">Login</string>
     <string name="button_register">Registre-se</string>
     <string name="button_back">← Voltar</string>
-    <string name="button_next">Avançar →</string>
-    <string name="button_submit_register">Cadastrar →</string>
+    <string name="button_next">Avançar </string>
+    <string name="button_submit_register">Cadastrar</string>
     <string name="button_login_submit">Entrar</string>
     <string name="button_next_step">Próximo Passo</string> <!-- NOVO: Botão Próximo do Passo 1 -->
     <string name="button_finish_registration">Finalizar Cadastro</string> <!-- NOVO: Botão Finalizar do Passo 2 -->

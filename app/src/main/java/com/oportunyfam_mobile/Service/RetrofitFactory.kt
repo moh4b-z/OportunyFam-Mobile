@@ -9,7 +9,7 @@ import java.time.LocalDate
 import com.oportunyfam_mobile.model.ResultData // Importa ResultData
 
 class RetrofitFactory {
-    private val BASE_URL = "http://192.168.15.14:8080/v1/oportunyfam/"
+    private val BASE_URL = "http://10.0.2.2:8080/v1/oportunyfam/"
 
     // O objeto Gson
     private val gson = GsonBuilder()
