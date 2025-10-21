@@ -9,10 +9,20 @@ import java.lang.reflect.Type
 
 /**
  * TypeAdapter que ensina o Gson a desserializar a 'sealed class ResultData'.
- * Ele tenta inferir o tipo do objeto 'result' verificando a presença de campos chaves.
- * Este adaptador é necessário porque o Gson não consegue instanciar classes seladas/abstratas automaticamente.
+ * Ele é necessário porque o Gson não consegue instanciar classes seladas/abstratas automaticamente.
+ * * Correção: Usamos um objeto Gson "limpo" (innerGson) para desserializar as classes internas
+ * (Usuario, Crianca, Instituicao). Isso evita a corrupção do contexto de desserialização
+ * que estava causando o erro 'Expected BEGIN_OBJECT but was STRING' no campo data_nascimento.
  */
 class ResultDataTypeAdapter : JsonDeserializer<ResultData> {
+
+    companion object {
+        // Objeto Gson limpo, sem o ResultDataTypeAdapter registrado.
+        // Ele garante que a desserialização de Usuario, Crianca, etc., use o mapeamento padrão e funcione.
+        private val innerGson = GsonBuilder()
+            .setLenient()
+            .create()
+    }
 
     @Throws(JsonParseException::class)
     override fun deserialize(
@@ -25,33 +35,37 @@ class ResultDataTypeAdapter : JsonDeserializer<ResultData> {
         // Tentativa de desserialização manual baseada nos campos presentes no objeto 'result':
 
         // 1. Verificar se é um Usuário (o usuário tem CPF, data_nascimento, etc.)
-        // Se a resposta JSON contiver campos típicos de 'Usuario', desserializa como 'UsuarioResult'.
         if (jsonObject.has("cpf") || (jsonObject.has("data_nascimento") && !jsonObject.has("responsavel_id"))) {
             try {
-                val usuario = context.deserialize<Usuario>(json, Usuario::class.java)
+                // CORREÇÃO: Usamos o innerGson (limpo) para deserializar o objeto Usuario
+                // O método .fromJson(jsonObject, ...) é mais seguro do que context.deserialize(...) aqui.
+                val usuario = innerGson.fromJson(jsonObject, Usuario::class.java)
                 return ResultData.UsuarioResult(usuario)
             } catch (e: Exception) {
-                throw JsonParseException("Falha ao desserializar ResultData para Usuario: ${e.message}", e)
+                // Adicionamos o JSON à exceção para ajudar na depuração, caso haja outro problema.
+                throw JsonParseException("Falha ao desserializar ResultData para Usuario: ${e.message}. JSON: $jsonObject", e)
             }
         }
 
         // 2. Verificar se é uma Criança (a criança deve ter responsavel_id)
         else if (jsonObject.has("responsavel_id") || jsonObject.has("data_nascimento_crianca")) {
             try {
-                val crianca = context.deserialize<Crianca>(json, Crianca::class.java)
+                // CORREÇÃO: Usamos o innerGson para Crianca
+                val crianca = innerGson.fromJson(jsonObject, Crianca::class.java)
                 return ResultData.CriancaResult(crianca)
             } catch (e: Exception) {
-                throw JsonParseException("Falha ao desserializar ResultData para Crianca: ${e.message}", e)
+                throw JsonParseException("Falha ao desserializar ResultData para Crianca: ${e.message}. JSON: $jsonObject", e)
             }
         }
 
         // 3. Verificar se é uma Instituição (a instituição tem cnpj, nome_fantasia, etc.)
         else if (jsonObject.has("cnpj") || jsonObject.has("nome_fantasia")) {
             try {
-                val instituicao = context.deserialize<Instituicao>(json, Instituicao::class.java)
+                // CORREÇÃO: Usamos o innerGson para Instituicao
+                val instituicao = innerGson.fromJson(jsonObject, Instituicao::class.java)
                 return ResultData.InstituicaoResult(instituicao)
             } catch (e: Exception) {
-                throw JsonParseException("Falha ao desserializar ResultData para Instituicao: ${e.message}", e)
+                throw JsonParseException("Falha ao desserializar ResultData para Instituicao: ${e.message}. JSON: $jsonObject", e)
             }
         }
 

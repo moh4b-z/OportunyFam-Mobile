@@ -9,7 +9,7 @@ data class CriancaRequest(
     val email: String? = null,
     val senha: String?,
     val cpf: String,
-    val data_nascimento: LocalDate,
+    val data_nascimento: String,
     val id_sexo: Int
 )
 data class CriancaResponse(
@@ -26,7 +26,7 @@ data class Crianca(
     val email: String,
     val telefone: String?,
     val cpf: String,
-    val data_nascimento: LocalDate,
+    val data_nascimento: String,
     val criado_em: String,
     val sexo: String?
 )

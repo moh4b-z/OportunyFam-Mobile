@@ -14,7 +14,7 @@ data class Usuario(
     val nome: String,
     val foto_perfil: String?,
     val email: String,
-    val data_nascimento: LocalDate,
+    val data_nascimento: String,
     val cpf: String,
     val criado_em: String,
     val telefone: String?,

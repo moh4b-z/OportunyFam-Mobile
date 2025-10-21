@@ -11,12 +11,11 @@ import com.oportunyfam_mobile.model.ResultData // Importa ResultData
 class RetrofitFactory {
     private val BASE_URL = "http://192.168.15.14:8080/v1/oportunyfam/"
 
-    // O objeto Gson (LocalDateAdapter não está incluído aqui para manter o foco)
+    // O objeto Gson
     private val gson = GsonBuilder()
         .setLenient()
-        // Supondo que LocalDateAdapter existe e está registrado aqui:
-        // .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
-        // ** NOVO: Registra o adaptador customizado para a sealed class ResultData **
+        // Voltamos a registrar o adaptador customizado.
+        // Ele é necessário porque ResultData é uma classe selada/abstrata.
         .registerTypeAdapter(ResultData::class.java, ResultDataTypeAdapter())
         .create()
 
