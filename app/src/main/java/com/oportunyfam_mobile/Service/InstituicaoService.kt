@@ -32,9 +32,10 @@ interface InstituicaoService {
     // GET - Busca com filtros e paginação (usando a Stored Procedure)
     // Ex: GET /v1/instituicoes?busca=escola&pagina=1
     @GET("instituicoes")
-    suspend fun buscarComFiltro(
+    fun buscarComFiltro(
         @Query("busca") termo: String?,
         @Query("pagina") pagina: Int?,
         @Query("tamanho") tamanho: Int?
-    ): Call<Any> // O Call<Any> é usado pois o retorno é complexo (metadata + instituições)
+    ): Call<List<Instituicao>>
+
 }
