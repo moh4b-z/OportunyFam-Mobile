@@ -16,6 +16,12 @@ data class Instituicao(
     val complemento: String? = null,
     val bairro: String,
     val cidade: String,
-    val estado: String
-    // O backend calcula latitude/longitude/geo
+    val estado: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
+
+
+
+
+

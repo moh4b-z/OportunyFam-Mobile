@@ -80,6 +80,8 @@ dependencies {
     implementation("org.osmdroid:osmdroid-android:6.1.18")//OpenStreetMap
 
     implementation("com.google.android.gms:play-services-location:21.3.0")//Para obter a posição atual do usuário
+
+
 }
 
 room {
