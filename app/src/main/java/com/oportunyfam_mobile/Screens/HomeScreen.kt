@@ -19,8 +19,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
-import com.oportunyfam_mobile.Components.MapViewGoogle
 import com.oportunyfam_mobile.Components.SearchBar
 import com.oportunyfam_mobile.Service.InstituicaoService
 import com.oportunyfam_mobile.Service.RetrofitClient
@@ -32,12 +34,12 @@ import retrofit2.Response
 @Composable
 fun HomeScreen(navController: NavHostController?) {
 
-    // Estado da barra de pesquisa
+    // === Estados ===
     var query by rememberSaveable { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    // Retrofit service
+    // === Retrofit ===
     val instituicaoService = RetrofitClient.instance.create(InstituicaoService::class.java)
 
     fun buscarInstituicoes(termo: String) {
@@ -64,24 +66,23 @@ fun HomeScreen(navController: NavHostController?) {
         })
     }
 
-    // Localização padrão (São Paulo)
-    val initialLat = -23.5505
-    val initialLon = -46.6333
-
-    // Zoom padrão
-    val initialZoom = 10
+    // === Mapa ===
+    val initialLatLng = LatLng(-23.5505, -46.6333)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(initialLatLng, 12f)
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // === Google Maps ===
-        MapViewGoogle(
-            modifier = Modifier.fillMaxSize(),
-            initialLat = initialLat,
-            initialLon = initialLon,
-            initialZoom = initialZoom.toFloat(),
-            markers = searchResults
+
+        // ===== Mapa de fundo =====
+        GoogleMap(
+            modifier = Modifier.matchParentSize(),
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(isMyLocationEnabled = false),
+            uiSettings = MapUiSettings(zoomControlsEnabled = false)
         )
 
-        // === Barra de pesquisa ===
+        // ===== Barra de pesquisa =====
         SearchBar(
             query = query,
             onQueryChange = { query = it },
@@ -92,7 +93,7 @@ fun HomeScreen(navController: NavHostController?) {
                 .padding(top = 16.dp, start = 16.dp, end = 16.dp)
         )
 
-        // === Resultados da busca ===
+        // ===== Resultados =====
         if (searchResults.isNotEmpty()) {
             Column(
                 modifier = Modifier
@@ -113,6 +114,7 @@ fun HomeScreen(navController: NavHostController?) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
+                                    // Exemplo: navegação futura
                                     // navController?.navigate("detalhesOng/${ong.id}")
                                 }
                                 .padding(16.dp)
@@ -129,7 +131,7 @@ fun HomeScreen(navController: NavHostController?) {
             }
         }
 
-        // === Indicador de carregamento ===
+        // ===== Indicador de carregamento =====
         when {
             isLoading -> {
                 CircularProgressIndicator(
@@ -155,33 +157,21 @@ fun HomeScreen(navController: NavHostController?) {
             }
         }
 
-        // === Barra de tarefas inferior ===
-        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
-            BarraTarefas(navController = navController)
-        }
-
-        // === Botão flutuante ===
+        // ===== Botão flutuante =====
         FloatingActionButton(
-            onClick = { /* TODO */ },
+            onClick = { /* ação futura */ },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
-            containerColor = Color.DarkGray
+            containerColor = Color(0xFF424242)
         ) {
             Icon(Icons.Filled.Face, contentDescription = "Usuários", tint = Color.White)
         }
-    }
-}
 
-@Composable
-fun ChipMock(text: String) {
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .background(Color.DarkGray)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-    ) {
-        Text(text, color = Color.White, fontSize = 14.sp)
+        // ===== Barra inferior =====
+        Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            BarraTarefas(navController = navController)
+        }
     }
 }
 

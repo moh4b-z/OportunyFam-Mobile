@@ -19,6 +19,12 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OportunyFamMobile">
+
+        <!-- Meta-data da API key do Google Maps -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyD0O_Wd2IWbbCO0Yj-qAwrSXvmvc0jB3Qw"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -26,13 +32,9 @@
             android:theme="@style/Theme.OportunyFamMobile">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="SUA_CHAVE_DO_MAPS_AQUI"/>
 
     </application>
 

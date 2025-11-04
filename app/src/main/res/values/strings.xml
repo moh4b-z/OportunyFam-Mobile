@@ -86,4 +86,9 @@
     <string name="label_google">Google</string>
     <string name="error_connection_failed_generic">Não foi possível conectar. Por favor, verifique sua conexão e tente novamente.</string>
     <string name="desc_icon_google">Ícone do Google</string>
+
+    <!-- mapa -->
+    <string name="google_maps_key">AIzaSyBKFwfrLdbTreqsOwnpMS9-zt9KD-HEH28</string>
+
+
 </resources>

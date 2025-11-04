@@ -9,8 +9,8 @@ import java.time.LocalDate
 import com.oportunyfam_mobile.model.ResultData // Importa ResultData
 
 class RetrofitFactory {
-    private val BASE_URL = "http://10.0.2.2:8080/v1/oportunyfam/"
-    //private val BASE_URL = "https://oportunyfam-back-end.onrender.com/v1/oportunyfam/" // URL base da API já na nuvem
+    //private val BASE_URL = "http://10.0.2.2:8080/v1/oportunyfam/"
+    private val BASE_URL = "https://oportunyfam-back-end.onrender.com/v1/oportunyfam/" // URL base da API já na nuvem
 
 
 
