@@ -1,7 +1,5 @@
 package com.oportunyfam_mobile.model
 
-import java.time.LocalDate
-
 data class UsuarioResponse(
     val status: Boolean,
     val status_code: Int,
@@ -10,7 +8,8 @@ data class UsuarioResponse(
 )
 
 data class Usuario(
-    val id: Int,
+    val usuario_id: Int,
+    val pessoa_id: Int,
     val nome: String,
     val foto_perfil: String?,
     val email: String,
@@ -20,9 +19,11 @@ data class Usuario(
     val telefone: String?,
     val atualizado_em: String?,
     val sexo: String?,
-    val nivel_usuario: String?
+    val tipo_nivel: String?,
+    val criancas_dependentes: List<Crianca> = emptyList(),
+    val conversas: List<Any> = emptyList(),
+    val id: Int
 )
-
 
 data class UsuarioRequest(
     val nome: String,
@@ -40,5 +41,5 @@ data class UsuarioRequest(
     val complemento: String?,
     val bairro: String,
     val cidade: String,
-    val estado: String,
+    val estado: String
 )

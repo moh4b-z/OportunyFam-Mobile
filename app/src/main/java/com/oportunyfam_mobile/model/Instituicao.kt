@@ -1,27 +1,54 @@
 package com.oportunyfam_mobile.model
 
-data class Instituicao(
-    val id: Int? = null,
-    val nome: String,
-    val logo: String? = null,
-    val cnpj: String,
-    val email: String,
-    val senha: String,
-    val descricao: String? = null,
+data class InstituicaoResponse(
+    val status: Boolean,
+    val status_code: Int,
+    val messagem: String,
+    val instituicao: Instituicao?
+)
 
-    // Se o POST da Instituicao cria o Endereço junto, precisamos dos dados:
+data class Instituicao(
+    val instituicao_id: Int,
+    val pessoa_id: Int,
+    val nome: String,
+    val email: String,
+    val foto_perfil: String?,
+    val cnpj: String,
+    val descricao: String?,
+    val criado_em: String,
+    val atualizado_em: String?,
+    val endereco: Endereco?,
+    val tipos_instituicao: List<Any> = emptyList(),
+    val publicacoes: List<Any> = emptyList(),
+    val conversas: List<Any> = emptyList(),
+    val atividades: List<Any> = emptyList()
+)
+
+data class Endereco(
+    val id: Int,
     val cep: String,
-    val logradouro: String,
-    val numero: String? = null,
-    val complemento: String? = null,
     val bairro: String,
     val cidade: String,
     val estado: String,
-    val latitude: Double? = null,
-    val longitude: Double? = null
+    val numero: String?,
+    val latitude: Double?,
+    val longitude: Double?,
+    val logradouro: String,
+    val complemento: String?
 )
 
-
-
-
-
+data class InstituicaoRequest(
+    val nome: String,
+    val foto_perfil: String? = null,
+    val email: String,
+    val senha: String,
+    val cnpj: String,
+    val descricao: String? = null,
+    val cep: String,
+    val logradouro: String,
+    val numero: String?,
+    val complemento: String?,
+    val bairro: String,
+    val cidade: String,
+    val estado: String
+)

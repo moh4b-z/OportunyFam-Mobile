@@ -74,14 +74,20 @@ dependencies {
     // Datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     //mapa
-    implementation("com.google.android.gms:play-services-maps:19.0.0")
-    implementation("com.google.maps.android:maps-compose:2.11.4") // integração com Jetpack Compose
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
+    implementation("com.google.maps.android:maps-compose:4.3.3") // integração com Jetpack Compose
 
-    implementation("org.osmdroid:osmdroid-android:6.1.18")//OpenStreetMap
+    implementation("com.google.android.gms:play-services-location:21.0.1")//Para obter a posição atual do usuário
 
-    implementation("com.google.android.gms:play-services-location:21.3.0")//Para obter a posição atual do usuário
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("com.google.android.gms:play-services-location:21.1.0")
+    implementation("com.google.accompanist:accompanist-permissions:0.30.1")
+    implementation("com.google.android.libraries.places:places:3.5.0")
 
-
+    // Remover dependências OSM
+    // implementation("org.osmdroid:osmdroid-android:6.1.18")
+    // implementation("org.osmdroid:osmdroid-mapsforge:6.1.18")
+    // implementation("androidx.preference:preference-ktx:1.2.1")
 }
 
 room {
