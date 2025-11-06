@@ -173,10 +173,12 @@ fun HomeScreen(navController: NavHostController?) {
 
         // ===== Botão flutuante =====
         FloatingActionButton(
-            onClick = { /* ação futura */ },
+            onClick = {
+                navController?.navigate("registerChild")
+                      },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(16.dp),
+                .padding(bottom = 80.dp, end = 16.dp),
             containerColor = Color(0xFF424242)
         ) {
             Icon(Icons.Filled.Face, contentDescription = "Usuários", tint = Color.White)

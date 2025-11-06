@@ -6,6 +6,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import java.util.regex.Pattern
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.ButtonDefaults
+import androidx.navigation.NavHostController
 
 data class ChildRegistration(
     val name: String,
@@ -33,7 +35,8 @@ data class ChildRegistration(
 @Composable
 fun RegisterChildScreen(
     modifier: Modifier = Modifier,
-    onSubmit: (ChildRegistration) -> Unit = {}
+    onSubmit: (ChildRegistration) -> Unit = {},
+    navController: NavHostController? = null
 ) {
     val context = LocalContext.current
 
@@ -133,14 +136,30 @@ fun RegisterChildScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
-            Text(
-                text = "Cadastrar Filho",
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 12.dp),
-                textAlign = TextAlign.Start
-            )
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { navController?.navigate("home") }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.ArrowBack,
+                        contentDescription = "Voltar",
+                        tint = Color(0xFF424242)
+                    )
+                }
+
+                Text(
+                    text = "Cadastrar Filho",
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    modifier = Modifier.padding(start = 8.dp),
+                    textAlign = TextAlign.Start
+                )
+            }
 
             OutlinedTextField(
                 value = name,
