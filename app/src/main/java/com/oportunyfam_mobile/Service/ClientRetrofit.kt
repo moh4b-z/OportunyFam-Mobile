@@ -17,6 +17,12 @@ object RetrofitClient {
 
         OkHttpClient.Builder()
             .addInterceptor(logging)
+            .addInterceptor { chain ->
+                val request = chain.request()
+                println("Request URL: ${request.url}")
+                println("Request Headers: ${request.headers}")
+                chain.proceed(request)
+            }
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)

@@ -1,6 +1,11 @@
-
 package com.oportunyfam_mobile.model
 
+data class InstituicaoListResponse(
+    val status: Boolean,
+    val status_code: Int,
+    val messagem: String,
+    val instituicoes: List<Instituicao>
+)
 
 data class InstituicaoResponse(
     val status: Boolean,

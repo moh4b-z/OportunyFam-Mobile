@@ -104,7 +104,9 @@ fun PerfilUserScreen(
             IconButton(onClick = { onLogout() }) {
                 Icon(Icons.Filled.ExitToApp, contentDescription = "Sair", tint = Color.Black)
             }
-            IconButton(onClick = { }) {
+            IconButton(onClick = {
+
+            }) {
                 Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = Color.Black)
             }
         }

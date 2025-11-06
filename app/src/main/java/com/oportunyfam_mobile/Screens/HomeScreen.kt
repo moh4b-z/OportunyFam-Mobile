@@ -26,6 +26,7 @@ import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
 import com.oportunyfam_mobile.Service.RetrofitClient
 import com.oportunyfam_mobile.model.Instituicao
+import com.oportunyfam_mobile.model.InstituicaoListResponse
 import com.oportunyfam_mobile.model.InstituicaoResponse
 import retrofit2.Call
 import retrofit2.Callback
@@ -47,18 +48,23 @@ fun HomeScreen(navController: NavHostController?) {
         hasSearched = true
 
         RetrofitClient.instituicaoService.buscarComFiltro(termo, 1, 20)
-            .enqueue(object : Callback<List<InstituicaoResponse>> {
+            .enqueue(object : Callback<InstituicaoListResponse> {
                 override fun onResponse(
-                    call: Call<List<InstituicaoResponse>>,
-                    response: Response<List<InstituicaoResponse>>
+                    call: Call<InstituicaoListResponse>,
+                    response: Response<InstituicaoListResponse>
                 ) {
                     isLoading = false
-                    searchResults = if (response.isSuccessful) {
-                        response.body()?.mapNotNull { it.instituicao } ?: emptyList()
-                    } else emptyList()
+                    if (response.isSuccessful) {
+                        val result = response.body()
+                        searchResults = if (result?.status == true) {
+                            result.instituicoes
+                        } else emptyList()
+                    } else {
+                        searchResults = emptyList()
+                    }
                 }
 
-                override fun onFailure(call: Call<List<InstituicaoResponse>>, t: Throwable) {
+                override fun onFailure(call: Call<InstituicaoListResponse>, t: Throwable) {
                     isLoading = false
                     t.printStackTrace()
                     searchResults = emptyList()
