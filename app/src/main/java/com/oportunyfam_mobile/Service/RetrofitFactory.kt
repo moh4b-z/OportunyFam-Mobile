@@ -1,5 +1,6 @@
 package com.oportunyfam_mobile.Service
 
+import com.example.oportunyfam.Service.InstituicaoService
 import com.google.gson.GsonBuilder
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

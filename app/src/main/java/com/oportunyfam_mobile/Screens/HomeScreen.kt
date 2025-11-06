@@ -24,9 +24,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
-import com.oportunyfam_mobile.Service.InstituicaoService
 import com.oportunyfam_mobile.Service.RetrofitClient
 import com.oportunyfam_mobile.model.Instituicao
+import com.oportunyfam_mobile.model.InstituicaoResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -38,32 +38,40 @@ fun HomeScreen(navController: NavHostController?) {
     var query by rememberSaveable { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    var hasSearched by remember { mutableStateOf(false) }
 
-    // === Retrofit ===
-    val instituicaoService = RetrofitClient.instance.create(InstituicaoService::class.java)
-
+    // Função de busca
     fun buscarInstituicoes(termo: String) {
         if (termo.isBlank()) return
         isLoading = true
+        hasSearched = true
 
-        val call = instituicaoService.buscarComFiltro(termo, 1, 20)
-        call.enqueue(object : Callback<List<Instituicao>> {
-            override fun onResponse(
-                call: Call<List<Instituicao>>,
-                response: Response<List<Instituicao>>
-            ) {
-                isLoading = false
-                searchResults = if (response.isSuccessful) {
-                    response.body() ?: emptyList()
-                } else emptyList()
-            }
+        RetrofitClient.instituicaoService.buscarComFiltro(termo, 1, 20)
+            .enqueue(object : Callback<List<InstituicaoResponse>> {
+                override fun onResponse(
+                    call: Call<List<InstituicaoResponse>>,
+                    response: Response<List<InstituicaoResponse>>
+                ) {
+                    isLoading = false
+                    searchResults = if (response.isSuccessful) {
+                        response.body()?.mapNotNull { it.instituicao } ?: emptyList()
+                    } else emptyList()
+                }
 
-            override fun onFailure(call: Call<List<Instituicao>>, t: Throwable) {
-                isLoading = false
-                t.printStackTrace()
-                searchResults = emptyList()
-            }
-        })
+                override fun onFailure(call: Call<List<InstituicaoResponse>>, t: Throwable) {
+                    isLoading = false
+                    t.printStackTrace()
+                    searchResults = emptyList()
+                }
+            })
+    }
+
+    // limpa resultados quando query ficar vazia
+    LaunchedEffect(query) {
+        if (query.isBlank()) {
+            searchResults = emptyList()
+            hasSearched = false
+        }
     }
 
     // === Mapa ===

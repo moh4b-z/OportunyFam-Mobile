@@ -1,4 +1,6 @@
+
 package com.oportunyfam_mobile.model
+
 
 data class InstituicaoResponse(
     val status: Boolean,
@@ -21,7 +23,9 @@ data class Instituicao(
     val tipos_instituicao: List<Any> = emptyList(),
     val publicacoes: List<Any> = emptyList(),
     val conversas: List<Any> = emptyList(),
-    val atividades: List<Any> = emptyList()
+    val atividades: List<Any> = emptyList(),
+    val logo: String?,
+    val telefone: String?
 )
 
 data class Endereco(
@@ -39,7 +43,7 @@ data class Endereco(
 
 data class InstituicaoRequest(
     val nome: String,
-    val foto_perfil: String? = null,
+    val logo: String? = null,
     val email: String,
     val senha: String,
     val cnpj: String,
@@ -50,5 +54,18 @@ data class InstituicaoRequest(
     val complemento: String?,
     val bairro: String,
     val cidade: String,
-    val estado: String
+    val estado: String,
+    val telefone: String?,
+    val tipos_instituicao: List<Int>
+)
+
+
+
+data class InstituicaoAtualizarRequest(
+    val nome: String? = null,
+    val cnpj: String? = null,
+    val email: String? = null,
+    val descricao: String? = null,
+    val telefone: String? = null,
+    val logo: String? = null
 )
