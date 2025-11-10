@@ -1,26 +1,47 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
     alias(libs.plugins.androidx.room)
+    id("com.google.gms.google-services")
+}
+
+// Carregar chaves do local.properties
+
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
 }
 
 android {
     namespace = "com.oportunyfam_mobile"
-    compileSdk = 36
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.oportunyfam_mobile"
         minSdk = 30
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
-        // ...
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Adicionar chave do Azure ao BuildConfig
+        buildConfigField("String", "AZURE_STORAGE_KEY", "\"${localProperties.getProperty("azure.storage.key") ?: ""}\"")
     }
 
     buildTypes {
-        // ...
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+        }
     }
 
     compileOptions {
@@ -34,6 +55,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 dependencies {
@@ -88,6 +110,33 @@ dependencies {
     // implementation("org.osmdroid:osmdroid-android:6.1.18")
     // implementation("org.osmdroid:osmdroid-mapsforge:6.1.18")
     // implementation("androidx.preference:preference-ktx:1.2.1")
+
+    // ----------------------------
+    // 🔥 Firebase
+    // ----------------------------
+    // Import the Firebase BoM (gerencia todas as versões)
+    implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
+
+    // Firebase Analytics (sem versão - gerenciado pelo BoM)
+    implementation("com.google.firebase:firebase-analytics-ktx")
+
+    // Firebase Realtime Database (sem versão - gerenciado pelo BoM)
+    implementation("com.google.firebase:firebase-database-ktx")
+
+    // Firebase Coroutines (para usar com Kotlin Coroutines)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+}
+
+// ----------------------------
+// ⚙️ Força versões corretas (evita conflito de OkHttp)
+// ----------------------------
+configurations.all {
+    resolutionStrategy {
+        force("com.squareup.okhttp3:okhttp:4.11.0")
+        force("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    }
 }
 
 room {
