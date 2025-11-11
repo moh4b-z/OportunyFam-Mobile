@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components
+package com.oportunyfam_mobile.Components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -18,19 +18,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.oportunyfam_mobile_ong.R
 
 
 @Composable
 fun InfoItem(
     titulo: String,
     valor: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector
+    icon: ImageVector
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = titulo, tint = Color(0xFFFFA000))

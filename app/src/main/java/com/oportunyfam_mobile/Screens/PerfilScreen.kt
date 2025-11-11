@@ -1,6 +1,5 @@
 package com.oportunyfam_mobile.Screens
 
-import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,7 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,11 +27,10 @@ import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
-import com.oportunyfam_mobile.data.AuthUserWrapper
 import kotlinx.coroutines.launch
 
 @Composable
-fun PerfilUserScreen(
+fun PerfilScreen(
     navController: NavHostController?
 ) {
     val context = LocalContext.current
@@ -249,6 +246,6 @@ fun PerfilUserScreen(
 
 @Preview(showSystemUi = true)
 @Composable
-fun PerfilUserScreenPreview() {
-    PerfilUserScreen(navController = null)
+fun PerfilScreenPreview() {
+    PerfilScreen(navController = null)
 }

@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Screens
+package com.oportunyfam_mobile.Screens
 
 import android.net.Uri
 import androidx.compose.animation.core.*
@@ -19,22 +19,23 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.oportunyfam_mobile_ong.Components.BarraTarefas
-import com.oportunyfam_mobile_ong.MainActivity.NavRoutes
-import com.oportunyfam_mobile_ong.R
-import com.oportunyfam_mobile_ong.viewmodel.ChatViewModel
-import com.oportunyfam_mobile_ong.viewmodel.ConversaUI
+import com.oportunyfam_mobile.Components.BarraTarefas
+import com.oportunyfam_mobile.MainActivity.NavRoutes
+import com.oportunyfam_mobile.ViewModel.ChatViewModel
+import com.oportunyfam_mobile.ViewModel.ConversaUI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversasScreen(
     navController: NavHostController?,
-    viewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: ChatViewModel = viewModel()
 ) {
     val conversas by viewModel.conversas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -83,7 +84,7 @@ fun ConversasScreen(
                         Text(
                             text = errorMessage ?: "Erro desconhecido",
                             color = Color.Red,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { viewModel.carregarConversas() }) {

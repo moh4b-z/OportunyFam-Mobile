@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components.Cards
+package com.oportunyfam_mobile.Components.Cards
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable

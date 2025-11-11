@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.model
+package com.oportunyfam_mobile.model
 
 
 import android.content.Context

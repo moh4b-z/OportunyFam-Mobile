@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Service
+package com.oportunyfam_mobile.Service
 
 import android.util.Log
 import com.google.firebase.database.FirebaseDatabase

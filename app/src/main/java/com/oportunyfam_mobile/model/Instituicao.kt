@@ -1,5 +1,6 @@
 package com.oportunyfam_mobile.model
 
+
 /**
  * InstituicaoResponse - Resposta padrão da API para operações com instituição
  */
@@ -8,6 +9,13 @@ data class InstituicaoResponse(
     val status_code: Int,
     val messagem: String,
     val instituicao: Instituicao?
+)
+
+data class InstituicaoListResponse(
+    val status: Boolean,
+    val status_code: Int,
+    val messagem: String,
+    val instituicao: List<Instituicao>
 )
 
 /**

@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components.Cards
+package com.oportunyfam_mobile.Components.Cards
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -27,9 +27,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.oportunyfam_mobile_ong.Components.InfoItemSimple
+import com.oportunyfam_mobile.Components.InfoItemSimple
 import com.oportunyfam_mobile_ong.R
-import com.oportunyfam_mobile_ong.model.AtividadeResponse
+import com.oportunyfam_mobile.model.AtividadeResponse
 
 /**
  * Card de resumo da atividade com dados da API

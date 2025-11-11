@@ -1,8 +1,8 @@
 package com.oportunyfam_mobile.Service
 
 import com.google.gson.GsonBuilder
-import com.oportunyfam_mobile_ong.model.LoginResponse
-import com.oportunyfam_mobile_ong.model.LoginResponseDeserializer
+import com.oportunyfam_mobile.model.LoginResponse
+import com.oportunyfam_mobile.model.LoginResponseDeserializer
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -64,13 +64,6 @@ class RetrofitFactory {
      */
     fun getInstituicaoService(): InstituicaoService {
         return retrofitFactory.create(InstituicaoService::class.java)
-    }
-
-    /**
-     * Serviço de Autenticação
-     */
-    fun getAuthService(): AuthService {
-        return retrofitFactory.create(AuthService::class.java)
     }
 
     /**

@@ -1,9 +1,9 @@
-package com.oportunyfam_mobile_ong.model
+package com.oportunyfam_mobile.model
 
+import android.util.Log
 import com.google.gson.JsonDeserializationContext
 import com.google.gson.JsonDeserializer
 import com.google.gson.JsonElement
-import com.oportunyfam_mobile.model.Usuario
 import java.lang.reflect.Type
 
 /**
@@ -66,7 +66,7 @@ class LoginResponseDeserializer : JsonDeserializer<LoginResponse> {
                     else -> null
                 }
             } catch (e: Exception) {
-                android.util.Log.e("LoginResponseDeserializer", "Erro ao deserializar result: ${e.message}", e)
+                Log.e("LoginResponseDeserializer", "Erro ao deserializar result: ${e.message}", e)
                 null
             }
         } else {

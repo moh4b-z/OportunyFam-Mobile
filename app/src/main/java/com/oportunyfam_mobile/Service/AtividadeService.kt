@@ -1,6 +1,15 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.*
+import com.oportunyfam_mobile.model.AtividadeCriadaResponse
+import com.oportunyfam_mobile.model.AtividadeRequest
+import com.oportunyfam_mobile.model.AtividadeUnicaResponse
+import com.oportunyfam_mobile.model.AtividadesListResponse
+import com.oportunyfam_mobile.model.AulaCriadaResponse
+import com.oportunyfam_mobile.model.AulaLoteRequest
+import com.oportunyfam_mobile.model.AulaLoteResponse
+import com.oportunyfam_mobile.model.AulaRequest
+import com.oportunyfam_mobile.model.AulaUnicaResponse
+import com.oportunyfam_mobile.model.AulasListResponse
 import retrofit2.Call
 import retrofit2.http.*
 

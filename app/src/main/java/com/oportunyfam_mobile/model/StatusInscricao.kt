@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.model
+package com.oportunyfam_mobile.model
 
 enum class StatusInscricao(val id: Int, val nome: String) {
     SUGERIDA_PELA_CRIANCA(1, "Sugerida Pela Criança"),

@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components.Cards
+package com.oportunyfam_mobile.Components.Cards
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape

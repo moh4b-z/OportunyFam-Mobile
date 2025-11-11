@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components.Cards
+package com.oportunyfam_mobile.Components.Cards
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
@@ -16,7 +16,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.oportunyfam_mobile_ong.R
 
 @Composable
 fun CardBoasVindas() {

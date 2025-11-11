@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.model
+package com.oportunyfam_mobile.model
 
 data class AtividadeRequest(
     val id_instituicao: Int,

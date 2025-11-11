@@ -1,6 +1,10 @@
-package com.oportunyfam_mobile_ong.Service
+package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.*
+import com.oportunyfam_mobile.model.InscricaoCriadaResponse
+import com.oportunyfam_mobile.model.InscricaoRequest
+import com.oportunyfam_mobile.model.InscricaoUnicaResponse
+import com.oportunyfam_mobile.model.InscricaoUpdateRequest
+import com.oportunyfam_mobile.model.InscricoesResponse
 import retrofit2.Call
 import retrofit2.http.*
 

@@ -1,6 +1,9 @@
-package com.oportunyfam_mobile_ong.Service
+package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.*
+import com.oportunyfam_mobile.model.MatriculaRequest
+import com.oportunyfam_mobile.model.MatriculaResponse
+import com.oportunyfam_mobile.model.MatriculaUpdateRequest
+import com.oportunyfam_mobile.model.MatriculasResponse
 import retrofit2.Call
 import retrofit2.http.*
 

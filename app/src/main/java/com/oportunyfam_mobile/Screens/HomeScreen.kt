@@ -24,10 +24,9 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
-import com.oportunyfam_mobile.Service.RetrofitClient
+import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.model.Instituicao
 import com.oportunyfam_mobile.model.InstituicaoListResponse
-import com.oportunyfam_mobile.model.InstituicaoResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -47,7 +46,7 @@ fun HomeScreen(navController: NavHostController?) {
         isLoading = true
         hasSearched = true
 
-        RetrofitClient.instituicaoService.buscarComFiltro(termo, 1, 20)
+        RetrofitFactory().getInstituicaoService().buscarComFiltro(termo, 1, 20)
             .enqueue(object : Callback<InstituicaoListResponse> {
                 override fun onResponse(
                     call: Call<InstituicaoListResponse>,

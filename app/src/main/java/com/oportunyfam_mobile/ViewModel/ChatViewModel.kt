@@ -1,20 +1,22 @@
-package com.oportunyfam_mobile_ong.viewmodel
+package com.oportunyfam_mobile.ViewModel
 
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.oportunyfam_mobile_ong.Service.FirebaseMensagemService
-import com.oportunyfam_mobile_ong.Service.MensagemService
-import com.oportunyfam_mobile_ong.Service.ConversaService
-import com.oportunyfam_mobile_ong.Service.RetrofitFactory
-import com.oportunyfam_mobile_ong.model.Mensagem
-import com.oportunyfam_mobile_ong.model.MensagemRequest
-import com.oportunyfam_mobile_ong.data.InstituicaoAuthDataStore
+import com.oportunyfam_mobile.Service.FirebaseMensagemService
+import com.oportunyfam_mobile.Service.MensagemService
+import com.oportunyfam_mobile.Service.ConversaService
+import com.oportunyfam_mobile.Service.RetrofitFactory
+import com.oportunyfam_mobile.model.Mensagem
+import com.oportunyfam_mobile.model.MensagemRequest
+import com.oportunyfam_mobile.data.InstituicaoAuthDataStore
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 data class ConversaUI(
     val id: Int,
@@ -105,7 +107,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                 Log.d("ChatViewModel", "🔄 Carregando conversas da API para pessoa ID=$pessoaId")
 
-                val response = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val response = withContext(Dispatchers.IO) {
                     conversaService.buscarPorIdPessoa(pessoaId)
                 }
 
@@ -160,7 +162,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 _isLoading.value = true
 
                 // Primeiro, carrega mensagens do backend
-                val response = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                val response = withContext(Dispatchers.IO) {
                     mensagemService.listarPorConversa(conversaId)
                 }
 
@@ -170,7 +172,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     Log.d("ChatViewModel", "Mensagens carregadas do backend: ${mensagensBackend.size}")
 
                     // Sincroniza com Firebase em background (não bloqueia a UI)
-                    launch(kotlinx.coroutines.Dispatchers.IO) {
+                    launch(Dispatchers.IO) {
                         try {
                             firebaseMensagemService.sincronizarMensagens(conversaId, mensagensBackend)
                             Log.d("ChatViewModel", "Mensagens sincronizadas com Firebase: ${mensagensBackend.size}")

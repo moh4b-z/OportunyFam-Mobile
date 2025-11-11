@@ -1,14 +1,15 @@
-package com.oportunyfam_mobile_ong.viewmodel
+package com.oportunyfam_mobile.ViewModel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.oportunyfam_mobile_ong.Service.RetrofitFactory
-import com.oportunyfam_mobile_ong.model.ErrorResponse
-import com.oportunyfam_mobile_ong.model.Publicacao
-import com.oportunyfam_mobile_ong.model.PublicacaoCriadaResponse
-import com.oportunyfam_mobile_ong.model.PublicacaoRequest
-import com.oportunyfam_mobile_ong.model.PublicacoesListResponse
+import com.google.gson.Gson
+import com.oportunyfam_mobile.Service.RetrofitFactory
+import com.oportunyfam_mobile.model.ErrorResponse
+import com.oportunyfam_mobile.model.Publicacao
+import com.oportunyfam_mobile.model.PublicacaoCriadaResponse
+import com.oportunyfam_mobile.model.PublicacaoRequest
+import com.oportunyfam_mobile.model.PublicacoesListResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -158,7 +159,7 @@ class PublicacaoViewModel : ViewModel() {
 
                                 // Extrair mensagem específica se possível
                                 val mensagemErro = try {
-                                    val jsonError = com.google.gson.Gson().fromJson(
+                                    val jsonError = Gson().fromJson(
                                         errorBody,
                                         ErrorResponse::class.java
                                     )

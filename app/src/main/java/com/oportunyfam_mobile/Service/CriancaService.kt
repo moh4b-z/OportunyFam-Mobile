@@ -1,10 +1,10 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.CriancaListResponse
-import com.oportunyfam_mobile_ong.model.CriancaRequest
-import com.oportunyfam_mobile_ong.model.CriancaResponse
-import com.oportunyfam_mobile_ong.model.LoginRequest
-import com.oportunyfam_mobile_ong.model.LoginResponse
+import com.oportunyfam_mobile.model.CriancaListResponse
+import com.oportunyfam_mobile.model.CriancaRequest
+import com.oportunyfam_mobile.model.CriancaResponse
+import com.oportunyfam_mobile.model.LoginRequest
+import com.oportunyfam_mobile.model.LoginResponse
 import retrofit2.Call
 import retrofit2.http.*
 

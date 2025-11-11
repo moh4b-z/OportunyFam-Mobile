@@ -1,7 +1,7 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.LoginRequest
-import com.oportunyfam_mobile_ong.model.LoginResponse
+import com.oportunyfam_mobile.model.LoginRequest
+import com.oportunyfam_mobile.model.LoginResponse
 import com.oportunyfam_mobile.model.UsuarioRequest
 import com.oportunyfam_mobile.model.UsuarioResponse
 import retrofit2.Call

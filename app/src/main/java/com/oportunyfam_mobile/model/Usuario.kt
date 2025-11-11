@@ -1,6 +1,6 @@
 package com.oportunyfam_mobile.model
 
-import com.oportunyfam_mobile_ong.model.Crianca
+import com.oportunyfam_mobile.model.Crianca
 
 data class UsuarioResponse(
     val status: Boolean,

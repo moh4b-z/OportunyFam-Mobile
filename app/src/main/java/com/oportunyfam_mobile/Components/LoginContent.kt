@@ -24,7 +24,6 @@ import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
 import com.oportunyfam_mobile.Service.LoginUniversalService
-import com.oportunyfam_mobile.model.LoginRequest
 import com.oportunyfam_mobile.model.ResultData // Importa a sealed class
 import com.oportunyfam_mobile.R
 import kotlinx.coroutines.CoroutineScope

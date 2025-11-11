@@ -1,9 +1,9 @@
-package com.oportunyfam_mobile_ong.Service
+package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.MensagemAtualizarRequest
-import com.oportunyfam_mobile_ong.model.MensagemRequest
-import com.oportunyfam_mobile_ong.model.MensagemResponse
-import com.oportunyfam_mobile_ong.model.MensagensResponse
+import com.oportunyfam_mobile.model.MensagemAtualizarRequest
+import com.oportunyfam_mobile.model.MensagemRequest
+import com.oportunyfam_mobile.model.MensagemResponse
+import com.oportunyfam_mobile.model.MensagensResponse
 import retrofit2.Response
 import retrofit2.http.*
 

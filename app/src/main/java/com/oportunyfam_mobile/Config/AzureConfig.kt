@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Config
+package com.oportunyfam_mobile.Config
 
 import android.util.Log
 

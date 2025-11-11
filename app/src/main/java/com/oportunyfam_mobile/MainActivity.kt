@@ -1,19 +1,20 @@
 package com.oportunyfam_mobile
 
-
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.oportunyfam_mobile.Screens.ChatScreen
-import com.oportunyfam_mobile.Screens.PerfilUserScreen
-import com.oportunyfam_mobile.Screens.PerfilOngScreen
+import com.oportunyfam_mobile.Screens.ConversasScreen
 import com.oportunyfam_mobile.Screens.SplashScreen
 import com.oportunyfam_mobile.Screens.RegistroScreen
 import com.oportunyfam_mobile.Screens.HomeScreen
+import com.oportunyfam_mobile.Screens.PerfilScreen
 import com.oportunyfam_mobile.ui.theme.OportunyFamMobileTheme
 
 class MainActivity : ComponentActivity() {
@@ -26,34 +27,62 @@ class MainActivity : ComponentActivity() {
 
                 NavHost(
                     navController = navController,
-                    startDestination = "tela_splash"
+                    startDestination = NavRoutes.SPLASH
                 ) {
-                    composable("tela_splash") {
+                    composable(NavRoutes.SPLASH) {
                         SplashScreen(navController)
                     }
 
-                    composable("tela_registro") {
+                    // Tela de Registro/Login
+                    composable(NavRoutes.REGISTRO) {
                         RegistroScreen(navController)
                     }
 
-                    composable("tela_home") {
+                    // Tela de Perfil
+                    composable(NavRoutes.PERFIL) {
+                        PerfilScreen(navController = navController)
+                    }
+
+                    // Tela Home
+                    composable(NavRoutes.HOME) {
                         HomeScreen(navController)
                     }
 
-                    composable("tela_perfiluser") {
-                        PerfilUserScreen(navController)
-
+                    // Tela de Conversas
+                    composable(NavRoutes.CONVERSAS) {
+                        ConversasScreen(navController)
                     }
+                    composable(
+                        route = "${NavRoutes.CHAT}/{conversaId}/{nomeContato}/{pessoaIdAtual}",
+                        arguments = listOf(
+                            navArgument("conversaId") { type = NavType.IntType },
+                            navArgument("nomeContato") { type = NavType.StringType },
+                            navArgument("pessoaIdAtual") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val conversaId = backStackEntry.arguments?.getInt("conversaId") ?: 0
+                        val nomeContato = backStackEntry.arguments?.getString("nomeContato") ?: ""
+                        val pessoaIdAtual = backStackEntry.arguments?.getInt("pessoaIdAtual") ?: 0
 
-                    composable("tela_perfilOng") {
-                        PerfilOngScreen(navController)
-
-                    }
-                    composable ("tela_chat"){
-                        ChatScreen(navController)
+                        ChatScreen(
+                            navController = navController,
+                            conversaId = conversaId,
+                            nomeContato = nomeContato,
+                            pessoaIdAtual = pessoaIdAtual
+                        )
                     }
                 }
             }
         }
+    }
+
+    companion object NavRoutes {
+        const val SPLASH = "tela_splash"
+        const val REGISTRO = "tela_registro"
+        const val PERFIL = "tela_perfil"
+        const val HOME = "HomeScreen"
+        const val ATIVIDADES = "AtividadesScreen"
+        const val CONVERSAS = "ConversasScreen"
+        const val CHAT = "ChatScreen"
     }
 }

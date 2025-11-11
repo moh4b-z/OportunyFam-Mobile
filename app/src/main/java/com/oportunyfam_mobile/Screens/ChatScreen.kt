@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Screens
+package com.oportunyfam_mobile.Screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,8 +26,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.oportunyfam_mobile_ong.model.Mensagem
-import com.oportunyfam_mobile_ong.viewmodel.ChatViewModel
+import com.oportunyfam_mobile.model.Mensagem
+import com.oportunyfam_mobile.ViewModel.ChatViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -39,7 +40,7 @@ fun ChatScreen(
     conversaId: Int,
     nomeContato: String,
     pessoaIdAtual: Int,
-    viewModel: ChatViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: ChatViewModel = viewModel()
 ) {
     val mensagens by viewModel.mensagens.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
@@ -119,7 +120,7 @@ fun ChatScreen(
                             Text(
                                 text = "Nenhuma mensagem ainda\nSeja o primeiro a enviar!",
                                 color = Color.Gray,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                textAlign = TextAlign.Center
                             )
                         }
                     }

@@ -1,7 +1,7 @@
-package com.oportunyfam_mobile_ong.Service
+package com.oportunyfam_mobile.Service
 
 import android.util.Log
-import com.oportunyfam_mobile_ong.model.Mensagem
+import com.oportunyfam_mobile.model.Mensagem
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DatabaseReference

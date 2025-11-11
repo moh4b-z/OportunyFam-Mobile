@@ -1,10 +1,9 @@
-package com.oportunyfam_mobile_ong.Service
+package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.ConversaRequest
-import com.oportunyfam_mobile_ong.model.ConversaResponse
-import com.oportunyfam_mobile_ong.model.ConversasResponse
-import com.oportunyfam_mobile_ong.model.ConversasPessoaResponse
-import retrofit2.Call
+import com.oportunyfam_mobile.model.ConversaRequest
+import com.oportunyfam_mobile.model.ConversaResponse
+import com.oportunyfam_mobile.model.ConversasResponse
+import com.oportunyfam_mobile.model.ConversasPessoaResponse
 import retrofit2.Response
 import retrofit2.http.*
 

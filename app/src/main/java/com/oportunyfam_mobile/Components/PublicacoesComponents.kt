@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components
+package com.oportunyfam_mobile.Components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -44,8 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
+import com.oportunyfam_mobile.model.Publicacao
 import com.oportunyfam_mobile_ong.R
-import com.oportunyfam_mobile_ong.viewmodel.PublicacoesState
+import com.oportunyfam_mobile.ViewModel.PublicacoesState
 
 
 // ============================================
@@ -132,7 +133,7 @@ fun PublicacoesGrid(
 
 @Composable
 fun PublicacaoCard(
-    publicacao: com.oportunyfam_mobile_ong.model.Publicacao,
+    publicacao: Publicacao,
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current

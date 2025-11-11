@@ -1,9 +1,10 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile_ong.model.AlunosResponse
-import com.oportunyfam_mobile_ong.model.InstituicaoAtualizarRequest
-import com.oportunyfam_mobile_ong.model.InstituicaoRequest
-import com.oportunyfam_mobile_ong.model.InstituicaoResponse
+import com.oportunyfam_mobile.model.AlunosResponse
+import com.oportunyfam_mobile.model.InstituicaoAtualizarRequest
+import com.oportunyfam_mobile.model.InstituicaoListResponse
+import com.oportunyfam_mobile.model.InstituicaoRequest
+import com.oportunyfam_mobile.model.InstituicaoResponse
 import retrofit2.Call
 import retrofit2.Response
 import retrofit2.http.*
@@ -18,7 +19,7 @@ interface InstituicaoService {
 
     // GET - Listar todas as instituições
     @GET("instituicoes")
-    fun listarTodas(): Call<List<InstituicaoResponse>>
+    fun listarTodas(): Call<List<InstituicaoListResponse>>
 
     // GET - Buscar instituição por ID
     @GET("instituicoes/{id}")
@@ -39,7 +40,7 @@ interface InstituicaoService {
         @Query("busca") termo: String?,
         @Query("pagina") pagina: Int?,
         @Query("tamanho") tamanho: Int?
-    ): Call<Any>
+    ): Call<InstituicaoListResponse>
 
     // GET - Busca com filtros e paginação
     @GET("instituicoes/alunos/")

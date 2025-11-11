@@ -1,4 +1,4 @@
-package com.oportunyfam_mobile_ong.Components.Cards
+package com.oportunyfam_mobile.Components.Cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.oportunyfam_mobile_ong.model.AulaDetalhe
+import com.oportunyfam_mobile.model.AulaDetalhe
 
 
 /**
