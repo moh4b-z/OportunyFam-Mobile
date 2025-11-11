@@ -24,10 +24,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.MainActivity
@@ -65,7 +63,7 @@ fun ConversasScreen(
                 containerColor = Color(0xFFFF6F00),
                 contentColor = Color.White
             ) {
-                Icon(Icons.Filled.Add, contentDescription = "Nova conversa")
+                Icon(Icons.Filled.Add, contentDescription = stringResource(com.oportunyfam_mobile.R.string.desc_new_conversation))
             }
         },
         containerColor = Color(0xFFF5F5F5)
@@ -89,13 +87,13 @@ fun ConversasScreen(
                         verticalArrangement = Arrangement.Center
                     ) {
                         Text(
-                            text = errorMessage ?: "Erro desconhecido",
+                            text = errorMessage ?: stringResource(com.oportunyfam_mobile.R.string.error_load_conversations),
                             color = Color.Red,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(onClick = { viewModel.carregarConversas() }) {
-                            Text("Tentar novamente")
+                            Text(stringResource(com.oportunyfam_mobile.R.string.button_retry))
                         }
                     }
                 }
@@ -109,19 +107,19 @@ fun ConversasScreen(
                     ) {
                         Image(
                             painter = painterResource(id = com.oportunyfam_mobile.R.drawable.logo),
-                            contentDescription = "Sem conversas",
+                            contentDescription = stringResource(com.oportunyfam_mobile.R.string.text_no_conversations),
                             modifier = Modifier.size(100.dp),
                             colorFilter = ColorFilter.tint(Color.Gray)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Nenhuma conversa ainda",
+                            text = stringResource(com.oportunyfam_mobile.R.string.text_no_conversations),
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Gray
                         )
                         Text(
-                            text = "Suas conversas aparecerão aqui",
+                            text = stringResource(com.oportunyfam_mobile.R.string.text_no_conversations_subtitle),
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -150,7 +148,7 @@ fun ConversasTopBarPremium() {
         colors = listOf(Color(0xFFFFA726), Color(0xFFF57C00))
     )
     TopAppBar(
-        title = { Text("Conversas", fontWeight = FontWeight.Bold, fontSize = 22.sp) },
+        title = { Text(stringResource(com.oportunyfam_mobile.R.string.title_conversations), fontWeight = FontWeight.Bold, fontSize = 22.sp) },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = Color.Transparent,
             titleContentColor = Color.White

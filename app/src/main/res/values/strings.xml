@@ -90,5 +90,17 @@
     <!-- mapa -->
     <string name="google_maps_key">AIzaSyCQAajKLlDYSKWYUpRUbTCiyF-fTx20XI0</string>
 
+    <!-- CONVERSAS -->
+    <string name="title_conversations">Conversas</string>
+    <string name="desc_new_conversation">Nova conversa</string>
+    <string name="text_no_conversations">Nenhuma conversa ainda</string>
+    <string name="text_no_conversations_subtitle">Suas conversas aparecerão aqui</string>
+    <string name="text_no_messages">Sem mensagens</string>
+    <string name="text_now">Agora</string>
+    <string name="button_retry">Tentar novamente</string>
+    <string name="error_load_conversations">Erro ao carregar conversas</string>
+    <string name="error_user_not_logged">Usuário não está logado</string>
+    <string name="error_no_connection">Sem conexão</string>
+
 
 </resources>

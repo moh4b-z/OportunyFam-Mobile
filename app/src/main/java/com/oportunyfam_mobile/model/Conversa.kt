@@ -1,8 +1,5 @@
 package com.oportunyfam_mobile.model
 
-import com.oportunyfam_mobile.model.Mensagem
-
-
 data class Conversa(
     val id: Int,
     val criado_em: String,
@@ -52,6 +49,7 @@ data class ConversaRequest(
 
 // Formato retornado pelo endpoint de instituição
 data class ConversaInstituicao(
+    val id_remetente: Int? = null, // ID do remetente da pessoa logada
     val id_conversa: Int,
     val ultima_mensagem: UltimaMensagem?,
     val outro_participante: OutroParticipante

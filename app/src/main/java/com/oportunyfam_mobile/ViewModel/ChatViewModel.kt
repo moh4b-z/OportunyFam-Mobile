@@ -91,6 +91,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 val pessoaId = _pessoaId.value
                 if (pessoaId == null) {
                     _errorMessage.value = "Usuário não está logado"
+                    _isLoading.value = false
                     return@launch
                 }
 
@@ -101,7 +102,8 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 }
 
                 if (response.isSuccessful) {
-                    val conversasData = response.body()?.conversas ?: emptyList()
+                    // ✅ Usa o helper getConversasList() que lida com "conversa" ou "conversas"
+                    val conversasData = response.body()?.getConversasList() ?: emptyList()
 
                     _conversas.value = conversasData.map { conversa ->
                         ConversaUI(
@@ -117,9 +119,11 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                     }
 
                     conversasCarregadas = true
+                    _errorMessage.value = null // ✅ Limpa erro após sucesso
                     Log.d("ChatViewModel", "Conversas carregadas: ${_conversas.value.size}")
                 } else {
                     _errorMessage.value = "Erro ao carregar conversas"
+                    Log.e("ChatViewModel", "Erro HTTP: ${response.code()} - ${response.message()}")
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Sem conexão"
@@ -135,6 +139,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 _isLoading.value = true
 
+                // 1️⃣ Carrega mensagens iniciais do backend
                 val response = withContext(Dispatchers.IO) {
                     mensagemService.listarPorConversa(conversaId)
                 }
@@ -142,32 +147,39 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 if (response.isSuccessful) {
                     val mensagensBackend = response.body()?.mensagens ?: emptyList()
                     _mensagens.value = mensagensBackend
-                    Log.d("ChatViewModel", "Mensagens carregadas: ${mensagensBackend.size}")
+                    Log.d("ChatViewModel", "✅ Mensagens carregadas do backend: ${mensagensBackend.size}")
 
+                    // 2️⃣ Sincroniza mensagens do backend para o Firebase
                     launch(Dispatchers.IO) {
-                        firebaseMensagemService.sincronizarMensagens(conversaId, mensagensBackend)
+                        val result = firebaseMensagemService.sincronizarMensagens(conversaId, mensagensBackend)
+                        if (result.isSuccess) {
+                            Log.d("ChatViewModel", "✅ Mensagens sincronizadas com Firebase")
+                        } else {
+                            Log.e("ChatViewModel", "❌ Erro ao sincronizar com Firebase: ${result.exceptionOrNull()?.message}")
+                        }
                     }
                 } else {
                     _errorMessage.value = "Erro ao carregar mensagens"
+                    Log.e("ChatViewModel", "❌ Erro HTTP: ${response.code()}")
                 }
 
                 _isLoading.value = false
 
+                // 3️⃣ Inicia escuta em tempo real do Firebase (SEMPRE ativa)
                 firebaseMensagemService.observarMensagens(conversaId).collect { mensagensFirebase ->
-                    if (mensagensFirebase.isNotEmpty()) {
-                        val mensagensExistentes = _mensagens.value
-                        val idsExistentes = mensagensExistentes.map { it.id }.toSet()
-                        val mensagensNovas = mensagensFirebase.filter { it.id !in idsExistentes }
+                    Log.d("ChatViewModel", "🔥 Firebase atualizou: ${mensagensFirebase.size} mensagens")
 
-                        if (mensagensNovas.isNotEmpty()) {
-                            _mensagens.value = mensagensExistentes + mensagensNovas
-                            Log.d("ChatViewModel", "${mensagensNovas.size} nova(s) mensagem(ns)")
-                        }
+                    // ✅ CORRIGIDO: Atualiza com TODAS as mensagens do Firebase
+                    // Isso garante que mudanças em tempo real sejam refletidas
+                    if (mensagensFirebase.isNotEmpty()) {
+                        _mensagens.value = mensagensFirebase.sortedBy { it.criado_em }
+                        Log.d("ChatViewModel", "✅ UI atualizada com ${mensagensFirebase.size} mensagens")
                     }
                 }
             } catch (e: Exception) {
                 _errorMessage.value = "Erro ao carregar mensagens: ${e.message}"
                 _isLoading.value = false
+                Log.e("ChatViewModel", "❌ Erro ao iniciar escuta: ${e.message}", e)
             }
         }
     }
@@ -175,24 +187,45 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     fun enviarMensagem(conversaId: Int, pessoaId: Int, texto: String) {
         viewModelScope.launch {
             try {
+                Log.d("ChatViewModel", "📤 Enviando mensagem: conversa=$conversaId, pessoa=$pessoaId")
+
                 val request = MensagemRequest(
                     id_conversa = conversaId,
                     id_pessoa = pessoaId,
                     descricao = texto
                 )
-                val response = mensagemService.criar(request)
+
+                val response = withContext(Dispatchers.IO) {
+                    mensagemService.criar(request)
+                }
 
                 if (response.isSuccessful) {
                     val mensagemCriada = response.body()?.mensagem
 
                     if (mensagemCriada != null) {
-                        firebaseMensagemService.enviarMensagem(mensagemCriada)
-                        Log.d("ChatViewModel", "Mensagem enviada: ${mensagemCriada.id}")
+                        Log.d("ChatViewModel", "✅ Mensagem criada no backend: ID=${mensagemCriada.id}")
+
+                        // Envia para o Firebase
+                        val resultFirebase = withContext(Dispatchers.IO) {
+                            firebaseMensagemService.enviarMensagem(mensagemCriada)
+                        }
+
+                        if (resultFirebase.isSuccess) {
+                            Log.d("ChatViewModel", "✅ Mensagem enviada para Firebase: ${mensagemCriada.id}")
+                        } else {
+                            Log.e("ChatViewModel", "❌ Erro ao enviar para Firebase: ${resultFirebase.exceptionOrNull()?.message}")
+                            _errorMessage.value = "Mensagem salva, mas erro na sincronização em tempo real"
+                        }
+                    } else {
+                        Log.e("ChatViewModel", "❌ Resposta do backend sem mensagem")
+                        _errorMessage.value = "Erro ao processar resposta do servidor"
                     }
                 } else {
+                    Log.e("ChatViewModel", "❌ Erro HTTP ao enviar mensagem: ${response.code()} - ${response.message()}")
                     _errorMessage.value = "Erro ao enviar mensagem"
                 }
             } catch (e: Exception) {
+                Log.e("ChatViewModel", "❌ Exceção ao enviar mensagem", e)
                 _errorMessage.value = "Erro ao enviar: ${e.message}"
             }
         }

@@ -29,15 +29,29 @@ import kotlinx.coroutines.tasks.await
  * Configuração do Firebase:
  * - Project ID: oportunyfamong
  * - Database URL: https://oportunyfamong-default-rtdb.firebaseio.com/
+ *
+ * ⚠️ IMPORTANTE: Ter 2 apps no mesmo projeto Firebase NÃO é problema!
+ * O Firebase diferencia pelos package names:
+ * - com.oportunyfam_mobile (este app - para responsáveis)
+ * - com.oportunyfam_mobile_ong (app para instituições)
+ * Ambos compartilham o mesmo Realtime Database e projeto.
  */
 class FirebaseMensagemService {
-    private val database: DatabaseReference = FirebaseDatabase.getInstance().reference
+    // ✅ Configuração explícita da URL do Realtime Database
+    private val database: DatabaseReference = try {
+        FirebaseDatabase.getInstance("https://oportunyfamong-default-rtdb.firebaseio.com/").reference
+    } catch (e: Exception) {
+        Log.e("FirebaseMensagemService", "⚠️ Falha ao configurar URL customizada, usando padrão", e)
+        FirebaseDatabase.getInstance().reference
+    }
+
     private val TAG = "FirebaseMensagemService"
 
     init {
         // Log para verificar se a configuração está correta
-        Log.d(TAG, "🔥 Firebase Database URL: ${FirebaseDatabase.getInstance().reference}")
-        Log.d(TAG, "📱 Firebase configurado para projeto: oportunyfamong")
+        Log.d(TAG, "🔥 Firebase Database inicializado")
+        Log.d(TAG, "📱 Projeto: oportunyfamong")
+        Log.d(TAG, "🔗 Database URL: https://oportunyfamong-default-rtdb.firebaseio.com/")
     }
 
     /**
@@ -47,9 +61,14 @@ class FirebaseMensagemService {
     fun observarMensagens(conversaId: Int): Flow<List<Mensagem>> = callbackFlow {
         val conversaRef = database.child("conversas").child(conversaId.toString()).child("mensagens")
 
+        Log.d(TAG, "👂 Iniciando escuta para conversa $conversaId")
+        Log.d(TAG, "📍 Path: conversas/$conversaId/mensagens")
+
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val mensagens = mutableListOf<Mensagem>()
+
+                Log.d(TAG, "🔥 onDataChange disparado! Snapshot existe: ${snapshot.exists()}, Filhos: ${snapshot.childrenCount}")
 
                 for (mensagemSnapshot in snapshot.children) {
                     try {
@@ -66,30 +85,37 @@ class FirebaseMensagemService {
                                     id_pessoa = it.id_pessoa
                                 )
                             )
+                            Log.d(TAG, "  ✅ Mensagem ${it.id}: \"${it.descricao.take(20)}...\"")
                         }
                     } catch (e: Exception) {
-                        Log.e(TAG, "Erro ao converter mensagem", e)
+                        Log.e(TAG, "❌ Erro ao converter mensagem: ${mensagemSnapshot.key}", e)
                     }
                 }
 
                 // Ordenar por data de criação
                 mensagens.sortBy { it.criado_em }
 
-                trySend(mensagens)
-                Log.d(TAG, "Mensagens atualizadas: ${mensagens.size}")
+                Log.d(TAG, "📤 Emitindo ${mensagens.size} mensagens para o Flow")
+                trySend(mensagens).isSuccess.also { sucesso ->
+                    if (!sucesso) {
+                        Log.e(TAG, "❌ Falha ao enviar mensagens para o Flow!")
+                    }
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Log.e(TAG, "Erro ao escutar mensagens: ${error.message}")
+                Log.e(TAG, "❌ Erro ao escutar mensagens: ${error.message} (Code: ${error.code})")
+                Log.e(TAG, "❌ Detalhes: ${error.details}")
                 close(error.toException())
             }
         }
 
         conversaRef.addValueEventListener(listener)
+        Log.d(TAG, "✅ Listener registrado com sucesso para conversa $conversaId")
 
         awaitClose {
             conversaRef.removeEventListener(listener)
-            Log.d(TAG, "Listener de mensagens removido para conversa $conversaId")
+            Log.d(TAG, "👋 Listener removido para conversa $conversaId")
         }
     }
 

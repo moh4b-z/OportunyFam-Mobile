@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "conversas": {
+      "$conversaId": {
+        "mensagens": {
+          ".read": "auth != null",
+          ".write": "auth != null",
+          "$mensagemId": {
+            ".validate": "newData.hasChildren(['id', 'descricao', 'visto', 'criado_em', 'id_conversa', 'id_pessoa'])"
+          }
+        }
+      }
+    }
+  }
+}
