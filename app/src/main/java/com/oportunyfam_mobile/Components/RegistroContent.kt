@@ -561,7 +561,7 @@ fun RegistroContent(
                                             foto_perfil = ""
                                         )
 
-                                        val response: Response<UsuarioResponse> = usuarioService.criar(request)
+                                        val response = usuarioService.criar(request).execute()
 
                                         if (response.isSuccessful && response.body() != null) {
                                             val usuarioResponse = response.body()!!

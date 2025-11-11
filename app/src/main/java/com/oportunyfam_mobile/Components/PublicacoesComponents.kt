@@ -45,7 +45,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.oportunyfam_mobile.model.Publicacao
-import com.oportunyfam_mobile_ong.R
+import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.ViewModel.PublicacoesState
 
 
@@ -160,8 +160,8 @@ fun PublicacaoCard(
                             .fillMaxWidth()
                             .height(150.dp),
                         contentScale = ContentScale.Crop,
-                        placeholder = painterResource(id = R.drawable.instituicao),
-                        error = painterResource(id = R.drawable.instituicao)
+                        placeholder = painterResource(id = R.drawable.logo),
+                        error = painterResource(id = R.drawable.logo)
                     )
                 }
 

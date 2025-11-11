@@ -30,6 +30,7 @@ data class LoginResponse(
 sealed class ResultData {
     data class InstituicaoResult(val data: Instituicao) : ResultData()
     data class UsuarioResult(val data: Usuario) : ResultData()
+    data class CriancaData(val crianca: Crianca) : ResultData()
 }
 
 /**
@@ -63,7 +64,14 @@ class LoginResponseDeserializer : JsonDeserializer<LoginResponse> {
                         val usuario = context.deserialize<Usuario>(resultElement, Usuario::class.java)
                         ResultData.UsuarioResult(usuario)
                     }
-                    else -> null
+                    "crianca" -> {
+                        val crianca = context.deserialize<Crianca>(resultElement, Crianca::class.java)
+                        ResultData.CriancaData(crianca)
+                    }
+                    else -> {
+                        Log.w("LoginResponseDeserializer", "Tipo desconhecido: $tipo")
+                        null
+                    }
                 }
             } catch (e: Exception) {
                 Log.e("LoginResponseDeserializer", "Erro ao deserializar result: ${e.message}", e)

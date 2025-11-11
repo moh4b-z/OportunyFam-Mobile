@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.model.AtividadeResponse
 import com.oportunyfam_mobile.model.AtividadesListResponse
+import com.oportunyfam_mobile.model.AtividadeUnicaResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -130,33 +131,30 @@ class AtividadeViewModel : ViewModel() {
     fun buscarAtividadePorId(atividadeId: Int) {
         _atividadeDetalheState.value = AtividadeDetalheState.Loading
 
-        viewModelScope.launch {
-            try {
-                atividadeService.buscarAtividadePorId(atividadeId).enqueue(object : Callback<AtividadeResponse> {
-                    override fun onResponse(
-                        call: Call<AtividadeResponse>,
-                        response: Response<AtividadeResponse>
-                    ) {
-                        if (response.isSuccessful && response.body() != null) {
-                            val atividade = response.body()!!
-                            Log.d("AtividadeViewModel", "Atividade carregada: ${atividade.titulo}")
-                            _atividadeDetalheState.value = AtividadeDetalheState.Success(atividade)
-                        } else {
-                            Log.e("AtividadeViewModel", "Erro na resposta: ${response.code()}")
-                            _atividadeDetalheState.value = AtividadeDetalheState.Error("Erro ao carregar atividade: ${response.code()}")
-                        }
+        atividadeService.buscarAtividadePorId(atividadeId).enqueue(object : Callback<AtividadeUnicaResponse> {
+            override fun onResponse(
+                call: Call<AtividadeUnicaResponse>,
+                response: Response<AtividadeUnicaResponse>
+            ) {
+                if (response.isSuccessful && response.body() != null) {
+                    val atividade = response.body()!!.atividade
+                    Log.d("AtividadeViewModel", "Atividade carregada: ${atividade?.titulo}")
+                    if (atividade != null) {
+                        _atividadeDetalheState.value = AtividadeDetalheState.Success(atividade)
+                    } else {
+                        _atividadeDetalheState.value = AtividadeDetalheState.Error("Atividade não encontrada")
                     }
-
-                    override fun onFailure(call: Call<AtividadeResponse>, t: Throwable) {
-                        Log.e("AtividadeViewModel", "Falha na requisição", t)
-                        _atividadeDetalheState.value = AtividadeDetalheState.Error("Erro de conexão: ${t.message}")
-                    }
-                })
-            } catch (e: Exception) {
-                Log.e("AtividadeViewModel", "Exceção ao buscar atividade", e)
-                _atividadeDetalheState.value = AtividadeDetalheState.Error("Erro: ${e.message}")
+                } else {
+                    Log.e("AtividadeViewModel", "Erro na resposta: ${response.code()}")
+                    _atividadeDetalheState.value = AtividadeDetalheState.Error("Erro ao carregar atividade: ${response.code()}")
+                }
             }
-        }
+
+            override fun onFailure(call: Call<AtividadeUnicaResponse>, t: Throwable) {
+                Log.e("AtividadeViewModel", "Falha na requisição", t)
+                _atividadeDetalheState.value = AtividadeDetalheState.Error("Erro de conexão: ${t.message}")
+            }
+        })
     }
 
     /**

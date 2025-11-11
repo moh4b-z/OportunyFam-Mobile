@@ -53,8 +53,8 @@ fun RegistroScreen(navController: NavHostController) {
 
     // Serviços
     val usuarioService = remember { RetrofitFactory().getUsuarioService() }
-    val loginUniversalService = remember { RetrofitFactory().getLoginUniversalService() }
     val sexoService = remember { RetrofitFactory().getSexoService() }
+    val loginUniversalService = remember { RetrofitFactory().getLoginUniversalService() }
 
     // --- Funções de Callback (Sucesso de Login) ---
     val onLoginSuccess: (destination: String) -> Unit = { destination ->

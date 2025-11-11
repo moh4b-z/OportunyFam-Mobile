@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.oportunyfam_mobile_ong.R
+import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.model.Aluno
 
 @Composable
@@ -59,12 +59,12 @@ fun CardAlunoAPI(aluno: Aluno) {
                         .size(50.dp)
                         .clip(CircleShape),
                     contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = R.drawable.instituicao),
-                    error = painterResource(id = R.drawable.instituicao)
+                    placeholder = painterResource(id = R.drawable.logo),
+                    error = painterResource(id = R.drawable.logo)
                 )
             } else {
                 Image(
-                    painter = painterResource(id = R.drawable.instituicao),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = aluno.crianca_nome,
                     modifier = Modifier
                         .size(50.dp)

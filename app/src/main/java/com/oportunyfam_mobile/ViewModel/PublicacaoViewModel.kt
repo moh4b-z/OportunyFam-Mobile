@@ -2,262 +2,90 @@ package com.oportunyfam_mobile.ViewModel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.google.gson.Gson
 import com.oportunyfam_mobile.Service.RetrofitFactory
-import com.oportunyfam_mobile.model.ErrorResponse
 import com.oportunyfam_mobile.model.Publicacao
-import com.oportunyfam_mobile.model.PublicacaoCriadaResponse
-import com.oportunyfam_mobile.model.PublicacaoRequest
 import com.oportunyfam_mobile.model.PublicacoesListResponse
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 /**
- * ViewModel para gerenciar o estado das publicações
+ * ViewModel para visualização de publicações
+ * Nota: Este é o app para Responsáveis e Crianças (USUÁRIOS FINAIS)
+ * Eles podem apenas VISUALIZAR publicações, não criar ou deletar
+ * (Criar/deletar são funcionalidades exclusivas do app institucional)
  */
 class PublicacaoViewModel : ViewModel() {
 
     private val publicacaoService = RetrofitFactory().getPublicacaoService()
 
-    // Estado das publicações
     private val _publicacoesState = MutableStateFlow<PublicacoesState>(PublicacoesState.Loading)
     val publicacoesState: StateFlow<PublicacoesState> = _publicacoesState.asStateFlow()
 
-    // Estado de criação de publicação
-    private val _criarPublicacaoState = MutableStateFlow<CriarPublicacaoState>(CriarPublicacaoState.Idle)
-    val criarPublicacaoState: StateFlow<CriarPublicacaoState> = _criarPublicacaoState.asStateFlow()
-
     /**
-     * Buscar publicações por instituição
+     * Busca publicações de uma instituição específica
+     * Usado quando o usuário visualiza o perfil de uma instituição
      */
     fun buscarPublicacoesPorInstituicao(instituicaoId: Int) {
         _publicacoesState.value = PublicacoesState.Loading
+        Log.d("PublicacaoViewModel", "📱 Buscando publicações da instituição ID: $instituicaoId")
 
-        Log.d("PublicacaoViewModel", "🔍 Buscando publicações da instituição ID: $instituicaoId")
-
-        viewModelScope.launch {
-            try {
-                publicacaoService.buscarPublicacoesPorInstituicao(instituicaoId).enqueue(object : Callback<PublicacoesListResponse> {
-                    override fun onResponse(
-                        call: Call<PublicacoesListResponse>,
-                        response: Response<PublicacoesListResponse>
-                    ) {
-                        Log.d("PublicacaoViewModel", "📡 Resposta recebida - Código: ${response.code()}")
-
-                        when {
-                            response.isSuccessful && response.body() != null -> {
-                                val publicacoes = response.body()!!.publicacoes ?: emptyList()
-                                Log.d("PublicacaoViewModel", "✅ ${publicacoes.size} publicações carregadas")
-                                _publicacoesState.value = PublicacoesState.Success(publicacoes)
-                            }
-                            response.code() == 404 -> {
-                                Log.w("PublicacaoViewModel", "⚠️ Nenhuma publicação encontrada")
-                                _publicacoesState.value = PublicacoesState.Success(emptyList())
-                            }
-                            response.code() == 500 -> {
-                                val errorBody = response.errorBody()?.string()
-                                Log.e("PublicacaoViewModel", "❌ Erro 500: $errorBody")
-                                // Tenta buscar todas e filtrar
-                                buscarTodasEFiltrar(instituicaoId)
-                            }
-                            else -> {
-                                val errorBody = response.errorBody()?.string()
-                                Log.e("PublicacaoViewModel", "❌ Erro ${response.code()}: $errorBody")
-                                _publicacoesState.value = PublicacoesState.Error(
-                                    "Erro ao carregar publicações (${response.code()})"
-                                )
-                            }
-                        }
-                    }
-
-                    override fun onFailure(call: Call<PublicacoesListResponse>, t: Throwable) {
-                        Log.e("PublicacaoViewModel", "❌ Falha na conexão", t)
-                        _publicacoesState.value = PublicacoesState.Error(
-                            "Erro de conexão: Verifique sua internet"
-                        )
-                    }
-                })
-            } catch (e: Exception) {
-                Log.e("PublicacaoViewModel", "❌ Exceção", e)
-                _publicacoesState.value = PublicacoesState.Error("Erro inesperado: ${e.message}")
+        publicacaoService.buscarPublicacoesPorInstituicao(instituicaoId).enqueue(object : Callback<PublicacoesListResponse> {
+            override fun onResponse(call: Call<PublicacoesListResponse>, response: Response<PublicacoesListResponse>) {
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()
+                    val publicacoes: List<Publicacao> = body?.publicacoes ?: emptyList()
+                    Log.d("PublicacaoViewModel", "✅ ${publicacoes.size} publicações carregadas")
+                    _publicacoesState.value = PublicacoesState.Success(publicacoes)
+                } else {
+                    Log.e("PublicacaoViewModel", "❌ Erro ${response.code()}")
+                    _publicacoesState.value = PublicacoesState.Error("Erro ao carregar publicações")
+                }
             }
-        }
-    }
 
-    /**
-     * Criar nova publicação (sobrecarga com parâmetros individuais)
-     */
-    fun criarPublicacao(descricao: String, imagem: String?, instituicaoId: Int) {
-        // Limpar espaços extras
-        val descricaoLimpa = descricao.trim()
-
-        // Validação de tamanho mínimo
-        if (descricaoLimpa.length < 30) {
-            _criarPublicacaoState.value = CriarPublicacaoState.Error(
-                "A descrição deve ter no mínimo 30 caracteres detalhados (sem contar espaços)"
-            )
-            return
-        }
-
-        // Log de debug
-        Log.d("PublicacaoViewModel", "Validação OK - Descrição: ${descricaoLimpa.length} chars")
-
-        if (imagem.isNullOrBlank()) {
-            _criarPublicacaoState.value = CriarPublicacaoState.Error(
-                "É necessário selecionar uma imagem"
-            )
-            return
-        }
-
-        val request = PublicacaoRequest(
-            descricao = descricaoLimpa,
-            imagem = imagem,
-            instituicaoId = instituicaoId
-        )
-        criarPublicacao(request)
-    }
-
-    /**
-     * Criar nova publicação
-     */
-    fun criarPublicacao(request: PublicacaoRequest) {
-        _criarPublicacaoState.value = CriarPublicacaoState.Loading
-
-        Log.d("PublicacaoViewModel", "📝 Criando publicação")
-        Log.d("PublicacaoViewModel", "📋 Dados do request:")
-        Log.d("PublicacaoViewModel", "  ➤ Descrição: '${request.descricao}' (${request.descricao.length} chars)")
-        Log.d("PublicacaoViewModel", "  ➤ Imagem: ${if (request.imagem?.isNotEmpty() == true) "✅" else "❌"}")
-        Log.d("PublicacaoViewModel", "  ➤ Instituição ID: ${request.instituicaoId}")
-
-        viewModelScope.launch {
-            try {
-                publicacaoService.criarPublicacao(request).enqueue(object : Callback<PublicacaoCriadaResponse> {
-                    override fun onResponse(
-                        call: Call<PublicacaoCriadaResponse>,
-                        response: Response<PublicacaoCriadaResponse>
-                    ) {
-                        when {
-                            response.isSuccessful && response.body() != null -> {
-                                Log.d("PublicacaoViewModel", "✅ Publicação criada com sucesso!")
-                                _criarPublicacaoState.value = CriarPublicacaoState.Success(
-                                    response.body()!!.publicacao_instituicao
-                                )
-                                // Recarregar lista
-                                if (response.body()!!.publicacao_instituicao != null) {
-                                    buscarPublicacoesPorInstituicao(request.instituicaoId)
-                                }
-                            }
-                            else -> {
-                                val errorBody = response.errorBody()?.string()
-                                Log.e("PublicacaoViewModel", "❌ Erro ao criar: $errorBody")
-
-                                // Extrair mensagem específica se possível
-                                val mensagemErro = try {
-                                    val jsonError = Gson().fromJson(
-                                        errorBody,
-                                        ErrorResponse::class.java
-                                    )
-                                    jsonError?.messagem ?: "Erro ao criar publicação (${response.code()})"
-                                } catch (e: Exception) {
-                                    "Erro ao criar publicação (${response.code()})"
-                                }
-
-                                _criarPublicacaoState.value = CriarPublicacaoState.Error(mensagemErro)
-                            }
-                        }
-                    }
-
-                    override fun onFailure(call: Call<PublicacaoCriadaResponse>, t: Throwable) {
-                        Log.e("PublicacaoViewModel", "❌ Falha ao criar", t)
-                        _criarPublicacaoState.value = CriarPublicacaoState.Error(
-                            "Erro de conexão: ${t.message}"
-                        )
-                    }
-                })
-            } catch (e: Exception) {
-                Log.e("PublicacaoViewModel", "❌ Exceção ao criar", e)
-                _criarPublicacaoState.value = CriarPublicacaoState.Error("Erro: ${e.message}")
+            override fun onFailure(call: Call<PublicacoesListResponse>, t: Throwable) {
+                Log.e("PublicacaoViewModel", "❌ Falha na conexão", t)
+                _publicacoesState.value = PublicacoesState.Error("Erro de conexão")
             }
-        }
+        })
     }
 
     /**
-     * Deletar publicação
+     * Busca todas as publicações (feed geral)
+     * Usado na tela inicial para mostrar publicações de todas as instituições
      */
-    fun deletarPublicacao(publicacaoId: Int, instituicaoId: Int) {
-        Log.d("PublicacaoViewModel", "🗑️ Deletando publicação ID: $publicacaoId")
+    fun buscarTodasPublicacoes() {
+        _publicacoesState.value = PublicacoesState.Loading
+        Log.d("PublicacaoViewModel", "📱 Buscando todas as publicações (feed)")
 
-        viewModelScope.launch {
-            try {
-                publicacaoService.deletarPublicacao(publicacaoId).enqueue(object : Callback<Unit> {
-                    override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
-                        if (response.isSuccessful) {
-                            Log.d("PublicacaoViewModel", "✅ Publicação deletada")
-                            // Recarregar lista
-                            buscarPublicacoesPorInstituicao(instituicaoId)
-                        } else {
-                            Log.e("PublicacaoViewModel", "❌ Erro ao deletar: ${response.code()}")
-                        }
-                    }
-
-                    override fun onFailure(call: Call<Unit>, t: Throwable) {
-                        Log.e("PublicacaoViewModel", "❌ Falha ao deletar", t)
-                    }
-                })
-            } catch (e: Exception) {
-                Log.e("PublicacaoViewModel", "❌ Exceção ao deletar", e)
+        publicacaoService.buscarTodasPublicacoes().enqueue(object : Callback<PublicacoesListResponse> {
+            override fun onResponse(call: Call<PublicacoesListResponse>, response: Response<PublicacoesListResponse>) {
+                if (response.isSuccessful && response.body() != null) {
+                    val body = response.body()
+                    val publicacoes: List<Publicacao> = body?.publicacoes ?: emptyList()
+                    Log.d("PublicacaoViewModel", "✅ ${publicacoes.size} publicações carregadas no feed")
+                    _publicacoesState.value = PublicacoesState.Success(publicacoes)
+                } else {
+                    Log.w("PublicacaoViewModel", "⚠️ Nenhuma publicação encontrada")
+                    _publicacoesState.value = PublicacoesState.Success(emptyList())
+                }
             }
-        }
-    }
 
-    /**
-     * Limpar estado de criação
-     */
-    fun limparEstadoCriacao() {
-        _criarPublicacaoState.value = CriarPublicacaoState.Idle
-    }
-
-    /**
-     * Fallback: busca todas as publicações e filtra pela instituição
-     */
-    private fun buscarTodasEFiltrar(instituicaoId: Int) {
-        viewModelScope.launch {
-            try {
-                publicacaoService.buscarTodasPublicacoes().enqueue(object : Callback<PublicacoesListResponse> {
-                    override fun onResponse(
-                        call: Call<PublicacoesListResponse>,
-                        response: Response<PublicacoesListResponse>
-                    ) {
-                        if (response.isSuccessful && response.body() != null) {
-                            val todasPublicacoes = response.body()!!.publicacoes ?: emptyList()
-                            val publicacoesFiltradas = todasPublicacoes.filter {
-                                it.id_instituicao == instituicaoId
-                            }
-
-                            Log.d("PublicacaoViewModel", "✅ Fallback: ${publicacoesFiltradas.size} publicações encontradas")
-                            _publicacoesState.value = PublicacoesState.Success(publicacoesFiltradas)
-                        } else {
-                            Log.e("PublicacaoViewModel", "❌ Fallback falhou: ${response.code()}")
-                            _publicacoesState.value = PublicacoesState.Success(emptyList())
-                        }
-                    }
-
-                    override fun onFailure(call: Call<PublicacoesListResponse>, t: Throwable) {
-                        Log.e("PublicacaoViewModel", "❌ Fallback falhou na conexão", t)
-                        _publicacoesState.value = PublicacoesState.Success(emptyList())
-                    }
-                })
-            } catch (e: Exception) {
-                Log.e("PublicacaoViewModel", "❌ Exceção no fallback", e)
-                _publicacoesState.value = PublicacoesState.Success(emptyList())
+            override fun onFailure(call: Call<PublicacoesListResponse>, t: Throwable) {
+                Log.e("PublicacaoViewModel", "❌ Erro ao carregar feed", t)
+                _publicacoesState.value = PublicacoesState.Error("Erro de conexão")
             }
-        }
+        })
+    }
+
+    /**
+     * Recarrega a lista atual
+     */
+    fun recarregar() {
+        buscarTodasPublicacoes()
     }
 }
 
@@ -270,13 +98,4 @@ sealed class PublicacoesState {
     data class Error(val message: String) : PublicacoesState()
 }
 
-/**
- * Estados possíveis para criar publicação
- */
-sealed class CriarPublicacaoState {
-    object Idle : CriarPublicacaoState()
-    object Loading : CriarPublicacaoState()
-    data class Success(val publicacao: Publicacao?) : CriarPublicacaoState()
-    data class Error(val message: String) : CriarPublicacaoState()
-}
 

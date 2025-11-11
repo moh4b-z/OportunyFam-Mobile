@@ -117,7 +117,7 @@ fun AtividadeCardVisual(titulo: String, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             Image(
-                painter = painterResource(id = R.drawable.instituicao),
+                painter = painterResource(id = com.oportunyfam_mobile.R.drawable.logo),
                 contentDescription = titulo,
                 modifier = Modifier
                     .size(50.dp)

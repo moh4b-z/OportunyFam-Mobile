@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.oportunyfam_mobile.Components.InfoItemSimple
-import com.oportunyfam_mobile_ong.R
+import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.model.AtividadeResponse
 
 /**
@@ -65,12 +65,12 @@ fun ResumoAtividadeCardAPI(atividade: AtividadeResponse) {
                             .size(80.dp)
                             .clip(RoundedCornerShape(16.dp)),
                         contentScale = ContentScale.Crop,
-                        placeholder = painterResource(id = R.drawable.instituicao),
-                        error = painterResource(id = R.drawable.instituicao)
+                        placeholder = painterResource(id = R.drawable.logo),
+                        error = painterResource(id = R.drawable.logo)
                     )
                 } else {
                     Image(
-                        painter = painterResource(id = R.drawable.instituicao),
+                        painter = painterResource(id = R.drawable.logo),
                         contentDescription = atividade.titulo,
                         modifier = Modifier
                             .size(80.dp)

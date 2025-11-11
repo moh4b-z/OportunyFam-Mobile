@@ -38,13 +38,11 @@ fun HomeScreen(navController: NavHostController?) {
     var query by rememberSaveable { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
-    var hasSearched by remember { mutableStateOf(false) }
 
     // Função de busca
     fun buscarInstituicoes(termo: String) {
         if (termo.isBlank()) return
         isLoading = true
-        hasSearched = true
 
         RetrofitFactory().getInstituicaoService().buscarComFiltro(termo, 1, 20)
             .enqueue(object : Callback<InstituicaoListResponse> {
@@ -75,7 +73,6 @@ fun HomeScreen(navController: NavHostController?) {
     LaunchedEffect(query) {
         if (query.isBlank()) {
             searchResults = emptyList()
-            hasSearched = false
         }
     }
 
@@ -133,12 +130,12 @@ fun HomeScreen(navController: NavHostController?) {
                                 .padding(16.dp)
                         ) {
                             Text(
-                                text = ong.nome ?: "Sem nome",
+                                text = ong.nome,
                                 fontSize = 16.sp,
                                 color = Color.Black
                             )
                         }
-                        Divider(color = Color.Gray.copy(alpha = 0.3f))
+                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
                     }
                 }
             }

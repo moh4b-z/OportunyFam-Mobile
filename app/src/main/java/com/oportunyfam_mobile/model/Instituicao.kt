@@ -15,7 +15,7 @@ data class InstituicaoListResponse(
     val status: Boolean,
     val status_code: Int,
     val messagem: String,
-    val instituicao: List<Instituicao>
+    val instituicoes: List<Instituicao>
 )
 
 /**

@@ -16,6 +16,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.oportunyfam_mobile.R
 
 @Composable
 fun CardBoasVindas() {
@@ -41,7 +42,7 @@ fun CardBoasVindas() {
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Image(
-                    painter = painterResource(id = R.drawable.security),
+                    painter = painterResource(id = R.drawable.logo),
                     contentDescription = "Ícone de segurança",
                     modifier = Modifier
                         .size(28.dp)

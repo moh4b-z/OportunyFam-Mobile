@@ -29,6 +29,7 @@ import com.oportunyfam_mobile.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import android.util.Log // Importa Log para logging
+import com.oportunyfam_mobile.model.LoginRequest
 
 // Define a tag para o Logcat (ajuste conforme necessário)
 private const val TAG = "LoginContent"
@@ -142,14 +143,22 @@ fun LoginContent(
                                         // O login deu certo, navega para a home
                                         onAuthSuccess("tela_home")
                                     }
-                                    is ResultData.CriancaResult -> {
-                                        authDataStore.saveAuthUser(resultData.data, AuthType.CRIANCA)
+                                    is ResultData.CriancaData -> {
+                                        authDataStore.saveAuthUser(resultData.crianca, AuthType.CRIANCA)
                                         // O login deu certo, navega para a home
                                         onAuthSuccess("tela_home")
                                     }
                                     is ResultData.InstituicaoResult -> {
                                         // Bloqueia se for uma Instituição logando no App de Família
                                         errorMessage.value = context.getString(R.string.error_not_responsible_app)
+                                    }
+                                    null -> {
+                                        // Nenhum resultado válido
+                                        errorMessage.value = context.getString(R.string.error_login_failed)
+                                    }
+                                    else -> {
+                                        // Caso inesperado
+                                        errorMessage.value = context.getString(R.string.error_login_failed)
                                     }
                                 }
 

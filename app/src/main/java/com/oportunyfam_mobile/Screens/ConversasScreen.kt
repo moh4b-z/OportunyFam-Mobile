@@ -24,19 +24,26 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
-import com.oportunyfam_mobile.MainActivity.NavRoutes
+import com.oportunyfam_mobile.MainActivity
 import com.oportunyfam_mobile.ViewModel.ChatViewModel
 import com.oportunyfam_mobile.ViewModel.ConversaUI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversasScreen(
-    navController: NavHostController?,
-    viewModel: ChatViewModel = viewModel()
+    navController: NavHostController?
 ) {
+    val context = LocalContext.current
+    val viewModel = remember {
+        ChatViewModel(context.applicationContext as android.app.Application)
+    }
+
     val conversas by viewModel.conversas.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -100,11 +107,11 @@ fun ConversasScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.logo),
+                        Image(
+                            painter = painterResource(id = com.oportunyfam_mobile.R.drawable.logo),
                             contentDescription = "Sem conversas",
                             modifier = Modifier.size(100.dp),
-                            tint = Color.Gray
+                            colorFilter = ColorFilter.tint(Color.Gray)
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
@@ -127,7 +134,7 @@ fun ConversasScreen(
                             // ✅ Codifica o nome para evitar problemas com espaços e caracteres especiais
                             val nomeEncoded = Uri.encode(conversa.nome)
                             val pId = pessoaId ?: 0
-                            navController?.navigate("${NavRoutes.CHAT}/${conversa.id}/$nomeEncoded/$pId")
+                            navController?.navigate("${MainActivity.CHAT}/${conversa.id}/$nomeEncoded/$pId")
                         }
                     )
                 }
@@ -153,10 +160,11 @@ fun ConversasTopBarPremium() {
             .fillMaxWidth(),
         actions = {
             IconButton(onClick = { /* ação */ }) {
-                Icon(
-                    painter = painterResource(id = R.drawable.logo),
+                Image(
+                    painter = painterResource(id = com.oportunyfam_mobile.R.drawable.logo),
                     contentDescription = "Logo",
-                    tint = Color.White
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(Color.White)
                 )
             }
         }

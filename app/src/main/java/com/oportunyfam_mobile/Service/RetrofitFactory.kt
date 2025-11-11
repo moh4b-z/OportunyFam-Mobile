@@ -141,4 +141,8 @@ class RetrofitFactory {
         return retrofitFactory.create(CategoriaService::class.java)
     }
 
+    fun getSexoService(): SexoService {
+        return retrofitFactory.create(SexoService::class.java)
+    }
+
 }

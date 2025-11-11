@@ -7,7 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
@@ -25,8 +25,6 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.R
-import com.oportunyfam_mobile.model.Oportunidade
-import kotlinx.coroutines.launch
 
 @Composable
 fun PerfilOngScreen(navController: NavHostController?) {
@@ -53,7 +51,7 @@ fun PerfilOngScreen(navController: NavHostController?) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = { navController?.popBackStack() }) {
-                Icon(Icons.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.Black)
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = { }) {
@@ -171,7 +169,7 @@ fun PerfilOngScreen(navController: NavHostController?) {
                         }
                     }
                 }
-                Divider(
+                HorizontalDivider(
                     color = Color.Gray,
                     thickness = 1.dp,
                     modifier = Modifier
@@ -214,57 +212,20 @@ fun PerfilOngScreen(navController: NavHostController?) {
 }
 
 @Composable
-//fazendo uma simulação pois nao esta consumindo da api
+// Simulação simplificada - quando a API estiver pronta, usar os modelos corretos
 fun CheckboxOportunidade() {
-    // Lista de oportunidades (mock)
-    val oportunidades = remember { mutableStateListOf<Oportunidade>() }
-    var selectedIndex by remember { mutableStateOf(-1) }
-    val scope = rememberCoroutineScope()
-
-    // Simulando carregamento das oportunidades
-    LaunchedEffect(Unit) {
-        try {
-            val response = listOf(
-                Oportunidade(id = 1, nome = "Oportunidade 1", vagas = 5),
-                Oportunidade(id = 2, nome = "Oportunidade 2", vagas = 3),
-                Oportunidade(id = 3, nome = "Oportunidade 3", vagas = 2)
-            )
-            oportunidades.addAll(response)
-        } catch (e: Exception) {
-            // Tratar erro, se quiser
-        }
-    }
-
-    Column {
-        oportunidades.forEachIndexed { index, opcao ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-            ) {
-                Text(
-                    "${opcao.nome} (${opcao.vagas} vagas)",
-                    modifier = Modifier.weight(1f)
-                )
-                RadioButton(
-                    selected = selectedIndex == index,
-                    onClick = {
-                        if (opcao.vagas > 0) {
-                            // Diminuir vagas localmente
-                            oportunidades[index] = opcao.copy(vagas = opcao.vagas - 1)
-                            selectedIndex = index
-
-                            // Aqui você ainda pode deixar o launch vazio ou só um comentário
-                            scope.launch {
-                                // Quando a API estiver pronta, você fará a requisição:
-                                // OportunidadeService.api.selecionarOportunidade(opcao.id)
-                            }
-                        }
-                    }
-                )
-            }
-        }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Funcionalidade em desenvolvimento",
+            color = Color.Gray,
+            fontSize = 14.sp,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
