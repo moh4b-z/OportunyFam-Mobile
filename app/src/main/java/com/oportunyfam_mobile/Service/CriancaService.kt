@@ -1,30 +1,36 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile.model.CriancaRequest
-import com.oportunyfam_mobile.model.CriancaResponse
-import com.oportunyfam_mobile.model.LoginRequest
-import com.oportunyfam_mobile.model.LoginResponse
+import com.oportunyfam_mobile_ong.model.CriancaListResponse
+import com.oportunyfam_mobile_ong.model.CriancaRequest
+import com.oportunyfam_mobile_ong.model.CriancaResponse
+import com.oportunyfam_mobile_ong.model.LoginRequest
+import com.oportunyfam_mobile_ong.model.LoginResponse
 import retrofit2.Call
-import retrofit2.Response
 import retrofit2.http.*
 
 interface CriancaService {
-    @Headers("Content-Type: application/json")
-    @POST("crianca")
-    suspend fun criar(@Body crianca: CriancaRequest): Response<CriancaResponse>
 
-    @PUT("crianca/{id}")
-    suspend fun atualizar(@Path("id") id: Int, @Body crianca: CriancaRequest): Response<CriancaResponse>
+    // POST /v1/oportunyfam/criancas
+    @POST("criancas")
+    fun criar(@Body crianca: CriancaRequest): Call<CriancaResponse>
 
-    @GET("crianca")
-    suspend fun listarTodas(): Response<CriancaResponse>
+    // PUT /v1/oportunyfam/criancas/:id
+    @PUT("criancas/{id}")
+    fun atualizar(@Path("id") id: Int, @Body crianca: CriancaRequest): Call<CriancaResponse>
 
-    @GET("crianca/{id}")
-    suspend fun buscarPorId(@Path("id") id: Int): Response<CriancaResponse>
+    // GET /v1/oportunyfam/criancas
+    @GET("criancas")
+    fun listarTodas(): Call<CriancaListResponse>
 
-    @POST("crianca/login")
-    suspend fun loginCrianca(@Body request: LoginRequest): Response<LoginResponse>
+    // GET /v1/oportunyfam/criancas/:id
+    @GET("criancas/{id}")
+    fun buscarPorId(@Path("id") id: Int): Call<CriancaResponse>
 
-    @DELETE("crianca/{id}")
-    suspend fun deletar(@Path("id") id: Int): Response<Unit>
+    // POST /v1/oportunyfam/criancas/login
+    @POST("criancas/login")
+    fun loginCrianca(@Body request: LoginRequest): Call<LoginResponse>
+
+    // DELETE /v1/oportunyfam/criancas/:id
+    @DELETE("criancas/{id}")
+    fun deletar(@Path("id") id: Int): Call<Unit>
 }

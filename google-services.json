@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "479297747898",
+    "project_id": "oportunyfamong",
+    "storage_bucket": "oportunyfamong.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479297747898:android:ecfbbd96dafd89457cfb83",
+        "android_client_info": {
+          "package_name": "com.oportunyfam_mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFuXVjGjNuJLCcWrB2GEHaZsccZraQWio"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:479297747898:android:0f3ee2b5c54cda127cfb83",
+        "android_client_info": {
+          "package_name": "com.oportunyfam_mobile_ong"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAFuXVjGjNuJLCcWrB2GEHaZsccZraQWio"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

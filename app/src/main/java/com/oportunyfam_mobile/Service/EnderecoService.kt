@@ -1,8 +1,8 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile.model.EnderecoRequest
-import com.oportunyfam_mobile.model.EnderecoResponse
-import com.oportunyfam_mobile.model.OSMResultado
+import com.oportunyfam_mobile_ong.model.EnderecoRequest
+import com.oportunyfam_mobile_ong.model.EnderecoResponse
+import com.oportunyfam_mobile_ong.model.OSMResultado
 import retrofit2.Call
 import retrofit2.http.*
 

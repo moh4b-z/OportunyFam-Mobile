@@ -1,35 +1,27 @@
 package com.oportunyfam_mobile.Components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 
 @Composable
-fun BarraTarefas(navController: NavHostController?) {
-
+fun BarraTarefas(
+    navController: NavHostController? = null,
+    currentRoute: String = ""
+) {
     val gradient = Brush.horizontalGradient(
         colors = listOf(
             Color(0xFFFFA000),
@@ -37,97 +29,98 @@ fun BarraTarefas(navController: NavHostController?) {
         )
     )
 
-    // Controle do item selecionado
-    var selectedItem by remember { mutableStateOf("home") }
-
     NavigationBar(
         modifier = Modifier
-            .height(70.dp)
             .fillMaxWidth()
+            .height(70.dp)
             .background(gradient),
-        containerColor = Color.Transparent
+        containerColor = Color.Transparent,
+        tonalElevation = 0.dp
     ) {
-        // Ícone Home
+        // Item Início
         NavigationBarItem(
-            selected = selectedItem == "home",
-            onClick = {
-                selectedItem = "home"
-                navController?.navigate("tela_home") {
-
-                    if (navController != null) {
-                        popUpTo(navController.graph.startDestinationId) { inclusive = false }
-                    }
-                    launchSingleTop = true
-                }
-            },
+            selected = currentRoute == "HomeScreen",
+            onClick = { navController?.navigate("HomeScreen") },
             icon = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Filled.Home,
-                        contentDescription = "Início",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (selectedItem == "home") Color.White else Color(0xFF5A3E1B)
-                    )
-                    Text(
-                        "Início",
-                        fontSize = 10.sp,
-                        color = if (selectedItem == "home") Color.White else Color(0xFF5A3E1B)
-                    )
-                }
-            }
+                NavItemContent(
+                    icon = Icons.Filled.Home,
+                    label = "Início",
+                    isSelected = currentRoute == "HomeScreen"
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color(0xFFFF6F00),
+                selectedTextColor = Color(0xFF5A3E1B),
+                indicatorColor = Color.White,
+                unselectedIconColor = Color(0xFF8D6E63),
+                unselectedTextColor = Color(0xFF8D6E63)
+            )
         )
 
-
-        // Ícone Atividades
+        // Item Conversas
         NavigationBarItem(
-            selected = selectedItem == "atividades",
-            onClick = {
-                selectedItem = "atividades"
-                navController?.navigate("tela_chat")
-            },
+            selected = currentRoute == "ConversasScreen",
+            onClick = { navController?.navigate("ConversasScreen") },
             icon = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Filled.CheckCircle,
-                        contentDescription = "Atividades",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (selectedItem == "atividades") Color.White else Color(0xFF5A3E1B)
-                    )
-                    Text(
-                        "Atividades",
-                        fontSize = 10.sp,
-                        color = if (selectedItem == "atividades") Color.White else Color(0xFF5A3E1B)
-                    )
-                }
-            }
+                NavItemContent(
+                    icon = Icons.Filled.Email,
+                    label = "Conversas",
+                    isSelected = currentRoute == "ConversasScreen"
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color(0xFFFF6F00),
+                selectedTextColor = Color(0xFF5A3E1B),
+                indicatorColor = Color.White,
+                unselectedIconColor = Color(0xFF8D6E63),
+                unselectedTextColor = Color(0xFF8D6E63)
+            )
         )
 
-        // Ícone Perfil
+        // Item Perfil
         NavigationBarItem(
-            selected = selectedItem == "perfil",
-            onClick = {
-                selectedItem = "perfil"
-                navController?.navigate("tela_perfiluser") {
-
-                    popUpTo("tela_perfiluser") { inclusive = true }
-                    launchSingleTop = true
-                }
-            },
+            selected = currentRoute == "tela_perfil",
+            onClick = { navController?.navigate("tela_perfil") },
             icon = {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Filled.Face,
-                        contentDescription = "Perfil",
-                        modifier = Modifier.size(20.dp),
-                        tint = if (selectedItem == "perfil") Color.White else Color(0xFF5A3E1B)
-                    )
-                    Text(
-                        "Perfil",
-                        fontSize = 10.sp,
-                        color = if (selectedItem == "perfil") Color.White else Color(0xFF5A3E1B)
-                    )
-                }
-            }
+                NavItemContent(
+                    icon = Icons.Filled.Person,
+                    label = "Perfil",
+                    isSelected = currentRoute == "tela_perfil"
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color(0xFFFF6F00),
+                selectedTextColor = Color(0xFF5A3E1B),
+                indicatorColor = Color.White,
+                unselectedIconColor = Color(0xFF8D6E63),
+                unselectedTextColor = Color(0xFF8D6E63)
+            )
+        )
+    }
+}
+
+@Composable
+private fun NavItemContent(
+    icon: ImageVector,
+    label: String,
+    isSelected: Boolean
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = label,
+            modifier = Modifier.size(24.dp),
+            tint = if (isSelected) Color(0xFFFF6F00) else Color(0xFF8D6E63)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = label,
+            fontSize = 11.sp,
+            color = if (isSelected) Color(0xFF5A3E1B) else Color(0xFF8D6E63),
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
@@ -135,5 +128,5 @@ fun BarraTarefas(navController: NavHostController?) {
 @Preview(showBackground = true, widthDp = 360, heightDp = 70)
 @Composable
 fun BarraTarefasPreview() {
-    BarraTarefas(navController = null)
+    BarraTarefas(currentRoute = "HomeScreen")
 }
