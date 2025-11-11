@@ -53,7 +53,6 @@ fun RegistroScreen(navController: NavHostController) {
 
     // Serviços
     val usuarioService = remember { RetrofitFactory().getUsuarioService() }
-    val sexoService = remember { RetrofitFactory().getSexoService() }
     val loginUniversalService = remember { RetrofitFactory().getLoginUniversalService() }
 
     // --- Funções de Callback (Sucesso de Login) ---
@@ -70,7 +69,7 @@ fun RegistroScreen(navController: NavHostController) {
     val onRegistrationSuccess: (Usuario) -> Unit = { usuario ->
         scope.launch {
             authDataStore.saveAuthUser(usuario, AuthType.USUARIO)
-            navController.navigate("tela_home") {
+            navController.navigate("HomeScreen") {
                 popUpTo("tela_registro") { inclusive = true }
             }
             isLoading.value = false
@@ -131,7 +130,6 @@ fun RegistroScreen(navController: NavHostController) {
                         isLoading = isLoading,
                         errorMessage = errorMessage,
                         usuarioService = usuarioService,
-                        sexoService = sexoService,
                         scope = scope,
                         onAuthSuccess = onRegistrationSuccess
                     )

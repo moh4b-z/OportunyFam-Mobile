@@ -24,9 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.R
-import com.oportunyfam_mobile.Service.SexoService
 import com.oportunyfam_mobile.Service.UsuarioService
-import com.oportunyfam_mobile.Utils.aplicarMascaraDataNascimento
 import com.oportunyfam_mobile.Utils.convertDataParaBackendFormat
 import com.oportunyfam_mobile.Utils.formatarDataNascimentoParaLocalDate
 import com.oportunyfam_mobile.model.Usuario
@@ -73,7 +71,6 @@ fun RegistroContent(
     isLoading: MutableState<Boolean>,
     errorMessage: MutableState<String?>,
     usuarioService: UsuarioService,
-    sexoService: SexoService,
     scope: CoroutineScope,
     onAuthSuccess: (Usuario) -> Unit
 ) {
@@ -137,9 +134,7 @@ fun RegistroContent(
                 SexoSelector(
                     selectedSexoId = idSexo,
                     selectedSexoName = selectedSexoName,
-                    isEnabled = !isLoading.value,
-                    sexoService = sexoService,
-                    scope = scope
+                    isEnabled = !isLoading.value
                 )
             }
             // *** CAMPO CPF REINTRODUZIDO E OBRIGATÓRIO PARA AVANÇAR ***

@@ -8,43 +8,31 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import com.oportunyfam_mobile.Service.SexoService
 import com.oportunyfam_mobile.model.Sexo
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SexoSelector(
     selectedSexoId: MutableState<Int?>,
     selectedSexoName: MutableState<String>,
-    isEnabled: Boolean,
-    sexoService: SexoService,
-    scope: CoroutineScope
+    isEnabled: Boolean
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var sexosList by remember { mutableStateOf(emptyList<Sexo>()) }
 
-    // Efeito para carregar a lista de sexos apenas uma vez
-    LaunchedEffect(Unit) {
-        scope.launch {
-            try {
-                val response = sexoService.listarTodos()
-                if (response.isSuccessful && response.body()?.sexos != null) {
-                    sexosList = response.body()!!.sexos
-                }
-            } catch (e: Exception) {
-                // Em um app real, aqui você mostraria uma mensagem de erro na UI
-                println("Erro ao carregar sexos: ${e.message}")
-            }
-        }
+    // Lista hardcoded de sexos (valores comuns da API)
+    val sexosList = remember {
+        listOf(
+            Sexo(id = 1, nome = "Masculino"),
+            Sexo(id = 2, nome = "Feminino"),
+            Sexo(id = 3, nome = "Outro"),
+            Sexo(id = 4, nome = "Prefiro não informar")
+        )
     }
 
     ExposedDropdownMenuBox(

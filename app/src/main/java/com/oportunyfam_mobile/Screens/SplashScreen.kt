@@ -55,12 +55,12 @@ private fun SplashScreenContent(
 
         // 3. Navega com base no resultado e limpa o back stack
         if (isLoggedIn) {
-            navController.navigate("tela_home") {
-                popUpTo("SplashScreen") { inclusive = true }
+            navController.navigate("HomeScreen") {
+                popUpTo("tela_splash") { inclusive = true }
             }
         } else {
             navController.navigate("tela_registro") {
-                popUpTo("SplashScreen") { inclusive = true }
+                popUpTo("tela_splash") { inclusive = true }
             }
         }
     }

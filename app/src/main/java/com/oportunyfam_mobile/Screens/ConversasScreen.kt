@@ -40,7 +40,7 @@ fun ConversasScreen(
     navController: NavHostController?
 ) {
     val context = LocalContext.current
-    val viewModel = remember {
+    val viewModel: ChatViewModel = remember {
         ChatViewModel(context.applicationContext as android.app.Application)
     }
 

@@ -137,33 +137,33 @@ fun LoginContent(
                             if (resultLogin != null) {
 
                                 // ** LÓGICA DE NAVEGAÇÃO E AUTENTICAÇÃO USANDO SEALED CLASS **
-                                when (val resultData = resultLogin.result) {
-                                    is ResultData.UsuarioResult -> {
+                                val resultData = resultLogin.result
+                                when {
+                                    resultData is ResultData.UsuarioResult -> {
                                         authDataStore.saveAuthUser(resultData.data, AuthType.USUARIO)
                                         // O login deu certo, navega para a home
-                                        onAuthSuccess("tela_home")
+                                        onAuthSuccess("HomeScreen")
                                     }
-                                    is ResultData.CriancaData -> {
+                                    resultData is ResultData.CriancaData -> {
                                         authDataStore.saveAuthUser(resultData.crianca, AuthType.CRIANCA)
                                         // O login deu certo, navega para a home
-                                        onAuthSuccess("tela_home")
+                                        onAuthSuccess("HomeScreen")
                                     }
-                                    is ResultData.InstituicaoResult -> {
+                                    resultData is ResultData.InstituicaoResult -> {
                                         // Bloqueia se for uma Instituição logando no App de Família
-                                        errorMessage.value = context.getString(R.string.error_not_responsible_app)
-                                    }
-                                    null -> {
-                                        // Nenhum resultado válido
-                                        errorMessage.value = context.getString(R.string.error_login_failed)
+                                        errorMessage.value = "Acesso negado: Este aplicativo é exclusivo para responsáveis e crianças. Use o app institucional."
+                                        isLoading.value = false
                                     }
                                     else -> {
-                                        // Caso inesperado
+                                        // Nenhum resultado válido ou null
                                         errorMessage.value = context.getString(R.string.error_login_failed)
+                                        isLoading.value = false
                                     }
                                 }
 
                             } else {
                                 errorMessage.value = context.getString(R.string.error_login_failed)
+                                isLoading.value = false
                             }
 
                         } else if (response.code() == 401) {
