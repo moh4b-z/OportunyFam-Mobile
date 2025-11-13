@@ -15,6 +15,7 @@ import com.oportunyfam_mobile.Screens.SplashScreen
 import com.oportunyfam_mobile.Screens.RegistroScreen
 import com.oportunyfam_mobile.Screens.HomeScreen
 import com.oportunyfam_mobile.Screens.PerfilScreen
+import com.oportunyfam_mobile.Screens.RegisterChildScreen
 import com.oportunyfam_mobile.ui.theme.OportunyFamMobileTheme
 
 class MainActivity : ComponentActivity() {
@@ -46,6 +47,11 @@ class MainActivity : ComponentActivity() {
                     // Tela Home
                     composable(NavRoutes.HOME) {
                         HomeScreen(navController)
+                    }
+
+                    // Tela de Registro de Filho
+                    composable(NavRoutes.CHILD_REGISTER) {
+                        RegisterChildScreen(navController = navController)
                     }
 
                     // Tela de Conversas
@@ -81,6 +87,7 @@ class MainActivity : ComponentActivity() {
         const val REGISTRO = "tela_registro"
         const val PERFIL = "tela_perfil"
         const val HOME = "HomeScreen"
+        const val CHILD_REGISTER = "child_register"
         const val ATIVIDADES = "AtividadesScreen"
         const val CONVERSAS = "ConversasScreen"
         const val CHAT = "ChatScreen"

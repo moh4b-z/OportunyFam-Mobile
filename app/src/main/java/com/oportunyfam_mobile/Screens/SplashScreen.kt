@@ -1,17 +1,16 @@
 package com.oportunyfam_mobile.Screens
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -45,14 +44,21 @@ private fun SplashScreenContent(
     val alpha = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
-        // Logo zoom suave
-        scale.animateTo(1f, animationSpec = tween(1500))
-        // Brilho de fundo aparece aos poucos
-        alpha.animateTo(1f, animationSpec = tween(2000))
+        // Efeito bounce suave do logo
+        scale.animateTo(
+            targetValue = 1.1f,
+            animationSpec = spring(
+                dampingRatio = Spring.DampingRatioLowBouncy,
+                stiffness = Spring.StiffnessMedium
+            )
+        )
+        scale.animateTo(1f, animationSpec = tween(300))
+
+        // Fade do fundo
+        alpha.animateTo(1f, animationSpec = tween(1500))
         delay(1000)
 
         val isLoggedIn = authDataStore.isUserLoggedIn()
-
         if (isLoggedIn) {
             navController.navigate("HomeScreen") {
                 popUpTo("tela_splash") { inclusive = true }
@@ -64,47 +70,49 @@ private fun SplashScreenContent(
         }
     }
 
-    // Fundo com gradiente moderno
+    // Fundo gradiente mais quente e moderno
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFF69508),      // Laranja principal
-                        Color(0xFFFFD580),      // Amarelo claro
-                        Color(0xFFFFFFFF)       // Branco
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFFF69508), // Laranja
+                        Color(0xFFFFC14D), // Amarelo
+                        Color(0xFFFFF1D2)  // Suave creme
                     )
                 )
             ),
         contentAlignment = Alignment.Center
     ) {
-        // Efeito de brilho/partículas leves de fundo
+        // Bolinhas animadas no fundo
         ParticlesLayer(alpha = alpha.value)
 
-        // Logo com animação de entrada
+        // Logo animada
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "Logo OportunyFam",
             modifier = Modifier
                 .size(200.dp)
                 .scale(scale.value)
+                .alpha(alpha.value)
         )
     }
 }
 
 /**
- * Efeito sutil de partículas animadas (círculos pequenos subindo lentamente)
+ * Camada de partículas animadas — agora com movimento mais rápido
  */
 @Composable
 fun ParticlesLayer(alpha: Float) {
     val particles = remember {
-        List(10) {
+        List(15) {
             Particle(
                 x = Random.nextFloat(),
                 y = Random.nextFloat(),
                 size = Random.nextInt(4, 10),
-                delay = Random.nextLong(0, 2000)
+                delay = Random.nextLong(0, 1000),
+                speed = Random.nextFloat() * 0.005f + 0.0025f // 👈 mais rápido
             )
         }
     }
@@ -112,14 +120,18 @@ fun ParticlesLayer(alpha: Float) {
     Box(modifier = Modifier.fillMaxSize()) {
         particles.forEach { particle ->
             var offsetY by remember { mutableStateOf(particle.y) }
+            var rotation by remember { mutableStateOf(0f) }
+
             LaunchedEffect(Unit) {
                 delay(particle.delay)
                 while (true) {
-                    offsetY -= 0.002f
+                    offsetY -= particle.speed
+                    rotation += 2.5f // 👈 rotação mais perceptível
                     if (offsetY < 0f) offsetY = 1f
                     delay(16)
                 }
             }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
@@ -130,9 +142,10 @@ fun ParticlesLayer(alpha: Float) {
                     )
                     .size(particle.size.dp)
                     .background(
-                        color = Color.White.copy(alpha = alpha * 0.3f),
+                        color = Color.White.copy(alpha = alpha * 0.35f),
                         shape = CircleShape
                     )
+                    .alpha(alpha)
             )
         }
     }
@@ -142,7 +155,8 @@ data class Particle(
     val x: Float,
     var y: Float,
     val size: Int,
-    val delay: Long
+    val delay: Long,
+    val speed: Float
 )
 
 @Preview(showSystemUi = true)

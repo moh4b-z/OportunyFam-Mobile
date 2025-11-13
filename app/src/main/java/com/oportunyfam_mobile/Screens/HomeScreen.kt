@@ -1,5 +1,7 @@
 package com.oportunyfam_mobile.Screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -8,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -15,15 +18,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavHostController
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
+import com.oportunyfam_mobile.Components.CategoryFilterRow
+import com.oportunyfam_mobile.Components.Category
+import com.oportunyfam_mobile.Service.LocationManager
 import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.model.Instituicao
 import com.oportunyfam_mobile.model.InstituicaoListResponse
@@ -33,11 +41,54 @@ import retrofit2.Response
 
 @Composable
 fun HomeScreen(navController: NavHostController?) {
+    // === Contexto ===
+    val context = LocalContext.current
 
     // === Estados ===
     var query by rememberSaveable { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+
+    // Estados de localização
+    var userLocation by remember { mutableStateOf<LatLng?>(null) }
+    var showLocationDialog by remember { mutableStateOf(false) }
+    var locationManager by remember { mutableStateOf<LocationManager?>(null) }
+
+    // Categorias e filtros
+    var selectedCategories by remember { mutableStateOf<List<Int>>(emptyList()) }
+
+    // Definir as categorias disponíveis
+    val categories = remember {
+        listOf(
+            Category(1, "Jiu Jitsu", Color(0xFFFF6B6B)),
+            Category(2, "T.I", Color(0xFF4ECDC4)),
+            Category(3, "Centro Cultural", Color(0xFFFFD93D)),
+            Category(4, "Biblioteca", Color(0xFF6C5CE7))
+        )
+    }
+
+    // Inicializar LocationManager e verificar permissão ao entrar na tela
+    LaunchedEffect(Unit) {
+        locationManager = LocationManager(context)
+
+        // Verificar se tem permissão de localização
+        val hasPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (hasPermission) {
+            // Se tem permissão, buscar localização
+            locationManager?.getCurrentLocation { location ->
+                if (location != null) {
+                    userLocation = LatLng(location.latitude, location.longitude)
+                }
+            }
+        } else {
+            // Se não tem permissão, mostrar diálogo
+            showLocationDialog = true
+        }
+    }
 
     // Função de busca
     fun buscarInstituicoes(termo: String) {
@@ -69,6 +120,21 @@ fun HomeScreen(navController: NavHostController?) {
             })
     }
 
+    // Função para filtrar ONGs por categorias
+    fun filtrarOngsPorCategoria(categoriaId: Int) {
+        if (selectedCategories.contains(categoriaId)) {
+            selectedCategories = selectedCategories.filter { it != categoriaId }
+        } else {
+            selectedCategories = selectedCategories + categoriaId
+        }
+
+        // Aqui você pode chamar uma API para buscar ONGs com as categorias selecionadas
+        if (selectedCategories.isNotEmpty()) {
+            // Exemplo: buscarOngsPorCategorias(selectedCategories)
+            android.util.Log.d("HomeScreen", "Categorias selecionadas: $selectedCategories")
+        }
+    }
+
     // limpa resultados quando query ficar vazia
     LaunchedEffect(query) {
         if (query.isBlank()) {
@@ -77,9 +143,16 @@ fun HomeScreen(navController: NavHostController?) {
     }
 
     // === Mapa ===
-    val initialLatLng = LatLng(-23.5505, -46.6333)
+    val initialLatLng = userLocation ?: LatLng(-23.5505, -46.6333)
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(initialLatLng, 12f)
+        position = CameraPosition.fromLatLngZoom(initialLatLng, 15f)
+    }
+
+    // Atualizar posição da câmera quando a localização do usuário é obtida
+    LaunchedEffect(userLocation) {
+        if (userLocation != null) {
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(userLocation!!, 15f)
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -90,7 +163,16 @@ fun HomeScreen(navController: NavHostController?) {
             cameraPositionState = cameraPositionState,
             properties = MapProperties(isMyLocationEnabled = false),
             uiSettings = MapUiSettings(zoomControlsEnabled = false)
-        )
+        ) {
+            // Adicionar marcador de localização do usuário
+            if (userLocation != null) {
+                Marker(
+                    state = rememberMarkerState(position = userLocation!!),
+                    title = "Sua Localização",
+                    snippet = "Você está aqui"
+                )
+            }
+        }
 
         // ===== Barra de pesquisa =====
         SearchBar(
@@ -101,6 +183,18 @@ fun HomeScreen(navController: NavHostController?) {
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+        )
+
+        // ===== Filtro de categorias =====
+        CategoryFilterRow(
+            categories = categories,
+            selectedCategories = selectedCategories,
+            onCategorySelected = { categoriaId ->
+                filtrarOngsPorCategoria(categoriaId)
+            },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 90.dp)
         )
 
         // ===== Resultados =====
@@ -167,11 +261,29 @@ fun HomeScreen(navController: NavHostController?) {
             }
         }
 
+        // ===== Botão de atualizar localização =====
+        FloatingActionButton(
+            onClick = {
+                // Buscar localização novamente
+                locationManager?.getCurrentLocation { location ->
+                    if (location != null) {
+                        userLocation = LatLng(location.latitude, location.longitude)
+                    }
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(bottom = 90.dp, start = 16.dp),
+            containerColor = Color(0xFFF69508)
+        ) {
+            Icon(Icons.Filled.MyLocation, contentDescription = "Minha Localização", tint = Color.White)
+        }
+
         // ===== Botão flutuante =====
         FloatingActionButton(
             onClick = {
-                navController?.navigate("registerChild")
-                      },
+                navController?.navigate("child_register")
+            },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 80.dp, end = 16.dp),
@@ -184,6 +296,27 @@ fun HomeScreen(navController: NavHostController?) {
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
             BarraTarefas(navController = navController)
         }
+    }
+
+    // ===== Diálogo de permissão de localização =====
+    if (showLocationDialog) {
+        LocationPermissionDialog(
+            onDismiss = {
+                showLocationDialog = false
+            },
+            onConfirm = {
+                showLocationDialog = false
+            },
+            context = context,
+            onLocationPermissionGranted = {
+                // Aguardar um pouco e tentar obter localização novamente
+                locationManager?.getCurrentLocation { location ->
+                    if (location != null) {
+                        userLocation = LatLng(location.latitude, location.longitude)
+                    }
+                }
+            }
+        )
     }
 }
 

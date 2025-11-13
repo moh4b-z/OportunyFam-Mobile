@@ -3,12 +3,12 @@ package com.oportunyfam_mobile.Screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -25,8 +25,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
+import com.oportunyfam_mobile.Components.ChildDetailDialog
+import com.oportunyfam_mobile.Components.ChildrenListSection
 import com.oportunyfam_mobile.Components.EditarPerfilDialog
-import com.oportunyfam_mobile.Components.PrimaryColor
 import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
@@ -44,6 +45,8 @@ fun PerfilScreen(
     var instituicaoNome by remember { mutableStateOf("Carregando...") }
     var instituicaoEmail by remember { mutableStateOf("Carregando...") }
     var usuarioAtual by remember { mutableStateOf<com.oportunyfam_mobile.model.Usuario?>(null) }
+    var criancaService by remember { mutableStateOf<com.oportunyfam_mobile.Service.CriancaService?>(null) }
+    var selectedChild by remember { mutableStateOf<com.oportunyfam_mobile.model.Crianca?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
     var usuarioService by remember { mutableStateOf<com.oportunyfam_mobile.Service.UsuarioService?>(null) }
 
@@ -51,6 +54,7 @@ fun PerfilScreen(
     LaunchedEffect(Unit) {
         val authData = authDataStore.loadAuthUser()
         usuarioService = com.oportunyfam_mobile.Service.RetrofitFactory().getUsuarioService()
+        criancaService = com.oportunyfam_mobile.Service.RetrofitFactory().getCriancaService()
 
         if (authData != null) {
             when (authData.type) {
@@ -79,17 +83,16 @@ fun PerfilScreen(
     fun onLogout() {
         coroutineScope.launch {
             authDataStore.logout()
-            // Após limpar o estado de autenticação, volta para a tela de login
             navController?.navigate("login") {
-                popUpTo(0) // Remove o histórico de navegação
+                popUpTo(0)
             }
         }
     }
 
     val gradient = Brush.horizontalGradient(
         colors = listOf(
-            Color(0xFFFFA000),  // Laranja original
-            Color(0xFFFFD27A)   // Laranja claro suave
+            Color(0xFFFFA000),
+            Color(0xFFFFD27A)
         )
     )
 
@@ -112,10 +115,8 @@ fun PerfilScreen(
             IconButton(onClick = { onLogout() }) {
                 Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sair", tint = Color.Black)
             }
-            IconButton(onClick = {
-
-            }) {
-                Icon(Icons.Filled.Menu, contentDescription = "Menu", tint = Color.Black)
+            IconButton(onClick = { showEditDialog = true }) {
+                Icon(Icons.Default.Edit, contentDescription = "Editar Perfil", tint = Color.Black)
             }
         }
 
@@ -131,34 +132,26 @@ fun PerfilScreen(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.75f)
+                    .fillMaxHeight(0.85f)
                     .align(Alignment.BottomCenter),
                 shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 90.dp)
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(top = 40.dp, start = 24.dp, end = 24.dp, bottom = 20.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        // Seção Nome, Email e Botão de Editar
-                        Row(
+                    item {
+                        Column(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
+                            // Nome e e-mail
                             Column(
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                // Nome e e-mail dinâmicos
                                 Text(
                                     instituicaoNome,
                                     fontSize = 20.sp,
@@ -175,87 +168,52 @@ fun PerfilScreen(
                                 )
                             }
 
-                            // Botão de Editar
-                            if (usuarioAtual != null) {
-                                IconButton(
-                                    onClick = { showEditDialog = true },
-                                    modifier = Modifier.padding(start = 8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Edit,
-                                        contentDescription = "Editar Perfil",
-                                        tint = PrimaryColor,
-                                        modifier = Modifier.size(24.dp)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Estatísticas fixas
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        "127",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                    Text(
+                                        "FOLLOWING",
+                                        fontSize = 12.sp,
+                                        color = Color.Gray
                                     )
                                 }
                             }
+
+                            Spacer(modifier = Modifier.height(32.dp))
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Estatísticas fixas por enquanto
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    "127",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Black
-                                )
-                                Text(
-                                    "FOLLOWING",
-                                    fontSize = 12.sp,
-                                    color = Color.Gray
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        // Descrição
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.logo),
-                                contentDescription = "Imagem Perfil da Instituição",
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .size(70.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                            )
-
-                            Spacer(modifier = Modifier.width(12.dp))
-
-                            Text(
-                                "Está participando da ONG há 4 meses. A organização tem como objetivo implementar o esporte nas comunidades, promovendo inclusão social, desenvolvimento pessoal e mais oportunidades para crianças e jovens.",
-                                fontSize = 14.sp,
-                                color = Color.DarkGray,
-                                lineHeight = 20.sp,
-                                modifier = Modifier.weight(1f)
+                    // Seção de crianças
+                    item {
+                        if (criancaService != null && usuarioAtual != null) {
+                            ChildrenListSection(
+                                usuarioId = usuarioAtual!!.usuario_id,
+                                criancaService = criancaService!!,
+                                onChildClick = { child ->
+                                    selectedChild = child
+                                }
                             )
                         }
+                    }
 
-                        Spacer(modifier = Modifier.height(32.dp))
-
-                        HorizontalDivider(
-                            color = Color.LightGray,
-                            thickness = 1.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
+                    item {
+                        Spacer(modifier = Modifier.height(20.dp))
                     }
                 }
             }
 
-            // Imagem de perfil centralizada
+            // Imagem de perfil sobreposta
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -277,11 +235,11 @@ fun PerfilScreen(
             }
         }
 
-        // Barra inferior (navegação)
+        // Barra inferior
         BarraTarefas(navController = navController)
     }
 
-    // Dialog de editar perfil
+    // Dialog de edição de perfil
     if (showEditDialog && usuarioAtual != null && usuarioService != null) {
         EditarPerfilDialog(
             usuario = usuarioAtual!!,
@@ -290,7 +248,7 @@ fun PerfilScreen(
                 usuarioAtual = usuarioAtualizado
                 instituicaoNome = usuarioAtualizado.nome
                 instituicaoEmail = usuarioAtualizado.email
-                // Atualizar dados no DataStore
+
                 coroutineScope.launch {
                     val authData = authDataStore.loadAuthUser()
                     if (authData != null) {
@@ -300,6 +258,14 @@ fun PerfilScreen(
             },
             usuarioService = usuarioService!!,
             scope = coroutineScope
+        )
+    }
+
+    // Dialog de detalhes da criança
+    if (selectedChild != null) {
+        ChildDetailDialog(
+            child = selectedChild,
+            onDismiss = { selectedChild = null }
         )
     }
 }

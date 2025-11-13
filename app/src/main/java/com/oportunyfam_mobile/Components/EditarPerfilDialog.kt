@@ -35,6 +35,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
+import android.util.Log
+
 @Composable
 fun EditarPerfilDialog(
     usuario: Usuario,
@@ -45,7 +47,10 @@ fun EditarPerfilDialog(
 ) {
     val context = LocalContext.current
 
-    // Estados para edição
+    // Debug: Log para verificar se os IDs estão sendo desserializados corretamente (se usuario.id for 0 = problema na desserialização)
+    Log.d("EditarPerfilDialog", "Usuario ID: ${usuario.id}, Usuario_ID: ${usuario.usuario_id}")
+
+    // ...existing code...
     var fotoPerfil by remember { mutableStateOf(usuario.foto_perfil ?: "") }
     var telefone by remember { mutableStateOf(usuario.telefone ?: "") }
     var endereco by remember { mutableStateOf(usuario.cpf) } // Placeholder, precisa de campo real
@@ -349,7 +354,9 @@ fun EditarPerfilDialog(
                                         estado = ""
                                     )
 
-                                    usuarioService.atualizar(usuario.usuario_id, request)
+                                    // ALTERAÇÃO: Usar usuario.id (ID único) em vez de usuario_id (ID interno da tabela)
+                                    // Isso garante que a requisição vá para PUT /v1/usuario/{id} com o ID correto
+                                    usuarioService.atualizar(usuario.id, request)
                                         .enqueue(object : retrofit2.Callback<UsuarioResponse> {
                                             override fun onResponse(
                                                 call: retrofit2.Call<UsuarioResponse>,
