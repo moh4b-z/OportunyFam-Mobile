@@ -24,7 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
-import com.oportunyfam_mobile.R
+
 
 @Composable
 fun PerfilOngScreen(navController: NavHostController?) {

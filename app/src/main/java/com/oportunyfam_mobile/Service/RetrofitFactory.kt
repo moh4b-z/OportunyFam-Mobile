@@ -8,14 +8,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-/**
- * RetrofitFactory - Fábrica para criar instâncias dos serviços de API
- *
- * Configura o Retrofit com:
- * - Logging de requisições/respostas
- * - Deserialização customizada de dados
- * - Configurações de rede otimizadas
- */
+
 class RetrofitFactory {
 
     companion object {

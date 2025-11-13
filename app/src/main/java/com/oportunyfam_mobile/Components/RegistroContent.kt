@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -76,6 +78,9 @@ fun RegistroContent(
 ) {
     val context = LocalContext.current
 
+    // Estado para controlar o scroll da tela
+    val scrollState = rememberLazyListState()
+
     // Estado local para a validação do CPF
     var isCpfInputValid by remember { mutableStateOf(false) }
 
@@ -99,7 +104,22 @@ fun RegistroContent(
     val isPasswordMatch = senha.value.length >= 6 && senha.value == confirmarSenha.value
     val isStep3Valid = isPasswordMatch && concordaTermos.value
 
+    // Efeito para avançar automaticamente quando o CPF é validado na etapa 1
+    LaunchedEffect(isCpfInputValid, currentStep.value) {
+        if (isCpfInputValid && isStep1Valid && currentStep.value == STEP_DADOS_PESSOAIS) {
+            // Aguarda um pouco para garantir que a validação foi processada
+            kotlinx.coroutines.delay(300)
+            currentStep.value = STEP_CONTATO_E_ENDERECO
+        }
+    }
+
+    // Efeito para fazer scroll suave ao topo quando muda de etapa
+    LaunchedEffect(currentStep.value) {
+        scrollState.animateScrollToItem(0)
+    }
+
     LazyColumn(
+        state = scrollState,
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),

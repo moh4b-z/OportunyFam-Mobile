@@ -5,11 +5,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowLeft
-import androidx.compose.material.icons.automirrored.filled.ArrowRight
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,6 +25,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
+import com.oportunyfam_mobile.Components.EditarPerfilDialog
+import com.oportunyfam_mobile.Components.PrimaryColor
 import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
@@ -43,16 +43,24 @@ fun PerfilScreen(
     // Estados para armazenar as informações dinâmicas do usuário
     var instituicaoNome by remember { mutableStateOf("Carregando...") }
     var instituicaoEmail by remember { mutableStateOf("Carregando...") }
+    var usuarioAtual by remember { mutableStateOf<com.oportunyfam_mobile.model.Usuario?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
+    var usuarioService by remember { mutableStateOf<com.oportunyfam_mobile.Service.UsuarioService?>(null) }
 
     // Efeito que carrega os dados assim que a tela abre
     LaunchedEffect(Unit) {
         val authData = authDataStore.loadAuthUser()
+        usuarioService = com.oportunyfam_mobile.Service.RetrofitFactory().getUsuarioService()
+
         if (authData != null) {
             when (authData.type) {
                 AuthType.USUARIO -> {
                     val user = authData.user as? com.oportunyfam_mobile.model.Usuario
-                    instituicaoNome = user?.nome ?: "Usuário"
-                    instituicaoEmail = user?.email ?: "Email não disponível"
+                    if (user != null) {
+                        usuarioAtual = user
+                        instituicaoNome = user.nome
+                        instituicaoEmail = user.email
+                    }
                 }
 
                 AuthType.CRIANCA -> {
@@ -102,7 +110,7 @@ fun PerfilScreen(
             }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = { onLogout() }) {
-                Icon(Icons.AutoMirrored.Filled.ArrowRight, contentDescription = "Sair", tint = Color.Black)
+                Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sair", tint = Color.Black)
             }
             IconButton(onClick = {
 
@@ -111,7 +119,7 @@ fun PerfilScreen(
             }
         }
 
-        HorizontalDivider(color = Color.LightGray, thickness = 1.5.dp)
+        HorizontalDivider(color = Color.White, thickness = 1.5.dp)
 
         // Conteúdo principal
         Box(
@@ -140,21 +148,48 @@ fun PerfilScreen(
                             .padding(horizontal = 24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        // Nome e e-mail dinâmicos
-                        Text(
-                            instituicaoNome,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.Black
-                        )
+                        // Seção Nome, Email e Botão de Editar
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                // Nome e e-mail dinâmicos
+                                Text(
+                                    instituicaoNome,
+                                    fontSize = 20.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Black
+                                )
 
-                        Spacer(modifier = Modifier.height(4.dp))
+                                Spacer(modifier = Modifier.height(4.dp))
 
-                        Text(
-                            instituicaoEmail,
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
+                                Text(
+                                    instituicaoEmail,
+                                    fontSize = 14.sp,
+                                    color = Color.Gray
+                                )
+                            }
+
+                            // Botão de Editar
+                            if (usuarioAtual != null) {
+                                IconButton(
+                                    onClick = { showEditDialog = true },
+                                    modifier = Modifier.padding(start = 8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = "Editar Perfil",
+                                        tint = PrimaryColor,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                }
+                            }
+                        }
 
                         Spacer(modifier = Modifier.height(16.dp))
 
@@ -244,6 +279,28 @@ fun PerfilScreen(
 
         // Barra inferior (navegação)
         BarraTarefas(navController = navController)
+    }
+
+    // Dialog de editar perfil
+    if (showEditDialog && usuarioAtual != null && usuarioService != null) {
+        EditarPerfilDialog(
+            usuario = usuarioAtual!!,
+            onDismiss = { showEditDialog = false },
+            onSave = { usuarioAtualizado ->
+                usuarioAtual = usuarioAtualizado
+                instituicaoNome = usuarioAtualizado.nome
+                instituicaoEmail = usuarioAtualizado.email
+                // Atualizar dados no DataStore
+                coroutineScope.launch {
+                    val authData = authDataStore.loadAuthUser()
+                    if (authData != null) {
+                        authDataStore.saveAuthUser(usuarioAtualizado, AuthType.USUARIO)
+                    }
+                }
+            },
+            usuarioService = usuarioService!!,
+            scope = coroutineScope
+        )
     }
 }
 
