@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.oportunyfam_mobile.Components.BarraTarefas
+import com.oportunyfam_mobile.R
 
 
 @Composable
@@ -200,7 +201,7 @@ fun PerfilOngScreen(navController: NavHostController?) {
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Image(
-                    painter = painterResource(R.drawable.logo),
+                    painter = painterResource(R.drawable.user),
                     contentDescription = "foto perfil",
                     modifier = Modifier.fillMaxSize()
                 )

@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -16,11 +15,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,13 +28,10 @@ import com.oportunyfam_mobile.Utils.convertDataParaBackendFormat
 import com.oportunyfam_mobile.Utils.formatarDataNascimentoParaLocalDate
 import com.oportunyfam_mobile.model.Usuario
 import com.oportunyfam_mobile.model.UsuarioRequest
-import com.oportunyfam_mobile.model.UsuarioResponse
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import retrofit2.Response
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
+import kotlinx.coroutines.withContext
 
 // Constantes de controle de etapa
 private const val STEP_DADOS_PESSOAIS = 1
@@ -576,7 +570,10 @@ fun RegistroContent(
                                             foto_perfil = ""
                                         )
 
-                                        val response = usuarioService.criar(request).execute()
+                                        // Executa a chamada na thread de I/O para não bloquear a Main Thread
+                                        val response = withContext(Dispatchers.IO) {
+                                            usuarioService.criar(request).execute()
+                                        }
 
                                         if (response.isSuccessful && response.body() != null) {
                                             val usuarioResponse = response.body()!!

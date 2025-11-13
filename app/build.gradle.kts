@@ -21,7 +21,7 @@ if (localPropertiesFile.exists()) {
 
 android {
     namespace = "com.oportunyfam_mobile"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.oportunyfam_mobile"
