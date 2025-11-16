@@ -23,14 +23,56 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import android.util.Log
 import com.oportunyfam_mobile.Components.BarraTarefas
+import com.oportunyfam_mobile.Components.MapViewGoogle
 import com.oportunyfam_mobile.R
+import com.oportunyfam_mobile.Service.RetrofitFactory
+import com.oportunyfam_mobile.model.Instituicao
+import kotlinx.coroutines.launch
+import com.google.android.gms.maps.MapsInitializer
 
 
 @Composable
-fun PerfilOngScreen(navController: NavHostController?) {
+fun PerfilOngScreen(navController: NavHostController?, instituicaoId: Int = 0) {
+
+    val scope = rememberCoroutineScope()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
     var selectedOption by remember { mutableStateOf<String?>(null) }
+    var instituicao by remember { mutableStateOf<Instituicao?>(null) }
+    var isMapReady by remember { mutableStateOf(false) }
+
+    // Inicializar Google Maps
+    LaunchedEffect(Unit) {
+        try {
+            MapsInitializer.initialize(context)
+            isMapReady = true
+            Log.d("PerfilOngScreen", "✅ Google Maps inicializado com sucesso")
+        } catch (e: Exception) {
+            Log.e("PerfilOngScreen", "❌ Erro ao inicializar Google Maps: ${e.message}")
+        }
+    }
+
+    // Buscar dados da instituição quando o ID mudar
+    LaunchedEffect(instituicaoId) {
+        if (instituicaoId > 0) {
+            scope.launch {
+                try {
+                    Log.d("PerfilOngScreen", "Buscando instituição com ID: $instituicaoId")
+                    val response = RetrofitFactory().getInstituicaoService().buscarPorIdSuspend(instituicaoId)
+                    if (response.isSuccessful) {
+                        instituicao = response.body()?.instituicao
+                        Log.d("PerfilOngScreen", "Instituição carregada: ${instituicao?.nome}")
+                    } else {
+                        Log.e("PerfilOngScreen", "Erro ao buscar instituição: ${response.code()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("PerfilOngScreen", "Erro ao buscar instituição", e)
+                }
+            }
+        }
+    }
 
     val gradient = Brush.horizontalGradient(
         colors = listOf(
@@ -94,23 +136,55 @@ fun PerfilOngScreen(navController: NavHostController?) {
                             tint = Color.Gray,
                             modifier = Modifier.padding(end = 4.dp)
                         )
-                        Text("Osasco-SP", color = Color.Black)
+                        Text(
+                            text = instituicao?.endereco?.let {
+                                "${it.cidade}-${it.estado}"
+                            } ?: "Localização não disponível",
+                            color = Color.Black
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Horário
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "",
-                            tint = Color.Gray,
-                            modifier = Modifier.padding(end = 4.dp)
-                        )
-                        Text("08:00 - 18:00", color = Color.Black)
+                    // Mapa mostrando a localização da instituição
+                    if (isMapReady && instituicao != null) {
+                        val lat = instituicao?.endereco?.latitude ?: -25.441111
+                        val lng = instituicao?.endereco?.longitude ?: -49.276667
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(200.dp)
+                                .padding(horizontal = 8.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        ) {
+                            MapViewGoogle(
+                                modifier = Modifier.fillMaxSize(),
+                                initialLat = lat,
+                                initialLon = lng,
+                                initialZoom = 15f,
+                                markers = listOf(instituicao!!)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    // Telefone (se disponível)
+                    instituicao?.telefone?.let {
+                        if (it.isNotBlank()) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Notifications,
+                                    contentDescription = "",
+                                    tint = Color.Gray,
+                                    modifier = Modifier.padding(end = 4.dp)
+                                )
+                                Text(it, color = Color.Black)
+                            }
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
+                    }
 
                     // Card de opções
                     Column(
@@ -156,7 +230,7 @@ fun PerfilOngScreen(navController: NavHostController?) {
                                 Column(modifier = Modifier.padding(16.dp)) {
                                     when (option) {
                                         "Sobre nós" -> Text(
-                                            "A ONG promove a inclusão social e desenvolvimento de jovens por meio do esporte.",
+                                            text = instituicao?.descricao ?: "Descrição não disponível",
                                             color = Color.Black
                                         )
                                         "Faça parte" -> CheckboxOportunidade()
@@ -181,7 +255,7 @@ fun PerfilOngScreen(navController: NavHostController?) {
 
             // Texto acima da foto
             Text(
-                text = "127\nFOLLOWING",
+                text = "${instituicao?.conversas?.size ?: 0}\nPERFIL",
                 color = Color.Black,
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier

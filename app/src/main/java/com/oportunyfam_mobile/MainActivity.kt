@@ -16,6 +16,7 @@ import com.oportunyfam_mobile.Screens.RegistroScreen
 import com.oportunyfam_mobile.Screens.HomeScreen
 import com.oportunyfam_mobile.Screens.PerfilScreen
 import com.oportunyfam_mobile.Screens.RegisterChildScreen
+import com.oportunyfam_mobile.Screens.PerfilOngScreen
 import com.oportunyfam_mobile.ui.theme.OportunyFamMobileTheme
 
 class MainActivity : ComponentActivity() {
@@ -58,6 +59,17 @@ class MainActivity : ComponentActivity() {
                     composable(NavRoutes.CONVERSAS) {
                         ConversasScreen(navController)
                     }
+                    // Tela de Perfil da ONG/Instituição
+                    composable(
+                        route = "instituicao_perfil/{instituicao_id}",
+                        arguments = listOf(
+                            navArgument("instituicao_id") { type = NavType.IntType }
+                        )
+                    ) { backStackEntry ->
+                        val instituicaoId = backStackEntry.arguments?.getInt("instituicao_id") ?: 0
+                        PerfilOngScreen(navController = navController, instituicaoId = instituicaoId)
+                    }
+
                     composable(
                         route = "${NavRoutes.CHAT}/{conversaId}/{nomeContato}/{pessoaIdAtual}",
                         arguments = listOf(

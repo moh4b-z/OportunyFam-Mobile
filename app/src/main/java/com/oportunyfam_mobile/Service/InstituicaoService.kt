@@ -29,6 +29,10 @@ interface InstituicaoService {
     @GET("instituicoes/{id}")
     fun buscarPorId(@Path("id") id: Int): Call<InstituicaoResponse>
 
+    // GET - Buscar instituição por ID (versão suspend para coroutines)
+    @GET("instituicoes/{id}")
+    suspend fun buscarPorIdSuspend(@Path("id") id: Int): Response<InstituicaoResponse>
+
     // PUT - Atualizar instituição por ID - ADICIONANDO HEADER EXPLÍCITO
     @Headers("Content-Type: application/json")
     @PUT("instituicoes/{id}")
