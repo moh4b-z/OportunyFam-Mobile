@@ -19,7 +19,11 @@ interface InstituicaoService {
 
     // GET - Listar todas as instituições
     @GET("instituicoes")
-    fun listarTodas(): Call<List<InstituicaoListResponse>>
+    fun listarTodas(): Call<InstituicaoListResponse>
+
+    // GET - Listar todas as instituições (versão suspend para coroutines)
+    @GET("instituicoes")
+    suspend fun listarTodasSuspend(): Response<InstituicaoListResponse>
 
     // GET - Buscar instituição por ID
     @GET("instituicoes/{id}")

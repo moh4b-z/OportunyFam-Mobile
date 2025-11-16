@@ -96,16 +96,15 @@ dependencies {
 
     // Datastore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    //mapa
+
+    // Google Maps & Location
     implementation("com.google.android.gms:play-services-maps:18.2.0")
-    implementation("com.google.maps.android:maps-compose:4.3.3") // integração com Jetpack Compose
-
-    implementation("com.google.android.gms:play-services-location:21.0.1")//Para obter a posição atual do usuário
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
+    implementation("com.google.maps.android:maps-compose:4.3.3")
     implementation("com.google.android.gms:play-services-location:21.1.0")
-    implementation("com.google.accompanist:accompanist-permissions:0.30.1")
     implementation("com.google.android.libraries.places:places:3.5.0")
+    implementation("com.google.maps.android:android-maps-utils:3.8.2")
+
+    implementation("com.google.accompanist:accompanist-permissions:0.30.1")
 
     // Remover dependências OSM
     // implementation("org.osmdroid:osmdroid-android:6.1.18")
