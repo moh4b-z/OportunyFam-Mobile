@@ -27,6 +27,10 @@ interface InscricaoService {
     @GET("inscricoes/crianca/{idCrianca}")
     fun buscarInscricoesPorCrianca(@Path("idCrianca") idCrianca: Int): Call<InscricoesResponse>
 
+    // GET /inscricoes/atividade/:idAtividade - Buscar inscrições por ID da atividade
+    @GET("inscricoes/atividade/{idAtividade}")
+    fun buscarInscricoesPorAtividade(@Path("idAtividade") idAtividade: Int): Call<InscricoesResponse>
+
     // PUT /inscricoes/:id - Atualizar inscrição (status, observação)
     @Headers("Content-Type: application/json")
     @PUT("inscricoes/{id}")

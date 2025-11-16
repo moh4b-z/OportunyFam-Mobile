@@ -49,10 +49,18 @@ fun ChatScreen(
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Carregar mensagens e iniciar escuta em tempo real do Firebase
-    LaunchedEffect(conversaId) {
+    // ✅ SEMPRE recarrega mensagens quando a tela aparece
+    // Isso garante que o histórico seja carregado mesmo após sair e voltar
+    LaunchedEffect(Unit) {
         viewModel.iniciarEscutaMensagens(conversaId)
     }
+    // depois do LaunchedEffect(conversaId) que chama iniciarEscutaMensagens:
+    DisposableEffect(conversaId) {
+        onDispose {
+            viewModel.pararEscutaMensagens()
+        }
+    }
+
 
     // Scroll automático para a última mensagem
     LaunchedEffect(mensagens.size) {

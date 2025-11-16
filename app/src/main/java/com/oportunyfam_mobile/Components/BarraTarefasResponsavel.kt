@@ -32,8 +32,9 @@ fun BarraTarefas(
     NavigationBar(
         modifier = Modifier
             .fillMaxWidth()
-            .height(70.dp)
-            .background(gradient),
+            .background(gradient)
+            .navigationBarsPadding() // respeita a área dos botões do sistema
+            .height(64.dp),
         containerColor = Color.Transparent,
         tonalElevation = 0.dp
     ) {
@@ -49,11 +50,11 @@ fun BarraTarefas(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFFFF6F00),
-                selectedTextColor = Color(0xFF5A3E1B),
-                indicatorColor = Color.White,
-                unselectedIconColor = Color(0xFF8D6E63),
-                unselectedTextColor = Color(0xFF8D6E63)
+                selectedIconColor = Color.White,
+                selectedTextColor = Color.White,
+                indicatorColor = Color.Transparent,
+                unselectedIconColor = Color(0xFF5A3E1B),
+                unselectedTextColor = Color(0xFF5A3E1B)
             )
         )
 
@@ -69,11 +70,11 @@ fun BarraTarefas(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFFFF6F00),
-                selectedTextColor = Color(0xFF5A3E1B),
-                indicatorColor = Color.White,
-                unselectedIconColor = Color(0xFF8D6E63),
-                unselectedTextColor = Color(0xFF8D6E63)
+                selectedIconColor = Color.White,
+                selectedTextColor = Color.White,
+                indicatorColor = Color.Transparent,
+                unselectedIconColor = Color(0xFF5A3E1B),
+                unselectedTextColor = Color(0xFF5A3E1B)
             )
         )
 
@@ -89,11 +90,11 @@ fun BarraTarefas(
                 )
             },
             colors = NavigationBarItemDefaults.colors(
-                selectedIconColor = Color(0xFFFF6F00),
-                selectedTextColor = Color(0xFF5A3E1B),
-                indicatorColor = Color.White,
-                unselectedIconColor = Color(0xFF8D6E63),
-                unselectedTextColor = Color(0xFF8D6E63)
+                selectedIconColor = Color.White,
+                selectedTextColor = Color.White,
+                indicatorColor = Color.Transparent,
+                unselectedIconColor = Color(0xFF5A3E1B),
+                unselectedTextColor = Color(0xFF5A3E1B)
             )
         )
     }
@@ -106,26 +107,28 @@ private fun NavItemContent(
     isSelected: Boolean
 ) {
     Column(
+        modifier = Modifier
+            .padding(vertical = 6.dp)
+            .height(IntrinsicSize.Min),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Icon(
             imageVector = icon,
             contentDescription = label,
-            modifier = Modifier.size(24.dp),
-            tint = if (isSelected) Color(0xFFFF6F00) else Color(0xFF8D6E63)
+            modifier = Modifier.size(22.dp),
+            tint = if (isSelected) Color.White else Color(0xFF5A3E1B)
         )
         Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = label,
             fontSize = 11.sp,
-            color = if (isSelected) Color(0xFF5A3E1B) else Color(0xFF8D6E63),
             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
         )
     }
 }
 
-@Preview(showBackground = true, widthDp = 360, heightDp = 70)
+@Preview(showBackground = true, widthDp = 360, heightDp = 88)
 @Composable
 fun BarraTarefasPreview() {
     BarraTarefas(currentRoute = "HomeScreen")

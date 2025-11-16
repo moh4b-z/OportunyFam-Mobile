@@ -45,7 +45,7 @@ data class PublicacaoRequest(
     @SerializedName("imagem")
     val imagem: String?,
 
-    @SerializedName("instituicao_id")
+    @SerializedName("id_instituicao")
     val instituicaoId: Int
 )
 
@@ -57,4 +57,3 @@ data class ErrorResponse(
     val status_code: Int,
     val messagem: String
 )
-
