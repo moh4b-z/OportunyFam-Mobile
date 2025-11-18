@@ -89,19 +89,32 @@ class MainActivity : ComponentActivity() {
                             pessoaIdAtual = pessoaIdAtual
                         )
                     }
-                }
-            }
-        }
-    }
 
-    companion object NavRoutes {
-        const val SPLASH = "tela_splash"
-        const val REGISTRO = "tela_registro"
-        const val PERFIL = "tela_perfil"
-        const val HOME = "HomeScreen"
+                    composable(
+                        route = "search_results/{query}",
+                        arguments = listOf(
+                            navArgument("query") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val query = backStackEntry.arguments?.getString("query") ?: ""
+                        com.oportunyfam_mobile.Screens.SearchResultsScreen(
+                            navController = navController,
+                            query = query
+                        )
+                    }
+        const val PERFIL_ONG = "instituicao_perfil" // Perfil de instituições
+
+        // Telas de cadastro
         const val CHILD_REGISTER = "child_register"
-        const val ATIVIDADES = "AtividadesScreen"
+
+        // Telas de busca
+        const val SEARCH_RESULTS = "search_results"
+
+        // Telas de comunicação
         const val CONVERSAS = "ConversasScreen"
         const val CHAT = "ChatScreen"
+
+        // Outras telas
+        const val ATIVIDADES = "AtividadesScreen"
     }
 }

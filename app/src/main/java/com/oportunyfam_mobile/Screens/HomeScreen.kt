@@ -356,8 +356,18 @@ fun HomeScreen(navController: NavHostController?) {
         SearchBar(
             query = query,
             onQueryChange = { query = it },
-            onSearch = { buscarInstituicoes(it) },
-            onSearchIconClick = { buscarInstituicoes(query) },
+            onSearch = {
+                // Navegar para tela de busca
+                if (it.isNotBlank()) {
+                    navController?.navigate("search_results/$it")
+                }
+            },
+            onSearchIconClick = {
+                // Navegar para tela de busca
+                if (query.isNotBlank()) {
+                    navController?.navigate("search_results/$query")
+                }
+            },
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 16.dp, start = 16.dp, end = 16.dp)
