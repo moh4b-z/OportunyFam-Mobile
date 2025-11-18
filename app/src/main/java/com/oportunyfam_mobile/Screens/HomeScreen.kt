@@ -32,6 +32,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
+import com.oportunyfam_mobile.Components.MapComponent
 import com.oportunyfam_mobile.Components.SearchBar
 import com.oportunyfam_mobile.Components.CategoryFilterRow
 import com.oportunyfam_mobile.Components.Category
@@ -46,6 +47,8 @@ import com.google.android.gms.maps.MapsInitializer
 import com.oportunyfam_mobile.util.haversineKm
 import com.oportunyfam_mobile.util.normalizeCep
 import java.util.Locale
+
+private const val TAG = "HomeScreen"
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -310,76 +313,23 @@ fun HomeScreen(navController: NavHostController?) {
 
         // ===== Mapa de fundo =====
         if (isMapReady) {
-            GoogleMap(
-                modifier = Modifier.matchParentSize(),
+            MapComponent(
+                userLocation = userLocation,
+                instituicoesCadastradas = instituicoesCadastradas,
+                instituicoesNaoCadastradas = instituicoesNaoCadastradas,
+                selectedCategories = selectedCategories,
+                categoryResults = categoryResults,
                 cameraPositionState = cameraPositionState,
-                properties = MapProperties(
-                    isMyLocationEnabled = false,
-                    latLngBoundsForCameraTarget = brasilBounds, // Limitar ao Brasil
-                    minZoomPreference = 4f,
-                    maxZoomPreference = 20f
-                ),
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    myLocationButtonEnabled = false
-                )
-            ) {
-                // Marcador de localização do usuário (Azul)
-                if (userLocation != null) {
-                    Marker(
-                        state = rememberMarkerState(position = userLocation!!),
-                        title = "Você está aqui",
-                        snippet = "Sua localização atual",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)
-                    )
-                }
-
-                // Marcadores de instituições CADASTRADAS (Verde)
-                val marcadoresVisiveis = if (selectedCategories.isNotEmpty()) categoryResults else instituicoesCadastradas
-                marcadoresVisiveis.forEach { instituicao ->
-                    val lat = instituicao.endereco?.latitude
-                    val lng = instituicao.endereco?.longitude
-
-                    if (lat != null && lng != null && lat != 0.0 && lng != 0.0) {
-                        // Calcular distância se temos localização do usuário
-                        val distance = if (userLocation != null) {
-                            haversineKm(userLocation!!.latitude, userLocation!!.longitude, lat, lng)
-                        } else null
-                        val distanceText = if (distance != null) String.format(Locale.US, "%.1f km", distance) else ""
-
-                        Marker(
-                            state = rememberMarkerState(position = LatLng(lat, lng)),
-                            title = instituicao.nome,
-                            snippet = "Instituição cadastrada\n${instituicao.endereco.logradouro}\n$distanceText",
-                            icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
-                            onClick = {
-                                // Aqui você pode adicionar ação ao clicar no marcador
-                                Log.d("HomeScreen", "Clicou na instituição: ${instituicao.nome}")
-                                // Navegar para o perfil da instituição
-                                navController?.navigate("instituicao_perfil/${instituicao.instituicao_id}")
-                                true
-                            }
-                        )
-                    }
-                }
-
-                // Marcadores de instituições NÃO CADASTRADAS - Google Places (Laranja)
-                instituicoesNaoCadastradas.forEach { place ->
-                    Marker(
-                        state = rememberMarkerState(position = LatLng(place.latitude, place.longitude)),
-                        title = place.nome,
-                        snippet = "Instituição não cadastrada\n${place.endereco ?: ""}",
-                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE),
-                        onClick = {
-                            Log.d("HomeScreen", "Clicou em instituição não cadastrada: ${place.nome}")
-                            // Para instituições do Google Places, fazer busca na API para obter dados completos
-                            // e depois navegar para o perfil se encontrar
-                            // Por enquanto, apenas log
-                            true
-                        }
-                    )
-                }
-            }
+                brasilBounds = brasilBounds,
+                isMapReady = isMapReady,
+                onMapLoaded = {
+                    Log.i(TAG, "✅ Callback onMapLoaded chamado")
+                },
+                onMapClick = { latLng ->
+                    Log.d(TAG, "🖱️ Clique no mapa na HomeScreen")
+                },
+                navController = navController
+            )
         } else {
             // Mostrar loading enquanto o mapa está sendo inicializado
             Box(
