@@ -98,7 +98,7 @@ class MainActivity : ComponentActivity() {
                         val query = backStackEntry.arguments?.getString("query") ?: ""
                         com.oportunyfam_mobile.Screens.SearchResultsScreen(
                             navController = navController,
-                            query = query
+                            initialQuery = query
                         )
                     }
                 }
