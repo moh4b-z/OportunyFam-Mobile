@@ -89,7 +89,6 @@ class MainActivity : ComponentActivity() {
                             pessoaIdAtual = pessoaIdAtual
                         )
                     }
-
                     composable(
                         route = "search_results/{query}",
                         arguments = listOf(
@@ -102,6 +101,19 @@ class MainActivity : ComponentActivity() {
                             query = query
                         )
                     }
+                }
+            }
+        }
+    }
+
+    companion object NavRoutes {
+        // Telas iniciais
+        const val SPLASH = "tela_splash"
+        const val REGISTRO = "tela_registro"
+
+        // Telas principais
+        const val HOME = "HomeScreen"
+        const val PERFIL = "tela_perfil"
         const val PERFIL_ONG = "instituicao_perfil" // Perfil de instituições
 
         // Telas de cadastro
