@@ -13,7 +13,6 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.*
-import com.oportunyfam_mobile.Service.PlaceInstituicao
 import com.oportunyfam_mobile.model.Instituicao
 import com.oportunyfam_mobile.util.haversineKm
 import java.util.Locale
@@ -24,7 +23,6 @@ private const val TAG = "MapComponent"
 fun MapComponent(
     userLocation: LatLng?,
     instituicoesCadastradas: List<Instituicao>,
-    instituicoesNaoCadastradas: List<PlaceInstituicao>,
     selectedCategories: List<Int>,
     categoryResults: List<Instituicao>,
     cameraPositionState: CameraPositionState,
@@ -42,7 +40,6 @@ fun MapComponent(
     Log.d(TAG, "========================================")
     Log.d(TAG, "📍 userLocation: $userLocation")
     Log.d(TAG, "📊 instituicoesCadastradas.size: ${instituicoesCadastradas.size}")
-    Log.d(TAG, "📊 instituicoesNaoCadastradas.size: ${instituicoesNaoCadastradas.size}")
     Log.d(TAG, "🏷️ selectedCategories: $selectedCategories")
     Log.d(TAG, "📊 categoryResults.size: ${categoryResults.size}")
     Log.d(TAG, "✅ isMapReady: $isMapReady")
@@ -153,24 +150,6 @@ fun MapComponent(
             }
         }
 
-        // Marcadores de instituições NÃO CADASTRADAS - Google Places (Laranja)
-        Log.d(TAG, "🌐 Adicionando ${instituicoesNaoCadastradas.size} marcadores do Google Places")
-
-        instituicoesNaoCadastradas.forEach { place ->
-            Log.v(TAG, "📍 Marcador Places: ${place.nome} em (${place.latitude}, ${place.longitude})")
-
-            Marker(
-                state = rememberMarkerState(position = LatLng(place.latitude, place.longitude)),
-                title = place.nome,
-                snippet = "Instituição não cadastrada\n${place.endereco ?: ""}",
-                icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE),
-                onClick = {
-                    Log.d(TAG, "🖱️ Clicou em instituição não cadastrada: ${place.nome}")
-                    true
-                }
-            )
-        }
-
         Log.d(TAG, "✅ Marcadores desenhados com sucesso")
     }
 
@@ -178,4 +157,3 @@ fun MapComponent(
     Log.d(TAG, "✅ MapComponent renderizado")
     Log.d(TAG, "========================================")
 }
-

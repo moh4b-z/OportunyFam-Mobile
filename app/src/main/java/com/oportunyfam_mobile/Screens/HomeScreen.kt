@@ -38,8 +38,6 @@ import com.oportunyfam_mobile.Components.CategoryFilterRow
 import com.oportunyfam_mobile.Components.Category
 import com.oportunyfam_mobile.Service.LocationManager
 import com.oportunyfam_mobile.Service.RetrofitFactory
-import com.oportunyfam_mobile.Service.PlacesService
-import com.oportunyfam_mobile.Service.PlaceInstituicao
 import com.oportunyfam_mobile.model.Instituicao
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import kotlinx.coroutines.launch
@@ -62,9 +60,9 @@ fun HomeScreen(navController: NavHostController?) {
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    // Estados de instituições cadastradas e não cadastradas
+    // Estados de instituições cadastradas
     var instituicoesCadastradas by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
-    var instituicoesNaoCadastradas by remember { mutableStateOf<List<PlaceInstituicao>>(emptyList()) }
+    var instituicoesNaoCadastradas by remember { mutableStateOf<List<Any>>(emptyList()) } // placeholder, não será usado
     // Resultados quando o usuário filtra por categorias
     var categoryResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
 
@@ -72,7 +70,6 @@ fun HomeScreen(navController: NavHostController?) {
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var showLocationDialog by remember { mutableStateOf(false) }
     var locationManager by remember { mutableStateOf<LocationManager?>(null) }
-    var placesService by remember { mutableStateOf<PlacesService?>(null) }
     var isMapReady by remember { mutableStateOf(false) }
 
     // Categorias e filtros
@@ -95,13 +92,11 @@ fun HomeScreen(navController: NavHostController?) {
     )
 
     /**
-     * Função para carregar instituições cadastradas e não cadastradas
+     * Função para carregar instituições cadastradas
      */
     suspend fun carregarInstituicoes(
         localizacao: LatLng,
-        placesService: PlacesService?,
         onInstituicoesCadastradas: (List<Instituicao>) -> Unit,
-        onInstituicoesNaoCadastradas: (List<PlaceInstituicao>) -> Unit,
         onLoading: (Boolean) -> Unit
     ) {
         onLoading(true)
@@ -129,27 +124,15 @@ fun HomeScreen(navController: NavHostController?) {
                 onInstituicoesCadastradas(emptyList())
             }
 
-            // 2. Buscar instituições NÃO CADASTRADAS do Google Places
-            if (placesService != null) {
-                Log.d("HomeScreen", "🔄 Buscando instituições não cadastradas (Google Places)...")
-                val instituicoesPlaces = placesService.buscarInstituicoesProximas(localizacao, raioKm = 10.0)
-                onInstituicoesNaoCadastradas(instituicoesPlaces)
-                Log.d("HomeScreen", "✅ ${instituicoesPlaces.size} instituições não cadastradas encontradas")
-            } else {
-                Log.w("HomeScreen", "⚠️ PlacesService não inicializado")
-                onInstituicoesNaoCadastradas(emptyList())
-            }
-
         } catch (e: Exception) {
             Log.e("HomeScreen", "❌ Erro ao carregar instituições", e)
             onInstituicoesCadastradas(emptyList())
-            onInstituicoesNaoCadastradas(emptyList())
         } finally {
             onLoading(false)
         }
     }
 
-    // Inicializar LocationManager, PlacesService e verificar permissão ao entrar na tela
+    // Inicializar LocationManager e verificar permissão ao entrar na tela
     LaunchedEffect(Unit) {
         try {
             // Inicializar Google Maps
@@ -161,7 +144,6 @@ fun HomeScreen(navController: NavHostController?) {
         }
 
         locationManager = LocationManager(context)
-        placesService = PlacesService(context)
 
         // Verificar se tem permissão de localização
         val hasPermission = ContextCompat.checkSelfPermission(
@@ -180,9 +162,7 @@ fun HomeScreen(navController: NavHostController?) {
                     scope.launch {
                         carregarInstituicoes(
                             userLocation!!,
-                            placesService,
                             onInstituicoesCadastradas = { instituicoesCadastradas = it },
-                            onInstituicoesNaoCadastradas = { instituicoesNaoCadastradas = it },
                             onLoading = {}
                         )
                     }
@@ -316,7 +296,6 @@ fun HomeScreen(navController: NavHostController?) {
             MapComponent(
                 userLocation = userLocation,
                 instituicoesCadastradas = instituicoesCadastradas,
-                instituicoesNaoCadastradas = instituicoesNaoCadastradas,
                 selectedCategories = selectedCategories,
                 categoryResults = categoryResults,
                 cameraPositionState = cameraPositionState,
@@ -516,9 +495,7 @@ fun HomeScreen(navController: NavHostController?) {
                         scope.launch {
                             carregarInstituicoes(
                                 userLocation!!,
-                                placesService,
                                 onInstituicoesCadastradas = { instituicoesCadastradas = it },
-                                onInstituicoesNaoCadastradas = { instituicoesNaoCadastradas = it },
                                 onLoading = {}
                             )
                         }
@@ -569,9 +546,7 @@ fun HomeScreen(navController: NavHostController?) {
                         scope.launch {
                             carregarInstituicoes(
                                 userLocation!!,
-                                placesService,
                                 onInstituicoesCadastradas = { instituicoesCadastradas = it },
-                                onInstituicoesNaoCadastradas = { instituicoesNaoCadastradas = it },
                                 onLoading = {}
                             )
                         }
