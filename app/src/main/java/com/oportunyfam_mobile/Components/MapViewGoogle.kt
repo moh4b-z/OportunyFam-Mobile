@@ -6,8 +6,8 @@ import androidx.compose.ui.Modifier
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
-import com.oportunyfam_mobile.model.Instituicao
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import com.oportunyfam_mobile.model.Instituicao
 
 private const val TAG = "MapViewGoogle"
 
@@ -32,7 +32,8 @@ fun MapViewGoogle(
         modifier = modifier,
         cameraPositionState = cameraPositionState,
         properties = MapProperties(
-            isMyLocationEnabled = false
+            isMyLocationEnabled = false,
+            mapType = MapType.NORMAL // Force default Google Maps rendering
         ),
         uiSettings = MapUiSettings(
             zoomControlsEnabled = true,
@@ -52,7 +53,7 @@ fun MapViewGoogle(
                 Log.d(TAG, "📍 Adicionando marcador: ${instituicao.nome} em ($lat, $lng)")
 
                 Marker(
-                    state = MarkerState(position = LatLng(lat, lng)),
+                    state = rememberMarkerState(position = LatLng(lat, lng)),
                     title = instituicao.nome,
                     snippet = instituicao.endereco.logradouro ?: "",
                     icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)
@@ -63,4 +64,3 @@ fun MapViewGoogle(
         }
     }
 }
-
