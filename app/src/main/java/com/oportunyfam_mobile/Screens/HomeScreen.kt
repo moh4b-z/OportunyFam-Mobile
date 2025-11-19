@@ -31,6 +31,8 @@ import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
 import com.oportunyfam_mobile.Components.CategoryFilterRow
 import com.oportunyfam_mobile.Components.Category
+import com.oportunyfam_mobile.Components.OngMapMarkers
+import com.oportunyfam_mobile.model.OngMapMarker
 import com.oportunyfam_mobile.Service.LocationManager
 import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.model.Instituicao
@@ -54,6 +56,10 @@ fun HomeScreen(navController: NavHostController?) {
     var query by rememberSaveable { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
+    // Estado para carregamento de ONGs por categoria
+    var isLoadingCategories by remember { mutableStateOf(false) }
+    // ONGs filtradas (marcadores)
+    var filteredOngs by remember { mutableStateOf<List<OngMapMarker>>(emptyList()) }
 
     // Estados de localização
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
@@ -134,10 +140,54 @@ fun HomeScreen(navController: NavHostController?) {
             selectedCategories = selectedCategories + categoriaId
         }
 
-        // Aqui você pode chamar uma API para buscar ONGs com as categorias selecionadas
+        // Se há categorias selecionadas, buscar na API
         if (selectedCategories.isNotEmpty()) {
-            // Exemplo: buscarOngsPorCategorias(selectedCategories)
-            android.util.Log.d("HomeScreen", "Categorias selecionadas: $selectedCategories")
+            isLoadingCategories = true
+            val csv = selectedCategories.joinToString(",")
+            RetrofitFactory().getInstituicaoService()
+                .buscarPorCategorias(csv, 1, 100)
+                .enqueue(object : Callback<InstituicaoListResponse> {
+                    override fun onResponse(
+                        call: Call<InstituicaoListResponse>,
+                        response: Response<InstituicaoListResponse>
+                    ) {
+                        isLoadingCategories = false
+                        if (response.isSuccessful) {
+                            val body = response.body()
+                            val institutos = if (body?.status == true) body.instituicoes else emptyList()
+
+                            // Mapear Instituicao -> OngMapMarker (filtrar sem coordenadas)
+                            filteredOngs = institutos.mapNotNull { inst ->
+                                val lat = inst.endereco?.latitude
+                                val lon = inst.endereco?.longitude
+                                if (lat == null || lon == null) return@mapNotNull null
+
+                                OngMapMarker(
+                                    id = inst.instituicao_id,
+                                    nome = inst.nome,
+                                    latitude = lat,
+                                    longitude = lon,
+                                    categorias = emptyList(),
+                                    descricao = inst.descricao ?: "",
+                                    endereco = inst.endereco?.logradouro ?: "",
+                                    telefone = inst.telefone ?: "",
+                                    email = inst.email ?: ""
+                                )
+                            }
+                        } else {
+                            filteredOngs = emptyList()
+                        }
+                    }
+
+                    override fun onFailure(call: Call<InstituicaoListResponse>, t: Throwable) {
+                        isLoadingCategories = false
+                        t.printStackTrace()
+                        filteredOngs = emptyList()
+                    }
+                })
+        } else {
+            // Sem categorias selecionadas limpa os marcadores
+            filteredOngs = emptyList()
         }
     }
 
@@ -183,6 +233,18 @@ fun HomeScreen(navController: NavHostController?) {
                     state = rememberMarkerState(position = userLocation!!),
                     title = "Sua Localização",
                     snippet = "Você está aqui"
+                )
+            }
+
+
+            // Adicionar marcadores das ONGs filtradas (se houver)
+            if (filteredOngs.isNotEmpty()) {
+                OngMapMarkers(
+                    ongs = filteredOngs,
+                    onMarkerClick = { ong ->
+                        // Navegar para o perfil da instituição
+                        navController?.navigate("instituicao_perfil/${ong.id}")
+                    }
                 )
             }
         }
@@ -231,8 +293,8 @@ fun HomeScreen(navController: NavHostController?) {
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    // Exemplo: navegação futura
-                                    // navController?.navigate("detalhesOng/${ong.id}")
+                                    // Navegar para o perfil da instituição quando clicar no resultado
+                                    navController?.navigate("instituicao_perfil/${ong.instituicao_id}")
                                 }
                                 .padding(16.dp)
                         ) {

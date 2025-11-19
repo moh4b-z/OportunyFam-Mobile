@@ -50,6 +50,14 @@ interface InstituicaoService {
         @Query("tamanho") tamanho: Int?
     ): Call<InstituicaoListResponse>
 
+    // GET - Busca por categorias (aceita lista de IDs em CSV)
+    @GET("instituicoes")
+    fun buscarPorCategorias(
+        @Query("categorias") categorias: String,
+        @Query("pagina") pagina: Int? = 1,
+        @Query("tamanho") tamanho: Int? = 100
+    ): Call<InstituicaoListResponse>
+
     // GET - Busca com filtros e paginação
     @GET("instituicoes/alunos/")
     fun buscarAlunos(
