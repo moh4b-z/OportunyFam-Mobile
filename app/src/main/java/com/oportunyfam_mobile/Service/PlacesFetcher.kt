@@ -1,0 +1,78 @@
+package com.oportunyfam_mobile.Service
+
+import android.content.Context
+import android.content.pm.PackageManager
+import com.oportunyfam_mobile.model.OngMapMarker
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.logging.HttpLoggingInterceptor
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
+
+suspend fun fetchPlacesFromGoogle(context: Context, lat: Double, lon: Double): List<OngMapMarker> = withContext(Dispatchers.IO) {
+    try {
+        val appInfo = try {
+            context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+        } catch (e: Exception) {
+            null
+        }
+        val apiKey = appInfo?.metaData?.getString("com.google.android.geo.API_KEY")
+        if (apiKey.isNullOrBlank()) return@withContext emptyList()
+
+        // build a small Retrofit instance locally to avoid cross-file resolution issues
+        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor(logging)
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://maps.googleapis.com/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val service = retrofit.create(PlacesService::class.java)
+
+        val locationParam = "${lat},${lon}"
+        val typesToQuery = listOf("school", "library", "gym", "point_of_interest")
+        val resultsAccum = mutableListOf<OngMapMarker>()
+
+        for (t in typesToQuery) {
+            try {
+                val response = service.nearbySearch(locationParam, 5000, t, null, apiKey)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    body?.results?.forEach { r: PlaceResult ->
+                        val latR = r.geometry.location.lat
+                        val lngR = r.geometry.location.lng
+                        resultsAccum.add(
+                            OngMapMarker(
+                                id = r.place_id.hashCode(),
+                                nome = r.name,
+                                latitude = latR,
+                                longitude = lngR,
+                                categorias = emptyList(),
+                                descricao = r.vicinity ?: "",
+                                endereco = r.vicinity ?: "",
+                                telefone = "",
+                                email = "",
+                                isExternal = true,
+                                placeId = r.place_id
+                            )
+                        )
+                    }
+                }
+            } catch (_: Exception) {
+                // ignore per-type errors and continue
+            }
+        }
+
+        resultsAccum.distinctBy { it.placeId }
+    } catch (_: Exception) {
+        emptyList()
+    }
+}

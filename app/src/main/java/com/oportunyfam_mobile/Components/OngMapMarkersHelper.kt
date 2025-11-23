@@ -1,30 +1,71 @@
 package com.oportunyfam_mobile.Components
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import androidx.annotation.DrawableRes
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material3.Icon
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.dp
 import com.oportunyfam_mobile.model.OngMapMarker
+import com.google.android.gms.maps.model.BitmapDescriptor
+import com.google.android.gms.maps.model.BitmapDescriptorFactory
+import androidx.core.content.ContextCompat
+import com.oportunyfam_mobile.R
+import android.util.TypedValue
+import androidx.compose.ui.platform.LocalDensity
 
 /**
- * Exemplo de como usar os marcadores de ONG no mapa
- * Use isso dentro do GoogleMap composable
+ * Converte um drawable (vector ou bitmap) para BitmapDescriptor compatível com Google Maps.
+ */
+fun bitmapDescriptorFromVector(context: android.content.Context, @DrawableRes vectorResId: Int): BitmapDescriptor {
+    val drawable: Drawable? = ContextCompat.getDrawable(context, vectorResId)
+    if (drawable == null) return BitmapDescriptorFactory.defaultMarker()
+
+    // use density to create a sensible pixel size
+    val density = context.resources.displayMetrics.density
+    val dpSize = 48 // desired size in dp
+    val width = (dpSize * density).toInt().coerceAtLeast(48)
+    val height = (dpSize * density).toInt().coerceAtLeast(48)
+
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    drawable.setBounds(0, 0, canvas.width, canvas.height)
+    drawable.draw(canvas)
+    return BitmapDescriptorFactory.fromBitmap(bitmap)
+}
+
+/**
+ * Renderiza uma lista de marcadores com diferenciação visual.
+ * - ongs: lista de OngMapMarker
+ * - onMarkerClick: callback que recebe o OngMapMarker clicado
  */
 @Composable
 fun OngMapMarkers(
     ongs: List<OngMapMarker>,
     onMarkerClick: (OngMapMarker) -> Unit = {}
 ) {
+    val context = LocalContext.current
+
+    // cache descriptors para evitar recriar bitmaps a cada recomposição
+    // Use default markers with different hues to avoid runtime bitmap decoding issues
+    val apiDescriptor = remember { BitmapDescriptorFactory.defaultMarker(40f) } // orange-ish
+    val externalDescriptor = remember { BitmapDescriptorFactory.defaultMarker(200f) }
+
     ongs.forEach { ong ->
+        val position = LatLng(ong.latitude, ong.longitude)
+
+        val icon: BitmapDescriptor = if (!ong.isExternal) apiDescriptor else externalDescriptor
+
+        // Chamar Marker diretamente (sem try/catch ao redor de composable invocations)
         Marker(
-            state = MarkerState(position = LatLng(ong.latitude, ong.longitude)),
+            state = MarkerState(position = position),
             title = ong.nome,
             snippet = ong.descricao,
+            icon = icon,
             onClick = {
                 onMarkerClick(ong)
                 true
@@ -47,7 +88,8 @@ fun getExampleOngs(): List<OngMapMarker> {
             descricao = "Centro especializado em Jiu Jitsu",
             endereco = "Rua A, 123",
             telefone = "(11) 1234-5678",
-            email = "contato@jiujitsu.com"
+            email = "contato@jiujitsu.com",
+            isExternal = false
         ),
         OngMapMarker(
             id = 2,
@@ -58,7 +100,8 @@ fun getExampleOngs(): List<OngMapMarker> {
             descricao = "Centro de capacitação em tecnologia",
             endereco = "Av. Paulista, 456",
             telefone = "(11) 9876-5432",
-            email = "contato@hubti.com"
+            email = "contato@hubti.com",
+            isExternal = false
         ),
         OngMapMarker(
             id = 3,
@@ -69,7 +112,8 @@ fun getExampleOngs(): List<OngMapMarker> {
             descricao = "Espaço para arte e cultura",
             endereco = "Rua B, 789",
             telefone = "(11) 5555-5555",
-            email = "contato@centrocultural.com"
+            email = "contato@centrocultural.com",
+            isExternal = false
         ),
         OngMapMarker(
             id = 4,
@@ -80,7 +124,8 @@ fun getExampleOngs(): List<OngMapMarker> {
             descricao = "Biblioteca com acervo completo",
             endereco = "Rua C, 321",
             telefone = "(11) 3333-3333",
-            email = "contato@biblioteca.com"
+            email = "contato@biblioteca.com",
+            isExternal = false
         ),
         OngMapMarker(
             id = 5,
@@ -91,7 +136,8 @@ fun getExampleOngs(): List<OngMapMarker> {
             descricao = "ONG que oferece ambos os serviços",
             endereco = "Rua D, 654",
             telefone = "(11) 2222-2222",
-            email = "contato@academiajiujitsueti.com"
+            email = "contato@academiajiujitsueti.com",
+            isExternal = false
         )
     )
 }
@@ -111,4 +157,3 @@ fun filterOngsByCategories(
         }
     }
 }
-

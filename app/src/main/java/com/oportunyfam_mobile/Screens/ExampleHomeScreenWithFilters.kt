@@ -36,8 +36,8 @@ fun ExampleHomeScreenWithFilters() {
         )
     }
 
-    // Obter todas as ONGs
-    val allOngs = remember { getExampleOngs() }
+    // Obter todas as ONGs (dados de exemplo)
+    val allOngs = getExampleOngs()
 
     // Filtrar ONGs de acordo com as categorias selecionadas
     val filteredOngs = remember(selectedCategories) {
@@ -127,4 +127,3 @@ fun ExampleHomeScreenWithFilters() {
 fun PreviewExampleHomeScreenWithFilters() {
     ExampleHomeScreenWithFilters()
 }
-

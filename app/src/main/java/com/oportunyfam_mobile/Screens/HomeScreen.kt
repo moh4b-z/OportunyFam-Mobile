@@ -3,6 +3,7 @@ package com.oportunyfam_mobile.Screens
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -45,6 +46,8 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.asPaddingValues
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = false) {
@@ -82,6 +85,10 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
     var showLocationDialog by remember { mutableStateOf(false) }
     var locationManager by remember { mutableStateOf<LocationManager?>(null) }
 
+    // Marcadores de API + externos (estado)
+    var apiMarkers by remember { mutableStateOf<List<OngMapMarker>>(emptyList()) }
+    var externalMarkers by remember { mutableStateOf<List<OngMapMarker>>(emptyList()) }
+
     // Definir as categorias disponíveis
     val categories = remember {
         listOf(
@@ -90,6 +97,12 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
             Category(3, "Centro Cultural", Color(0xFFFFD93D)),
             Category(4, "Biblioteca", Color(0xFF6C5CE7))
         )
+    }
+
+    // initial camera position (moved up so LaunchedEffect can use it)
+    val initialLatLng = userLocation ?: LatLng(-23.5505, -46.6333)
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(initialLatLng, 15f)
     }
 
     // Inicializar LocationManager e verificar permissão ao entrar na tela
@@ -112,6 +125,44 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
         } else {
             // Se não tem permissão, mostrar diálogo
             showLocationDialog = true
+        }
+    }
+
+    // Carrega instituições da API e locais externos quando a tela inicia
+    LaunchedEffect(Unit) {
+        // carregar instituições da nossa API
+        try {
+            val response = withContext(Dispatchers.IO) { RetrofitFactory().getInstituicaoService().listarTodasSuspend() }
+            if (response.isSuccessful) {
+                val list = response.body()?.instituicoes ?: emptyList()
+                apiMarkers = list.map { inst ->
+                    OngMapMarker(
+                        id = inst.instituicao_id,
+                        nome = inst.nome,
+                        latitude = inst.endereco?.latitude ?: 0.0,
+                        longitude = inst.endereco?.longitude ?: 0.0,
+                        categorias = emptyList(),
+                        descricao = inst.descricao ?: "",
+                        endereco = inst.endereco?.logradouro ?: "",
+                        telefone = inst.telefone ?: "",
+                        email = inst.email ?: "",
+                        isExternal = false
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            apiMarkers = emptyList()
+        }
+
+        // carregar places externos (se houver chave)
+        try {
+            val lat = userLocation?.latitude ?: initialLatLng.latitude
+            val lon = userLocation?.longitude ?: initialLatLng.longitude
+            externalMarkers = com.oportunyfam_mobile.Service.fetchPlacesFromGoogle(context, lat, lon)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            externalMarkers = emptyList()
         }
     }
 
@@ -152,17 +203,33 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
         }
     }
 
-    // === Mapa ===
-    val initialLatLng = userLocation ?: LatLng(-23.5505, -46.6333)
-    val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(initialLatLng, 15f)
-    }
-
     // Atualizar posição da câmera quando a localização do usuário é obtida
     LaunchedEffect(userLocation) {
         if (userLocation != null) {
             cameraPositionState.position = CameraPosition.fromLatLngZoom(userLocation!!, 15f)
         }
+    }
+
+    // marcadores que devem ser exibidos no mapa: se houver resultados da busca, mostramos apenas eles + externos;
+    // caso contrário mostramos todas as instituições da API + externos
+    val displayedMarkers by remember(searchResults, apiMarkers, externalMarkers) {
+        val fromSearch = if (searchResults.isNotEmpty()) {
+            searchResults.map { ong ->
+                OngMapMarker(
+                    id = ong.instituicao_id,
+                    nome = ong.nome,
+                    latitude = ong.endereco?.latitude ?: 0.0,
+                    longitude = ong.endereco?.longitude ?: 0.0,
+                    categorias = emptyList(),
+                    descricao = ong.descricao ?: "",
+                    endereco = ong.endereco?.logradouro ?: "",
+                    telefone = ong.telefone ?: "",
+                    email = ong.email ?: "",
+                    isExternal = false
+                )
+            }
+        } else apiMarkers
+        mutableStateOf(fromSearch + externalMarkers)
     }
 
     // altura interna usada pela barra de tarefas definida no componente (ver BarraTarefas: .height(64.dp))
@@ -189,35 +256,26 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                 android.util.Log.d("HomeScreen", "GoogleMap onMapLoaded - hasLocationPermission=$hasLocationPermission")
             }
         ) {
-            // Adicionar marcador de localização do usuário
+            // marcador do usuário
             if (userLocation != null) {
-                Marker(
-                    state = rememberMarkerState(position = userLocation!!),
-                    title = "Sua Localização",
-                    snippet = "Você está aqui"
-                )
+                Marker(state = rememberMarkerState(position = userLocation!!), title = "Sua Localização")
             }
 
-
-            // Adicionar marcadores das ONGs filtradas (se houver)
-            if (searchResults.isNotEmpty()) {
+            // Render displayed markers (API + external)
+            if (displayedMarkers.isNotEmpty()) {
                 OngMapMarkers(
-                    ongs = searchResults.map { ong ->
-                        OngMapMarker(
-                            id = ong.instituicao_id,
-                            nome = ong.nome,
-                            latitude = ong.endereco?.latitude ?: 0.0,
-                            longitude = ong.endereco?.longitude ?: 0.0,
-                            categorias = emptyList(),
-                            descricao = ong.descricao ?: "",
-                            endereco = ong.endereco?.logradouro ?: "",
-                            telefone = ong.telefone ?: "",
-                            email = ong.email ?: ""
-                        )
-                    },
-                    onMarkerClick = { ong ->
-                        // Navegar para o perfil da instituição
-                        navController?.navigate("instituicao_perfil/${ong.id}")
+                    ongs = displayedMarkers,
+                    onMarkerClick = { marker ->
+                        if (!marker.isExternal) {
+                            navController?.navigate("instituicao_perfil/${marker.id}")
+                        } else {
+                            val uri = if (!marker.placeId.isNullOrBlank()) {
+                                Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(marker.nome)}&query_place_id=${marker.placeId}")
+                            } else {
+                                Uri.parse("geo:${marker.latitude},${marker.longitude}?q=${Uri.encode(marker.nome)}")
+                            }
+                            context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri))
+                        }
                     }
                 )
             }

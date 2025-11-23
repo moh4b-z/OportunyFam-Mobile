@@ -1,7 +1,5 @@
 package com.oportunyfam_mobile.model
 
-import androidx.compose.ui.graphics.Color
-
 data class OngMapMarker(
     val id: Int,
     val nome: String,
@@ -12,11 +10,9 @@ data class OngMapMarker(
     val endereco: String,
     val telefone: String,
     val email: String,
-    val imagem: String? = null
+    val imagem: String? = null,
+    // Novo: indica se o marcador veio de uma fonte externa (Google Places). Se true, clicar deve abrir a ficha/mini-aba.
+    val isExternal: Boolean = false,
+    // Quando é externo, pode conter placeId do Google Places para abrir no Maps
+    val placeId: String? = null
 )
-
-data class FilteredOngResult(
-    val ongs: List<OngMapMarker>,
-    val totalFound: Int
-)
-
