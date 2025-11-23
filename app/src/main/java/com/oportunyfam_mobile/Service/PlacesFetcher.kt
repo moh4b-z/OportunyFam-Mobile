@@ -76,3 +76,37 @@ suspend fun fetchPlacesFromGoogle(context: Context, lat: Double, lon: Double): L
         emptyList()
     }
 }
+
+suspend fun fetchPlaceDetails(context: Context, placeId: String): PlaceDetailsResult? = withContext(Dispatchers.IO) {
+    try {
+        val appInfo = try { context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA) } catch (e: Exception) { null }
+        val apiKey = appInfo?.metaData?.getString("com.google.android.geo.API_KEY")
+        if (apiKey.isNullOrBlank()) return@withContext null
+
+        val logging = HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC }
+        val client = OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor(logging)
+            .build()
+
+        val retrofit = Retrofit.Builder()
+            .baseUrl("https://maps.googleapis.com/")
+            .client(client)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+
+        val service = retrofit.create(PlacesService::class.java)
+        // Pedimos campos mínimos: name, formatted_address, formatted_phone_number, website, rating
+        val fields = "place_id,name,formatted_address,formatted_phone_number,website,rating"
+        val resp = service.placeDetails(placeId, fields, apiKey)
+        if (resp.isSuccessful) {
+            resp.body()?.result
+        } else null
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
+
+

@@ -13,5 +13,11 @@ interface PlacesService {
         @Query("keyword") keyword: String?,
         @Query("key") apiKey: String
     ): Response<PlacesResponse>
-}
 
+    @GET("maps/api/place/details/json")
+    suspend fun placeDetails(
+        @Query("place_id") placeId: String,
+        @Query("fields") fields: String,
+        @Query("key") apiKey: String
+    ): Response<PlaceDetailsResponse>
+}

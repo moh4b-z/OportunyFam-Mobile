@@ -24,3 +24,17 @@ data class LatLngJson(
     val lng: Double
 )
 
+// Minimal Place Details response models
+data class PlaceDetailsResponse(
+    val result: PlaceDetailsResult? = null,
+    val status: String? = null
+)
+
+data class PlaceDetailsResult(
+    val place_id: String,
+    val name: String?,
+    val formatted_address: String?,
+    val formatted_phone_number: String?,
+    val website: String?,
+    val rating: Double? = null
+)

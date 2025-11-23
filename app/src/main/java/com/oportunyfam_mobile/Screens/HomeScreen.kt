@@ -1,9 +1,12 @@
+@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
+
 package com.oportunyfam_mobile.Screens
 
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -48,6 +51,8 @@ import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import com.oportunyfam_mobile.Service.fetchPlaceDetails
 
 @Composable
 fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = false) {
@@ -88,6 +93,12 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
     // Marcadores de API + externos (estado)
     var apiMarkers by remember { mutableStateOf<List<OngMapMarker>>(emptyList()) }
     var externalMarkers by remember { mutableStateOf<List<OngMapMarker>>(emptyList()) }
+
+    // estado para marker externo selecionado e detalhes
+    var selectedExternalMarker by remember { mutableStateOf<OngMapMarker?>(null) }
+    var selectedExternalDetails by remember { mutableStateOf<com.oportunyfam_mobile.Service.PlaceDetailsResult?>(null) }
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val coroutineScope = rememberCoroutineScope()
 
     // Definir as categorias disponíveis
     val categories = remember {
@@ -269,12 +280,18 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                         if (!marker.isExternal) {
                             navController?.navigate("instituicao_perfil/${marker.id}")
                         } else {
-                            val uri = if (!marker.placeId.isNullOrBlank()) {
-                                Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(marker.nome)}&query_place_id=${marker.placeId}")
-                            } else {
-                                Uri.parse("geo:${marker.latitude},${marker.longitude}?q=${Uri.encode(marker.nome)}")
+                            // abrir bottom sheet com detalhes
+                            selectedExternalMarker = marker
+                            selectedExternalDetails = null
+                            coroutineScope.launch {
+                                sheetState.show()
                             }
-                            context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri))
+
+                            // buscar detalhes em background
+                            coroutineScope.launch {
+                                val details = fetchPlaceDetails(context, marker.placeId ?: "")
+                                selectedExternalDetails = details
+                            }
                         }
                     }
                 )
@@ -435,6 +452,112 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
             }
         )
     }
+
+    // ===== Bottom Sheet com detalhes de local externo =====
+    if (selectedExternalMarker != null) {
+        ModalBottomSheet(onDismissRequest = {
+            coroutineScope.launch { sheetState.hide() }
+            selectedExternalMarker = null
+        }, sheetState = sheetState) {
+            val m = selectedExternalMarker
+            val primaryColor = Color(0xFFF69508)
+            val clipboardManager = androidx.compose.ui.platform.LocalClipboardManager.current
+            val toastContext = context
+            // Card container to control background tone (warm white) and rounded corners
+            Card(
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E0)),
+                shape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 0.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    if (m != null) {
+                        Text(m.nome, style = MaterialTheme.typography.titleLarge, color = Color(0xFF222222))
+                        Spacer(Modifier.height(8.dp))
+                        if (!m.descricao.isNullOrBlank()) Text(m.descricao, color = Color(0xFF444444))
+                        // se temos detalhes mais ricos, mostrar
+                        val d = selectedExternalDetails
+                        Spacer(Modifier.height(8.dp))
+                        if (d != null) {
+                            // Endereço — clicável para copiar
+                            d.formatted_address?.takeIf { it.isNotBlank() }?.let { addr ->
+                                Text(text = "Endereço:", style = MaterialTheme.typography.labelMedium, color = Color(0xFF666666))
+                                Text(
+                                    text = addr,
+                                    color = primaryColor,
+                                    modifier = Modifier
+                                        .padding(top = 4.dp, bottom = 6.dp)
+                                        .clickable {
+                                            clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(addr))
+                                            android.widget.Toast.makeText(toastContext, "Endereço copiado", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                )
+                            }
+
+                            // Telefone — clicável para copiar
+                            d.formatted_phone_number?.takeIf { it.isNotBlank() }?.let { phone ->
+                                Text(text = "Telefone:", style = MaterialTheme.typography.labelMedium, color = Color(0xFF666666))
+                                Text(
+                                    text = phone,
+                                    color = primaryColor,
+                                    modifier = Modifier
+                                        .padding(top = 4.dp, bottom = 6.dp)
+                                        .clickable {
+                                            clipboardManager.setText(androidx.compose.ui.text.AnnotatedString(phone))
+                                            android.widget.Toast.makeText(toastContext, "Telefone copiado", android.widget.Toast.LENGTH_SHORT).show()
+                                        }
+                                )
+                            }
+
+                            // Website — clicável para abrir
+                            d.website?.takeIf { it.isNotBlank() }?.let { site ->
+                                Text(text = "Website:", style = MaterialTheme.typography.labelMedium, color = Color(0xFF666666))
+                                Text(
+                                    text = site,
+                                    color = primaryColor,
+                                    modifier = Modifier
+                                        .padding(top = 4.dp, bottom = 6.dp)
+                                        .clickable {
+                                            val uri = android.net.Uri.parse(site)
+                                            toastContext.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri))
+                                        }
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(12.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Button(
+                                onClick = {
+                                    val uri = if (!m.placeId.isNullOrBlank()) {
+                                        Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(m.nome)}&query_place_id=${m.placeId}")
+                                    } else {
+                                        Uri.parse("geo:${m.latitude},${m.longitude}?q=${Uri.encode(m.nome)}")
+                                    }
+                                    context.startActivity(android.content.Intent(android.content.Intent.ACTION_VIEW, uri))
+                                },
+                                colors = ButtonDefaults.buttonColors(containerColor = primaryColor)
+                            ) {
+                                Text("Abrir no Google Maps", color = Color.White)
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    coroutineScope.launch { sheetState.hide() }
+                                    selectedExternalMarker = null
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryColor),
+                                border = BorderStroke(1.dp, primaryColor)
+                            ) {
+                                Text("Fechar")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 @Composable
@@ -468,3 +591,4 @@ fun CreateChildPromptCard(onCreate: () -> Unit, onSkip: () -> Unit, modifier: Mo
 fun HomeScreenPreview() {
     HomeScreen(navController = null)
 }
+
