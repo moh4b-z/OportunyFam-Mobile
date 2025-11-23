@@ -10,7 +10,6 @@ import retrofit2.http.Url
 import okhttp3.RequestBody
 import retrofit2.Retrofit
 import retrofit2.http.Body
-import retrofit2.http.Header
 import java.io.File
 import java.io.FileInputStream
 import java.security.cert.X509Certificate
@@ -21,21 +20,19 @@ import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 import kotlin.io.extension
 import kotlin.io.readBytes
-import kotlin.jvm.java
-import java.text.SimpleDateFormat
-import java.util.*
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
-import android.util.Base64
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
+// ========================================================
+// INTERFACE DE SERVIÇO SIMPLIFICADA PARA SAS TOKEN
+// - Não requer Headers de autenticação complexos (x-ms-date, Authorization)
+// ========================================================
 interface AzureBlobApiService {
     @PUT
+    // Necessário para informar ao Azure que este é um BLOB de bloco
     @Headers("x-ms-blob-type: BlockBlob")
-    suspend fun uploadFile(
-        @Url uploadUrl: String,
-        @Header("x-ms-date") date: String,
-        @Header("x-ms-version") version: String,
-        @Header("Authorization") authorization: String,
+    suspend fun uploadFileSas(
+        @Url uploadUrlWithSas: String, // URL COMPLETA já contendo o ?sasToken
         @Body fileBytes: RequestBody
     ): Response<Void>
 }
@@ -85,118 +82,65 @@ object AzureBlobRetrofit {
     }
 
     /**
-     * Testa a conectividade com o Azure Storage
-     */
-    suspend fun testAzureConnection(storageAccount: String): Boolean {
-        return try {
-            println("🔍 Testando conectividade com: https://${storageAccount}.blob.core.windows.net/")
-
-            // Simples teste de resolução DNS executado em IO dispatcher
-            val host = "${storageAccount}.blob.core.windows.net"
-
-            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                val address = java.net.InetAddress.getByName(host)
-                println("✅ DNS resolvido: ${address.hostAddress}")
-            }
-            true
-        } catch (e: java.net.UnknownHostException) {
-            println("❌ Falha na resolução DNS: ${e.message}")
-            println("⚠️ Verifique se o nome da conta está correto: $storageAccount")
-            false
-        } catch (e: android.os.NetworkOnMainThreadException) {
-            println("❌ Erro: Operação de rede na thread principal")
-            println("⚠️ Este erro não deveria ocorrer - verifique o contexto da coroutine")
-            false
-        } catch (e: Exception) {
-            println("❌ Falha no teste de conectividade: ${e.message}")
-            println("🔍 Tipo de erro: ${e.javaClass.simpleName}")
-            e.printStackTrace()
-            false
-        }
-    }
-
-    /**
-     * Upload de imagem para Azure Blob Storage usando Shared Key Authentication
+     * Upload de imagem para Azure Blob Storage usando Autenticação de Token SAS.
+     * O Token SAS DEVE ser o parâmetro 'accountKey'.
+     *
      * @param imageFile Arquivo de imagem a ser enviado
      * @param storageAccount Nome da conta de storage do Azure
-     * @param accountKey Chave de acesso da conta
+     * @param sasToken O Token SAS para o container (ex: sp=racwl&st=...&sig=...)
      * @param containerName Nome do container no Azure
-     * @return URL da imagem ou null em caso de erro
+     * @return URL COMPLETA da imagem (sem o SAS Token) ou null em caso de erro
      */
     suspend fun uploadImageToAzure(
         imageFile: File,
         storageAccount: String,
-        accountKey: String,
+        sasToken: String, // Agora é o Token SAS
         containerName: String
-    ): String? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    ): String? = withContext(Dispatchers.IO) {
         // Gera um nome único para o blob usando UUID
         val extension = imageFile.extension.ifEmpty { "jpg" }
         val blobName = "${UUID.randomUUID()}.$extension"
-        val uploadUrl = "https://${storageAccount}.blob.core.windows.net/${containerName}/${blobName}"
 
-        println("📤 Iniciando upload para Azure Storage...")
+        // 1. Cria a URL do recurso (URL que será armazenada no seu banco de dados)
+        val resourceUrl = "https://${storageAccount}.blob.core.windows.net/${containerName}/${blobName}"
+
+        // 2. Cria a URL de UPLOAD (URL do recurso + Token SAS como parâmetro de consulta)
+        val uploadUrlWithSas = "$resourceUrl?$sasToken"
+
+
+        println("📤 Iniciando upload para Azure Storage (usando SAS Token)...")
         println("🔗 Storage Account: $storageAccount")
         println("📦 Container: $containerName")
         println("📄 Blob Name: $blobName")
-        println("🌐 URL completa: $uploadUrl")
+        println("🌐 URL de Upload (com SAS): $uploadUrlWithSas") // Log para debug, mas a URL final é resourceUrl
 
         try {
             val fileBytes = FileInputStream(imageFile).readBytes()
+            // Assume que estamos sempre enviando JPEG (otimização para o seu caso)
             val requestBody = fileBytes.toRequestBody("image/jpeg".toMediaTypeOrNull())
 
             println("📊 Tamanho do arquivo: ${fileBytes.size} bytes")
 
-            // Gera data no formato RFC1123
-            val dateFormat = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'", Locale.US)
-            dateFormat.timeZone = TimeZone.getTimeZone("GMT")
-            val date = dateFormat.format(Date())
-
-            val version = "2020-04-08"
-            val contentLength = fileBytes.size.toString()
-
-            println("📅 Data: $date")
-            println("📏 Content-Length: $contentLength")
-
-            // Gera assinatura Shared Key
-            val authorization = generateSharedKeyAuth(
-                storageAccount = storageAccount,
-                accountKey = accountKey,
-                method = "PUT",
-                contentLength = contentLength,
-                contentType = "image/jpeg",
-                date = date,
-                version = version,
-                canonicalizedResource = "/${storageAccount}/${containerName}/${blobName}"
-            )
-
-            println("🔐 Authorization gerada")
-            println("🚀 Enviando requisição...")
-
-            val response = apiService.uploadFile(
-                uploadUrl = uploadUrl,
-                date = date,
-                version = version,
-                authorization = authorization,
+            // Usando a API simplificada para SAS
+            val response = apiService.uploadFileSas(
+                uploadUrlWithSas = uploadUrlWithSas,
                 fileBytes = requestBody
             )
 
             if (response.isSuccessful) {
-                println("✅ Upload de imagem bem-sucedido para: $uploadUrl")
-                uploadUrl
+                println("✅ Upload de imagem bem-sucedido para: $resourceUrl")
+                resourceUrl // Retorna a URL SEM o Token SAS
             } else {
                 val errorBody = response.errorBody()?.string()
                 println("❌ Erro no upload da imagem: ${response.code()} - $errorBody")
                 println("⚠️ Headers da resposta: ${response.headers()}")
+
+                // Se o erro for 403, pode indicar que o token expirou ou é inválido
+                if (response.code() == 403) {
+                    println("🚨 ERRO 403: Acesso Negado. Verifique se o Token SAS ainda é válido ou se o Container/Blob Name estão corretos.")
+                }
                 null
             }
-        } catch (e: java.net.UnknownHostException) {
-            e.printStackTrace()
-            println("❌ Erro DNS: Não foi possível resolver o host $storageAccount.blob.core.windows.net")
-            println("⚠️ Verifique:")
-            println("   1. Nome da conta Azure está correto")
-            println("   2. Conexão com internet está ativa")
-            println("   3. Firewall não está bloqueando")
-            null
         } catch (e: Exception) {
             e.printStackTrace()
             println("❌ Erro ao fazer upload da imagem: ${e.message}")
@@ -205,63 +149,28 @@ object AzureBlobRetrofit {
         }
     }
 
+    // A função generateSharedKeyAuth e outras que a usavam foram removidas, pois não são necessárias com SAS Token.
+
+    // ========================================================
+    // Funções auxiliares (manter)
+    // ========================================================
+
     /**
-     * Gera a assinatura Shared Key para autenticação no Azure Storage
-     * Formato correto: https://docs.microsoft.com/en-us/rest/api/storageservices/authorize-with-shared-key
+     * Testa a conectividade com o Azure Storage
      */
-    private fun generateSharedKeyAuth(
-        storageAccount: String,
-        accountKey: String,
-        method: String,
-        contentLength: String,
-        contentType: String,
-        date: String,
-        version: String,
-        canonicalizedResource: String
-    ): String {
-        // Ajusta Content-Length conforme recomendação Azure: vazio se 0
-        val adjustedContentLength = if (contentLength == "0") "" else contentLength
-        val cleanCanonicalResource = canonicalizedResource.trim()
-
-        val stringToSign = buildString {
-            append("$method\n")
-            append("\n") // Content-Encoding
-            append("\n") // Content-Language
-            append("$adjustedContentLength\n") // Content-Length
-            append("\n") // Content-MD5
-            append("$contentType\n") // Content-Type
-            append("\n") // Date (usando x-ms-date)
-            append("\n") // If-Modified-Since
-            append("\n") // If-Match
-            append("\n") // If-None-Match
-            append("\n") // If-Unmodified-Since
-            append("\n") // Range
-            append("x-ms-blob-type:BlockBlob\n")
-            append("x-ms-date:$date\n")
-            append("x-ms-version:$version\n")
-            append(cleanCanonicalResource)
-        }
-
-        println("📝 String to sign:")
-        println(stringToSign)
-        println("---")
-
-        try {
-            val mac = javax.crypto.Mac.getInstance("HmacSHA256")
-            // Usa NO_WRAP para evitar caracteres de nova linha invisíveis
-            val decodedKey = Base64.decode(accountKey.trim(), Base64.NO_WRAP)
-            val secretKey = javax.crypto.spec.SecretKeySpec(decodedKey, "HmacSHA256")
-            mac.init(secretKey)
-            val signature = Base64.encodeToString(
-                mac.doFinal(stringToSign.toByteArray(Charsets.UTF_8)),
-                Base64.NO_WRAP
-            )
-            println("🔐 Tamanho da assinatura Base64: ${signature.length}")
-            return "SharedKey $storageAccount:$signature"
+    suspend fun testAzureConnection(storageAccount: String): Boolean {
+        return try {
+            println("🔍 Testando conectividade com: https://${storageAccount}.blob.core.windows.net/")
+            withContext(Dispatchers.IO) {
+                val host = "${storageAccount}.blob.core.windows.net"
+                val address = java.net.InetAddress.getByName(host)
+                println("✅ DNS resolvido: ${address.hostAddress}")
+            }
+            true
         } catch (e: Exception) {
-            println("❌ Erro ao gerar assinatura: ${e.message}")
+            println("❌ Falha no teste de conectividade: ${e.message}")
             e.printStackTrace()
-            throw e
+            false
         }
     }
 
@@ -269,7 +178,7 @@ object AzureBlobRetrofit {
      * Verifica se uma URL de blob é acessível (HEAD request).
      * Retorna true se status for 2xx.
      */
-    suspend fun isUrlAccessible(url: String): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+    suspend fun isUrlAccessible(url: String): Boolean = withContext(Dispatchers.IO) {
         try {
             val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
             connection.requestMethod = "HEAD"
@@ -287,11 +196,9 @@ object AzureBlobRetrofit {
     }
 }
 
-
-
 /**
  * Upload genérico de arquivo para Azure Blob Storage
- * @deprecated Use uploadImageToAzure for images instead
+ * @deprecated Use AzureBlobRetrofit.uploadImageToAzure instead
  */
 suspend fun uploadFileToAzure(
     file: File,

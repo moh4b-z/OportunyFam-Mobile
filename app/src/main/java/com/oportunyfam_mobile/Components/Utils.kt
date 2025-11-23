@@ -52,9 +52,9 @@ fun RegistroOutlinedTextField(
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable() (() -> Unit)? = null,
     modifier: Modifier = Modifier.fillMaxWidth(),
-    readOnly: Boolean,
+    readOnly: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
-    supportingText: @Composable () -> Unit
+    supportingText: @Composable () -> Unit = {}
 ) {
     OutlinedTextField(
         value = value,

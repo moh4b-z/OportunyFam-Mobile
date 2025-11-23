@@ -14,9 +14,9 @@ interface CriancaService {
     @POST("criancas")
     fun criar(@Body crianca: CriancaRequest): Call<CriancaResponse>
 
-    // PUT /v1/oportunyfam/criancas/:id
+    // PUT /v1/oportunyfam/criancas/:id - aceita campos parciais como mapa
     @PUT("criancas/{id}")
-    fun atualizar(@Path("id") id: Int, @Body crianca: CriancaRequest): Call<CriancaResponse>
+    fun atualizar(@Path("id") id: Int, @Body fields: Map<String, @JvmSuppressWildcards Any?>): Call<CriancaResponse>
 
     // GET /v1/oportunyfam/criancas
     @GET("criancas")

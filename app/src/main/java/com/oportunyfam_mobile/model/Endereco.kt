@@ -62,3 +62,17 @@ data class EnderecoOSM(
     val estado: String? = null,
     val cep: String? = null
 )
+
+data class EnderecoUser(
+    val cep: String,
+    val logradouro: String,
+    val numero: String,
+    val complemento: String,
+    val bairro: String,
+    val cidade: String,
+    val estado: String,
+    val id_endereco: Int,
+    val id_usuario_endereco: Int,
+    val latitude: Double,
+    val longitude: Double
+)

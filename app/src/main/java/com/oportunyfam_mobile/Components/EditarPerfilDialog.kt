@@ -29,10 +29,10 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.oportunyfam_mobile.Service.UsuarioService
 import com.oportunyfam_mobile.model.Usuario
-import com.oportunyfam_mobile.model.UsuarioRequest
-import com.oportunyfam_mobile.model.UsuarioResponse
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 import android.util.Log
@@ -50,21 +50,85 @@ fun EditarPerfilDialog(
     // Debug: Log para verificar se os IDs estão sendo desserializados corretamente (se usuario.id for 0 = problema na desserialização)
     Log.d("EditarPerfilDialog", "Usuario ID: ${usuario.id}, Usuario_ID: ${usuario.usuario_id}")
 
-    // ...existing code...
     var fotoPerfil by remember { mutableStateOf(usuario.foto_perfil ?: "") }
     var telefone by remember { mutableStateOf(usuario.telefone ?: "") }
-    var endereco by remember { mutableStateOf(usuario.cpf) } // Placeholder, precisa de campo real
-    var statusOng by remember { mutableStateOf("Ativo") } // Placeholder
+    // Campos editáveis adicionais (Usuario fields are non-nullable)
+    var nome by remember { mutableStateOf(usuario.nome) }
+    var email by remember { mutableStateOf(usuario.email) }
+    var dataNascimento by remember { mutableStateOf(usuario.data_nascimento) }
+    var cpf by remember { mutableStateOf(usuario.cpf) }
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Launcher para galeria de fotos
+    // Launcher para galeria de fotos -> faz upload imediato para Azure e registra no Logcat
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
-        uri?.let {
-            fotoPerfil = it.toString()
+        uri?.let { selectedUri ->
+            // Faz upload em background e atualiza fotoPerfil com a URL retornada
+            scope.launch {
+                isLoading = true
+                errorMessage = null
+                try {
+                    // Cria arquivo temporário
+                    val file = createImageFile(context)
+                    val inputStream = context.contentResolver.openInputStream(selectedUri)
+                    if (inputStream == null) {
+                        errorMessage = "Não foi possível ler a imagem selecionada"
+                        return@launch
+                    }
+                    withContext(Dispatchers.IO) {
+                        java.io.FileOutputStream(file).use { out ->
+                            inputStream.use { inp -> inp.copyTo(out) }
+                        }
+                    }
+
+                    // Verifica SAS token
+                    val sas = com.oportunyfam_mobile.Config.AzureConfig.getStorageKey()
+                    Log.d("EditarPerfilDialog", "Azure SAS token present: ${!sas.isNullOrBlank()}")
+                    if (sas.isNullOrBlank()) {
+                        errorMessage = "Azure Storage não configurado"
+                        return@launch
+                    }
+
+                    Log.d("EditarPerfilDialog", "Iniciando upload para Azure (arquivo=${file.name})")
+                    val uploadedUrl = com.oportunyfam_mobile.Service.AzureBlobRetrofit.uploadImageToAzure(
+                        file,
+                        com.oportunyfam_mobile.Config.AzureConfig.STORAGE_ACCOUNT,
+                        sas,
+                        com.oportunyfam_mobile.Config.AzureConfig.CONTAINER_PERFIL
+                    )
+
+                    if (!uploadedUrl.isNullOrBlank()) {
+                        Log.d("EditarPerfilDialog", "Upload Azure bem-sucedido: $uploadedUrl")
+                        fotoPerfil = uploadedUrl
+                        // Envia apenas o campo foto_perfil ao backend (PUT parcial com mapa)
+                        try {
+                            val usuarioServiceLocal = usuarioService
+                            val patchMap = mapOf("foto_perfil" to uploadedUrl)
+                            val resp = withContext(Dispatchers.IO) { usuarioServiceLocal.atualizar(usuario.id, patchMap).execute() }
+                            if (resp.isSuccessful) {
+                                Log.d("EditarPerfilDialog", "PUT foto_perfil bem-sucedido")
+                            } else {
+                                Log.e("EditarPerfilDialog", "PUT foto_perfil falhou: ${resp.code()}")
+                                errorMessage = "Erro ao atualizar foto no servidor"
+                            }
+                        } catch (e: Exception) {
+                            Log.e("EditarPerfilDialog", "Erro ao enviar foto ao servidor", e)
+                            errorMessage = "Erro ao enviar foto ao servidor: ${e.message}"
+                        }
+                    } else {
+                        Log.e("EditarPerfilDialog", "Falha no upload para Azure")
+                        errorMessage = "Falha no upload da imagem"
+                    }
+                } catch (e: Exception) {
+                    Log.e("EditarPerfilDialog", "Erro ao enviar imagem para Azure", e)
+                    errorMessage = "Erro ao enviar imagem: ${e.message}"
+                } finally {
+                    isLoading = false
+                }
+            }
         }
     }
 
@@ -188,6 +252,79 @@ fun EditarPerfilDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // ===== SEÇÃO: NOME =====
+                Text(
+                    text = "Nome",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                RegistroOutlinedTextField(
+                    value = nome,
+                    onValueChange = { nome = it },
+                    label = "Nome",
+                    readOnly = isLoading
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ===== SEÇÃO: EMAIL =====
+                Text(
+                    text = "Email",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                RegistroOutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = "Email",
+                    readOnly = isLoading
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ===== SEÇÃO: DATA NASCIMENTO =====
+                Text(
+                    text = "Data de Nascimento",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                RegistroOutlinedTextField(
+                    value = dataNascimento,
+                    onValueChange = { dataNascimento = it },
+                    label = "Data de Nascimento",
+                    readOnly = isLoading,
+                    supportingText = { Text("YYYY-MM-DD") }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // ===== SEÇÃO: CPF =====
+                Text(
+                    text = "CPF",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+
+                RegistroOutlinedTextField(
+                    value = cpf,
+                    onValueChange = { cpf = it.filter { ch -> ch.isDigit() } },
+                    label = "CPF",
+                    readOnly = isLoading
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 // ===== SEÇÃO: TELEFONE =====
                 Text(
                     text = "Número de Telefone",
@@ -210,81 +347,8 @@ fun EditarPerfilDialog(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // ===== SEÇÃO: ENDEREÇO =====
-                Text(
-                    text = "Endereço",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                RegistroOutlinedTextField(
-                    value = endereco,
-                    onValueChange = { endereco = it },
-                    label = "Endereço",
-                    readOnly = isLoading,
-                    supportingText = { Text("Endereço completo") }
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // ===== SEÇÃO: STATUS ONG =====
-                Text(
-                    text = "Status da ONG",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                var expandedStatus by remember { mutableStateOf(false) }
-                val statusOptions = listOf("Ativo", "Inativo", "Pendente", "Bloqueado")
-
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    RegistroOutlinedTextField(
-                        value = statusOng,
-                        onValueChange = {},
-                        label = "Status",
-                        readOnly = true,
-                        supportingText = { Text("Selecione o status") },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { expandedStatus = !expandedStatus }
-                    )
-
-                    if (expandedStatus) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 4.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(8.dp)
-                            ) {
-                                statusOptions.forEach { status ->
-                                    Text(
-                                        text = status,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .clickable {
-                                                statusOng = status
-                                                expandedStatus = false
-                                            }
-                                            .padding(12.dp),
-                                        color = Color.Black
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
+                // Endereço removido conforme solicitado
+                Spacer(modifier = Modifier.height(12.dp))
 
                 // Mensagem de erro
                 if (errorMessage != null) {
@@ -332,55 +396,38 @@ fun EditarPerfilDialog(
                             isLoading = true
                             errorMessage = null
 
-                            // Chamada à API para atualizar
+                            // Chamada à API para atualizar usando coroutines (C)
                             scope.launch {
                                 try {
-                                    val request = UsuarioRequest(
-                                        nome = usuario.nome,
-                                        foto_perfil = fotoPerfil.takeIf { it.isNotEmpty() },
-                                        email = usuario.email,
-                                        senha = "", // Não alterar senha aqui
-                                        data_nascimento = usuario.data_nascimento,
-                                        telefone = telefone.filter { it.isDigit() },
-                                        cpf = usuario.cpf,
-                                        id_sexo = 0, // Ajustar conforme necessário
-                                        id_tipo_nivel = 0, // Ajustar conforme necessário
-                                        cep = "", // Ajustar conforme necessário
-                                        logradouro = endereco,
-                                        numero = "",
-                                        complemento = null,
-                                        bairro = "",
-                                        cidade = "",
-                                        estado = ""
-                                    )
+                                    val usuarioServiceLocal = usuarioService
+                                    // Busca versão atual do usuário para evitar sobrescrita (A)
+                                    val existingResp = withContext(Dispatchers.IO) { usuarioServiceLocal.buscarPorId(usuario.id).execute() }
+                                    if (existingResp.isSuccessful) {
+                                        val existing = existingResp.body()?.usuario
+                                        // Build a map of fields to update (partial PUT)
+                                        val fields = mutableMapOf<String, Any?>()
+                                        if (nome != existing?.nome) fields["nome"] = nome
+                                        if (fotoPerfil.isNotBlank() && fotoPerfil != existing?.foto_perfil) fields["foto_perfil"] = fotoPerfil
+                                        if (email != existing?.email) fields["email"] = email
+                                        if (dataNascimento != existing?.data_nascimento) fields["data_nascimento"] = dataNascimento
+                                        if (telefone.filter { it.isDigit() } != (existing?.telefone ?: "")) fields["telefone"] = telefone.filter { it.isDigit() }
+                                        if (cpf != existing?.cpf) fields["cpf"] = cpf
+                                        // endereco removed - do not include logradouro in partial update
 
-                                    // ALTERAÇÃO: Usar usuario.id (ID único) em vez de usuario_id (ID interno da tabela)
-                                    // Isso garante que a requisição vá para PUT /v1/usuario/{id} com o ID correto
-                                    usuarioService.atualizar(usuario.id, request)
-                                        .enqueue(object : retrofit2.Callback<UsuarioResponse> {
-                                            override fun onResponse(
-                                                call: retrofit2.Call<UsuarioResponse>,
-                                                response: retrofit2.Response<UsuarioResponse>
-                                            ) {
-                                                if (response.isSuccessful && response.body()?.usuario != null) {
-                                                    val usuarioAtualizado = response.body()!!.usuario!!
-                                                    isLoading = false
-                                                    onSave(usuarioAtualizado)
-                                                    onDismiss()
-                                                } else {
-                                                    errorMessage = "Erro ao atualizar perfil. Tente novamente."
-                                                    isLoading = false
-                                                }
-                                            }
-
-                                            override fun onFailure(
-                                                call: retrofit2.Call<UsuarioResponse>,
-                                                t: Throwable
-                                            ) {
-                                                errorMessage = "Erro de conexão: ${t.message}"
-                                                isLoading = false
-                                            }
-                                        })
+                                        val updateResp = withContext(Dispatchers.IO) { usuarioServiceLocal.atualizar(usuario.id, fields).execute() }
+                                        if (updateResp.isSuccessful && updateResp.body()?.usuario != null) {
+                                            val usuarioAtualizado = updateResp.body()!!.usuario!!
+                                            isLoading = false
+                                            onSave(usuarioAtualizado)
+                                            onDismiss()
+                                        } else {
+                                            errorMessage = "Erro ao atualizar perfil. Tente novamente."
+                                            isLoading = false
+                                        }
+                                    } else {
+                                        errorMessage = "Erro ao buscar dados do usuário: ${existingResp.code()}"
+                                        isLoading = false
+                                    }
                                 } catch (e: Exception) {
                                     errorMessage = "Erro ao preparar requisição: ${e.message}"
                                     isLoading = false
@@ -413,4 +460,3 @@ private fun createImageFile(context: Context): File {
     val storageDir = context.cacheDir
     return File.createTempFile("IMG_", ".jpg", storageDir)
 }
-

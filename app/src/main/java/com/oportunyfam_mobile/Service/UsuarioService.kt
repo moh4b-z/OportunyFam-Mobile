@@ -1,7 +1,5 @@
 package com.oportunyfam_mobile.Service
 
-import com.oportunyfam_mobile.model.LoginRequest
-import com.oportunyfam_mobile.model.LoginResponse
 import com.oportunyfam_mobile.model.UsuarioRequest
 import com.oportunyfam_mobile.model.UsuarioResponse
 import retrofit2.Call
@@ -14,10 +12,10 @@ interface UsuarioService {
     @POST("usuarios")
     fun criar(@Body usuario: UsuarioRequest): Call<UsuarioResponse>
 
-    // PUT /v1/usuario/:id - Envia o Request, retorna o Response
+    // PUT /v1/usuario/:id - Envia campos parciais como um mapa (o backend aceita atualizar apenas os atributos enviados)
     @Headers("Content-Type: application/json")
     @PUT("usuarios/{id}")
-    fun atualizar(@Path("id") id: Int, @Body usuario: UsuarioRequest): Call<UsuarioResponse>
+    fun atualizar(@Path("id") id: Int, @Body fields: Map<String, @JvmSuppressWildcards Any?>): Call<UsuarioResponse>
 
     // GET /v1/usuario - Retorna Lista de Responses
     @GET("usuarios")
