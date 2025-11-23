@@ -40,8 +40,7 @@ data class Crianca(
     val atualizado_em: String?,
     val sexo: String?,
     val atividades_matriculadas: List<Any> = emptyList(),
-    val conversas: List<Any> = emptyList(),
-    val id: Int
+    val conversas: List<Any> = emptyList()
 )
 
 data class CriancaRequest(
@@ -52,4 +51,9 @@ data class CriancaRequest(
     val cpf: String,
     val data_nascimento: String,
     val id_sexo: Int
+)
+
+data class CriancaMini(
+    val crianca_id: Int,
+    val nome: String,
 )

@@ -11,27 +11,23 @@ interface UsuarioService {
 
     // POST /v1/usuario - Envia o Request, retorna o Response
     @Headers("Content-Type: application/json")
-    @POST("usuario")
+    @POST("usuarios")
     fun criar(@Body usuario: UsuarioRequest): Call<UsuarioResponse>
 
     // PUT /v1/usuario/:id - Envia o Request, retorna o Response
     @Headers("Content-Type: application/json")
-    @PUT("usuario/{id}")
+    @PUT("usuarios/{id}")
     fun atualizar(@Path("id") id: Int, @Body usuario: UsuarioRequest): Call<UsuarioResponse>
 
     // GET /v1/usuario - Retorna Lista de Responses
-    @GET("usuario")
+    @GET("usuarios")
     fun listarTodos(): Call<List<UsuarioResponse>>
 
     // GET /v1/usuario/:id - Retorna um Response
-    @GET("usuario/{id}")
+    @GET("usuarios/{id}")
     fun buscarPorId(@Path("id") id: Int): Call<UsuarioResponse>
 
-    // POST /v1/usuario/login - Usa LoginRequest, retorna LoginResponse
-    @POST("usuario/login")
-    fun loginUsuario(@Body request: LoginRequest): Call<LoginResponse>
-
     // DELETE /v1/usuario/:id - Sem mudança
-    @DELETE("usuario/{id}")
+    @DELETE("usuarios/{id}")
     fun deletar(@Path("id") id: Int): Call<Unit>
 }

@@ -13,8 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.oportunyfam_mobile.Service.CriancaService
+import com.oportunyfam_mobile.Service.UsuarioService
 import com.oportunyfam_mobile.model.Crianca
+import com.oportunyfam_mobile.model.CriancaMini
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,58 +23,53 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ChildrenListSection(
     usuarioId: Int,
-    criancaService: CriancaService,
+    usuarioService: UsuarioService,
     onChildClick: (Crianca) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var crianças by remember { mutableStateOf<List<Crianca>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
-    val coroutineScope = rememberCoroutineScope()
 
     // Carregar crianças quando o componente é inicializado
     LaunchedEffect(usuarioId) {
         isLoading = true
         errorMessage = null
-
-        coroutineScope.launch {
-            try {
-                val response = withContext(Dispatchers.IO) {
-                    criancaService.listarPorUsuario(usuarioId).execute()
-                }
-
-                if (response.isSuccessful && response.body() != null) {
-                    val criancasList = response.body()!!.criancas.map { raw ->
-                        Crianca(
-                            crianca_id = raw.id,
-                            pessoa_id = raw.id,
-                            nome = raw.nome,
-                            email = raw.email,
-                            foto_perfil = raw.foto_perfil,
-                            data_nascimento = raw.data_nascimento ?: "",
-                            idade = calcularIdade(raw.data_nascimento ?: ""),
-                            criado_em = raw.criado_em ?: "",
-                            atualizado_em = null,
-                            sexo = when (raw.id_sexo) {
-                                1 -> "Masculino"
-                                2 -> "Feminino"
-                                3 -> "Outro"
-                                else -> "Não informado"
-                            },
-                            id = raw.id
-                        )
-                    }
-                    crianças = criancasList
-                } else {
-                    errorMessage = "Erro ao carregar crianças"
-                    Log.e("ChildrenList", "Erro: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                errorMessage = "Erro de conexão"
-                Log.e("ChildrenList", "Exceção: ${e.message}")
-            } finally {
-                isLoading = false
+        try {
+            val response = withContext(Dispatchers.IO) {
+                usuarioService.buscarPorId(usuarioId).execute()
             }
+
+            if (response.isSuccessful && response.body()?.usuario != null) {
+                val usuario = response.body()!!.usuario!!
+                val criancasMini: List<CriancaMini> = usuario.criancas_dependentes
+                val criancasList = criancasMini.map { mini ->
+                    // Preenche campos obrigatórios com valores padrão quando não disponíveis
+                    Crianca(
+                        crianca_id = mini.crianca_id,
+                        pessoa_id = 0,
+                        nome = mini.nome,
+                        email = null,
+                        foto_perfil = null,
+                        data_nascimento = "",
+                        idade = 0,
+                        criado_em = "",
+                        atualizado_em = null,
+                        sexo = null,
+                        atividades_matriculadas = emptyList(),
+                        conversas = emptyList()
+                    )
+                }
+                crianças = criancasList
+            } else {
+                errorMessage = "Erro ao carregar crianças"
+                Log.e("ChildrenList", "Erro usuario: ${response.code()}")
+            }
+        } catch (e: Exception) {
+            errorMessage = "Erro de conexão"
+            Log.e("ChildrenList", "Exceção: ${e.message}")
+        } finally {
+            isLoading = false
         }
     }
 

@@ -59,7 +59,7 @@ data class Usuario(
     @SerializedName("tipo_nivel") // Mapeia "tipo_nivel" do JSON para este campo
     val tipo_nivel: String?,
     @SerializedName("criancas_dependentes") // Mapeia "criancas_dependentes" do JSON para este campo
-    val criancas_dependentes: List<Crianca> = emptyList(),
+    val criancas_dependentes: List<CriancaMini> = emptyList(),
     @SerializedName("conversas") // Mapeia "conversas" do JSON para este campo
     val conversas: List<Any> = emptyList(),
     @SerializedName("id") // CRÍTICO: Mapeia "id" do JSON (este era o campo que vinha como 0 antes)

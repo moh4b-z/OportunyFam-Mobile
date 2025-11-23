@@ -7,16 +7,22 @@ import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.util.concurrent.TimeUnit
 
 
 class RetrofitFactory {
 
     companion object {
         // URL base da API
-        private const val BASE_URL = "https://oportunyfam-back-end.onrender.com/v1/oportunyfam/"
+        private const val BASE_URL = "https://oportunyfam-bcf0ghd9fkevaeez.canadacentral-01.azurewebsites.net/v1/oportunyfam/"
 
         // Níveis de log
         private val LOG_LEVEL = HttpLoggingInterceptor.Level.BODY
+
+        // Configuração do RetryInterceptor (podemos expor esses valores se precisar ajustar em runtime)
+        private const val RETRY_MAX_ATTEMPTS = 4
+        private const val RETRY_INITIAL_DELAY_MS = 1500L
+        private const val RETRY_MAX_DELAY_MS = 10000L
     }
 
     /**
@@ -38,6 +44,15 @@ class RetrofitFactory {
      * Cliente HTTP com configurações personalizadas
      */
     private val client = OkHttpClient.Builder()
+        // aumente os timeouts para lidar com alta latência do servidor
+        .connectTimeout(60, TimeUnit.SECONDS)
+        .writeTimeout(120, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .callTimeout(180, TimeUnit.SECONDS)
+        // permitir tentativas automáticas em falhas de conexão
+        .retryOnConnectionFailure(true)
+        // nosso interceptor de retry com backoff exponencial e jitter
+        .addInterceptor(RetryInterceptor(RETRY_MAX_ATTEMPTS, RETRY_INITIAL_DELAY_MS, RETRY_MAX_DELAY_MS))
         .addInterceptor(loggingInterceptor)
         .addInterceptor { chain ->
             val originalRequest = chain.request()

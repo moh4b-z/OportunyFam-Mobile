@@ -108,26 +108,45 @@ fun PerfilScreen(navController: NavHostController?) {
                     usuario = authData.user as? Usuario
                     Log.d(TAG, "👤 Usuário carregado: ${usuario?.nome}")
 
-                    // Buscar filhos
+                    // Buscar filhos: a API não possui listarPorUsuario; obter via Usuario.buscarPorId e usar criancas_dependentes
                     usuario?.usuario_id?.let { usuarioId ->
                         try {
-                            RetrofitFactory().getCriancaService().listarPorUsuario(usuarioId).enqueue(
-                                object : retrofit2.Callback<com.oportunyfam_mobile.model.CriancaListResponse> {
+                            RetrofitFactory().getUsuarioService().buscarPorId(usuarioId).enqueue(
+                                object : retrofit2.Callback<com.oportunyfam_mobile.model.UsuarioResponse> {
                                     override fun onResponse(
-                                        call: retrofit2.Call<com.oportunyfam_mobile.model.CriancaListResponse>,
-                                        response: retrofit2.Response<com.oportunyfam_mobile.model.CriancaListResponse>
+                                        call: retrofit2.Call<com.oportunyfam_mobile.model.UsuarioResponse>,
+                                        response: retrofit2.Response<com.oportunyfam_mobile.model.UsuarioResponse>
                                     ) {
                                         if (response.isSuccessful) {
-                                            filhos = (response.body()?.criancas ?: emptyList()) as List<Crianca>
-                                            Log.d(TAG, "👶 Filhos carregados: ${filhos.size}")
+                                            val usuarioResp = response.body()?.usuario
+                                            val miniList = usuarioResp?.criancas_dependentes ?: emptyList()
+                                            filhos = miniList.map { mini ->
+                                                Crianca(
+                                                    crianca_id = mini.crianca_id,
+                                                    pessoa_id = 0,
+                                                    nome = mini.nome,
+                                                    email = null,
+                                                    foto_perfil = null,
+                                                    data_nascimento = "",
+                                                    idade = 0,
+                                                    criado_em = "",
+                                                    atualizado_em = null,
+                                                    sexo = null,
+                                                    atividades_matriculadas = emptyList(),
+                                                    conversas = emptyList()
+                                                )
+                                            }
+                                            Log.d(TAG, "👶 Filhos carregados (via usuario): ${filhos.size}")
+                                        } else {
+                                            Log.e(TAG, "Erro ao buscar usuario para filhos: ${response.code()}")
                                         }
                                     }
 
                                     override fun onFailure(
-                                        call: retrofit2.Call<com.oportunyfam_mobile.model.CriancaListResponse>,
+                                        call: retrofit2.Call<com.oportunyfam_mobile.model.UsuarioResponse>,
                                         t: Throwable
                                     ) {
-                                        Log.e(TAG, "Erro ao buscar filhos", t)
+                                        Log.e(TAG, "Erro ao buscar filhos (usuario)", t)
                                     }
                                 }
                             )

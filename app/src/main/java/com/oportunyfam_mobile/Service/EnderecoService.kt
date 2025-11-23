@@ -9,28 +9,28 @@ import retrofit2.http.*
 interface EnderecoService {
 
     // POST /v1/endereco - Criar novo endereço
-    @POST("endereco")
+    @POST("enderecos")
     fun criar(@Body endereco: EnderecoRequest): Call<EnderecoResponse>
 
     // DELETE /v1/endereco/:id - Excluir endereço por ID
-    @DELETE("endereco/{id}")
+    @DELETE("enderecos/{id}")
     fun deletar(@Path("id") id: Int): Call<Unit>
 
     // PUT /v1/endereco/:id - Atualizar endereço por ID
-    @PUT("endereco/{id}")
+    @PUT("enderecos/{id}")
     fun atualizar(@Path("id") id: Int, @Body endereco: EnderecoRequest): Call<EnderecoResponse>
 
     // GET /v1/endereco - Buscar todos os endereços (ou com filtros simples)
-    @GET("endereco")
+    @GET("enderecos")
     fun listarTodos(): Call<List<EnderecoResponse>>
 
     // GET /v1/endereco/:id - Buscar endereço por ID
-    @GET("endereco/{id}")
+    @GET("enderecos/{id}")
     fun buscarPorId(@Path("id") id: Int): Call<EnderecoResponse>
 
     // GET /v1/endereco/osm - Buscar Instituições próximas usando OpenStreetMap
     // A rota no backend usa Query Parameters: /osm/?lat=X&lng=Y&tipo=school&raio=10
-    @GET("endereco/osm")
+    @GET("enderecos/osm")
     fun buscarInstituicoesProximas(
         @Query("lat") latitude: Double,
         @Query("lng") longitude: Double,
