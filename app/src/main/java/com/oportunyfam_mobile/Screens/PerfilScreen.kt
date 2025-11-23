@@ -22,19 +22,12 @@ import com.oportunyfam_mobile.Components.EditChildDialog
 import com.oportunyfam_mobile.Components.PerfilTopBar
 import com.oportunyfam_mobile.Components.PerfilPhoto
 import com.oportunyfam_mobile.Components.PerfilTabs
-import com.oportunyfam_mobile.Config.AzureConfig
-import com.oportunyfam_mobile.Service.AzureBlobRetrofit
 import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
 import com.oportunyfam_mobile.model.Crianca
 import com.oportunyfam_mobile.model.Usuario
-import com.oportunyfam_mobile.model.UsuarioRequest
-import com.oportunyfam_mobile.model.CriancaRequest
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
-import java.io.FileOutputStream
 
 private const val TAG = "PerfilScreen"
 
@@ -86,7 +79,6 @@ fun PerfilScreen(navController: NavHostController?) {
                                             // Update the local usuario state on the main thread so Compose recomposes
                                             scope.launch {
                                                 usuario = usuarioResp
-                                                Log.d(TAG, "📸 Usuario (server) foto_perfil: ${usuarioResp?.foto_perfil}")
                                                 val miniList = usuarioResp?.criancas_dependentes ?: emptyList()
                                                 filhos = miniList.map { mini ->
                                                     Crianca(
@@ -104,7 +96,6 @@ fun PerfilScreen(navController: NavHostController?) {
                                                         conversas = emptyList()
                                                     )
                                                 }
-                                                Log.d(TAG, "👶 Filhos carregados (via usuario): ${filhos.size}")
                                             }
                                          } else {
                                              Log.e(TAG, "Erro ao buscar usuario para filhos: ${response.code()}")
@@ -151,7 +142,13 @@ fun PerfilScreen(navController: NavHostController?) {
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize().background(brush = gradient)) {
+        // Aplica statusBarsPadding para garantir que nada fique preso na parte superior
+        Column(modifier = Modifier
+            .fillMaxSize()
+            .background(brush = gradient)
+            .statusBarsPadding()
+            .padding(top = 8.dp) // pequeno espaçamento extra para evitar que a topbar/foto fiquem muito próximos da status bar
+        ) {
             PerfilTopBar(navController = navController, onEdit = { showEditDialog = true }, onLogout = { onLogout() })
 
             // Conteúdo principal: card com foto e tabs
@@ -185,13 +182,16 @@ fun PerfilScreen(navController: NavHostController?) {
                 }
 
                 // Foto de perfil sobreposta (centralizada no topo do card)
-                Box(modifier = Modifier.align(Alignment.TopCenter).offset(y = (-50).dp)) {
+                // reduzir o offset negativo para não invadir a status bar quando usamos statusBarsPadding
+                Box(modifier = Modifier.align(Alignment.TopCenter).offset(y = (-8).dp)) {
                     PerfilPhoto(usuario = usuario, crianca = crianca, isUploading = false)
                 }
             }
 
-            // Barra inferior
-            BarraTarefas(navController = navController)
+            // Barra inferior: adiciona navigationBarsPadding para garantir que fique acima da nav bar do sistema
+            Box(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
+                BarraTarefas(navController = navController)
+            }
         }
 
         // Snackbar colocado aqui (fora do Column) para poder usar Modifier.align do Box
@@ -287,11 +287,4 @@ fun InfoRow(label: String, value: String) {
             color = Color.Black
         )
     }
-}
-
-
-// Helper para criar arquivo temporário
-private fun createImageFile(context: android.content.Context): java.io.File {
-    val storageDir = context.cacheDir
-    return java.io.File.createTempFile("IMG_", ".jpg", storageDir)
 }

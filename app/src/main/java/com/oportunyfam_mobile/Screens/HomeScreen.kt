@@ -40,6 +40,9 @@ import com.oportunyfam_mobile.model.InstituicaoListResponse
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.asPaddingValues
 
 @Composable
 fun HomeScreen(navController: NavHostController?) {
@@ -211,11 +214,20 @@ fun HomeScreen(navController: NavHostController?) {
         }
     }
 
+    // altura interna usada pela barra de tarefas definida no componente (ver BarraTarefas: .height(64.dp))
+    val barraHeight = 64.dp
+    // inset do navigation bar do sistema (p.ex. botões home/back) — será 0 em gesture navigation
+    val navBarInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottomReserved = barraHeight + navBarInset
+
     Box(modifier = Modifier.fillMaxSize()) {
 
         // ===== Mapa de fundo =====
+        // garante que o conteúdo do mapa não fique por baixo da área da barra de tarefas + nav bar
         GoogleMap(
-            modifier = Modifier.matchParentSize(),
+            modifier = Modifier
+                .matchParentSize()
+                .padding(bottom = bottomReserved),
             cameraPositionState = cameraPositionState,
             properties = MapProperties(
                 isMyLocationEnabled = hasLocationPermission,
@@ -223,7 +235,6 @@ fun HomeScreen(navController: NavHostController?) {
             ),
             uiSettings = MapUiSettings(zoomControlsEnabled = false),
             onMapLoaded = {
-                // Helpful log for debugging rendering issues
                 android.util.Log.d("HomeScreen", "GoogleMap onMapLoaded - hasLocationPermission=$hasLocationPermission")
             }
         ) {
@@ -257,7 +268,8 @@ fun HomeScreen(navController: NavHostController?) {
             onSearchIconClick = { buscarInstituicoes(query) },
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 16.dp, start = 16.dp, end = 16.dp)
+                .statusBarsPadding()
+                .padding(top = 12.dp, start = 16.dp, end = 16.dp)
         )
 
         // ===== Filtro de categorias =====
@@ -269,14 +281,14 @@ fun HomeScreen(navController: NavHostController?) {
             },
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 90.dp)
+                .padding(top = 84.dp)
         )
 
         // ===== Resultados =====
         if (searchResults.isNotEmpty()) {
             Column(
                 modifier = Modifier
-                    .padding(top = 90.dp)
+                    .padding(top = 100.dp)
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
             ) {
@@ -324,7 +336,7 @@ fun HomeScreen(navController: NavHostController?) {
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 90.dp)
+                        .padding(top = 100.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
                         .background(Color.White.copy(alpha = 0.9f))
@@ -339,7 +351,6 @@ fun HomeScreen(navController: NavHostController?) {
         // ===== Botão de atualizar localização =====
         FloatingActionButton(
             onClick = {
-                // Buscar localização novamente
                 locationManager?.getCurrentLocation { location ->
                     if (location != null) {
                         userLocation = LatLng(location.latitude, location.longitude)
@@ -348,7 +359,7 @@ fun HomeScreen(navController: NavHostController?) {
             },
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(bottom = 90.dp, start = 16.dp),
+                .padding(start = 16.dp, bottom = 16.dp + bottomReserved),
             containerColor = Color(0xFFF69508)
         ) {
             Icon(Icons.Filled.MyLocation, contentDescription = "Minha Localização", tint = Color.White)
@@ -356,19 +367,18 @@ fun HomeScreen(navController: NavHostController?) {
 
         // ===== Botão flutuante =====
         FloatingActionButton(
-            onClick = {
-                navController?.navigate("child_register")
-            },
+            onClick = { navController?.navigate("child_register") },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(bottom = 80.dp, end = 16.dp),
+                .padding(end = 16.dp, bottom = 16.dp + bottomReserved),
             containerColor = Color(0xFF424242)
         ) {
             Icon(Icons.Filled.Face, contentDescription = "Usuários", tint = Color.White)
         }
 
-        // ===== Barra inferior =====
+        // ===== Barra inferior (overlay) =====
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+            // `BarraTarefas` já aplica navigationBarsPadding() internamente e define altura 64.dp
             BarraTarefas(navController = navController)
         }
     }
