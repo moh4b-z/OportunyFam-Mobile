@@ -14,7 +14,7 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.model.Instituicao
-import com.oportunyfam_mobile.util.haversineKm
+import com.oportunyfam_mobile.Utils.haversineKm
 import java.util.Locale
 
 private const val TAG = "MapComponent"
