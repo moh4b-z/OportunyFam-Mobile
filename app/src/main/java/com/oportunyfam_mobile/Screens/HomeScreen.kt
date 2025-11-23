@@ -1,6 +1,7 @@
 package com.oportunyfam_mobile.Screens
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,7 +30,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
-import com.oportunyfam_mobile.Components.CategoryFilterRow
 import com.oportunyfam_mobile.Components.Category
 import com.oportunyfam_mobile.Components.OngMapMarkers
 import com.oportunyfam_mobile.model.OngMapMarker
@@ -43,11 +43,28 @@ import retrofit2.Response
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.asPaddingValues
+import com.oportunyfam_mobile.data.AuthDataStore
+import com.oportunyfam_mobile.data.AuthType
 
 @Composable
-fun HomeScreen(navController: NavHostController?) {
+fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = false) {
     // === Contexto ===
     val context = LocalContext.current
+    val authDataStore = remember { AuthDataStore(context) }
+    var authUser by remember { mutableStateOf<com.oportunyfam_mobile.data.AuthUserWrapper?>(null) }
+    var shouldShowCreateChildCard by remember { mutableStateOf(showCreateChild) }
+
+    // SharedPreferences para persistir o 'pular' do card
+    val prefs = remember { context.getSharedPreferences("oportunyfam_prefs", Context.MODE_PRIVATE) }
+    var createChildPromptDismissed by remember { mutableStateOf(prefs.getBoolean("create_child_prompt_dismissed", false)) }
+
+    // Carrega o estado de autenticação
+    LaunchedEffect(Unit) {
+        val loaded = authDataStore.loadAuthUser()
+        authUser = loaded
+        // garante que o estado do dismiss seja atualizado caso mude externamente
+        createChildPromptDismissed = prefs.getBoolean("create_child_prompt_dismissed", false)
+    }
 
     // Check location permission at composition time to drive MapProperties
     val hasLocationPermission = ContextCompat.checkSelfPermission(
@@ -59,18 +76,11 @@ fun HomeScreen(navController: NavHostController?) {
     var query by rememberSaveable { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<Instituicao>>(emptyList()) }
     var isLoading by remember { mutableStateOf(false) }
-    // Estado para carregamento de ONGs por categoria
-    var isLoadingCategories by remember { mutableStateOf(false) }
-    // ONGs filtradas (marcadores)
-    var filteredOngs by remember { mutableStateOf<List<OngMapMarker>>(emptyList()) }
 
     // Estados de localização
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
     var showLocationDialog by remember { mutableStateOf(false) }
     var locationManager by remember { mutableStateOf<LocationManager?>(null) }
-
-    // Categorias e filtros
-    var selectedCategories by remember { mutableStateOf<List<Int>>(emptyList()) }
 
     // Definir as categorias disponíveis
     val categories = remember {
@@ -135,65 +145,6 @@ fun HomeScreen(navController: NavHostController?) {
             })
     }
 
-    // Função para filtrar ONGs por categorias
-    fun filtrarOngsPorCategoria(categoriaId: Int) {
-        if (selectedCategories.contains(categoriaId)) {
-            selectedCategories = selectedCategories.filter { it != categoriaId }
-        } else {
-            selectedCategories = selectedCategories + categoriaId
-        }
-
-        // Se há categorias selecionadas, buscar na API
-        if (selectedCategories.isNotEmpty()) {
-            isLoadingCategories = true
-            val csv = selectedCategories.joinToString(",")
-            RetrofitFactory().getInstituicaoService()
-                .buscarPorCategorias(csv, 1, 100)
-                .enqueue(object : Callback<InstituicaoListResponse> {
-                    override fun onResponse(
-                        call: Call<InstituicaoListResponse>,
-                        response: Response<InstituicaoListResponse>
-                    ) {
-                        isLoadingCategories = false
-                        if (response.isSuccessful) {
-                            val body = response.body()
-                            val institutos = if (body?.status == true) body.instituicoes else emptyList()
-
-                            // Mapear Instituicao -> OngMapMarker (filtrar sem coordenadas)
-                            filteredOngs = institutos.mapNotNull { inst ->
-                                val lat = inst.endereco?.latitude
-                                val lon = inst.endereco?.longitude
-                                if (lat == null || lon == null) return@mapNotNull null
-
-                                OngMapMarker(
-                                    id = inst.instituicao_id,
-                                    nome = inst.nome,
-                                    latitude = lat,
-                                    longitude = lon,
-                                    categorias = emptyList(),
-                                    descricao = inst.descricao ?: "",
-                                    endereco = inst.endereco?.logradouro ?: "",
-                                    telefone = inst.telefone ?: "",
-                                    email = inst.email ?: ""
-                                )
-                            }
-                        } else {
-                            filteredOngs = emptyList()
-                        }
-                    }
-
-                    override fun onFailure(call: Call<InstituicaoListResponse>, t: Throwable) {
-                        isLoadingCategories = false
-                        t.printStackTrace()
-                        filteredOngs = emptyList()
-                    }
-                })
-        } else {
-            // Sem categorias selecionadas limpa os marcadores
-            filteredOngs = emptyList()
-        }
-    }
-
     // limpa resultados quando query ficar vazia
     LaunchedEffect(query) {
         if (query.isBlank()) {
@@ -249,9 +200,21 @@ fun HomeScreen(navController: NavHostController?) {
 
 
             // Adicionar marcadores das ONGs filtradas (se houver)
-            if (filteredOngs.isNotEmpty()) {
+            if (searchResults.isNotEmpty()) {
                 OngMapMarkers(
-                    ongs = filteredOngs,
+                    ongs = searchResults.map { ong ->
+                        OngMapMarker(
+                            id = ong.instituicao_id,
+                            nome = ong.nome,
+                            latitude = ong.endereco?.latitude ?: 0.0,
+                            longitude = ong.endereco?.longitude ?: 0.0,
+                            categorias = emptyList(),
+                            descricao = ong.descricao ?: "",
+                            endereco = ong.endereco?.logradouro ?: "",
+                            telefone = ong.telefone ?: "",
+                            email = ong.email ?: ""
+                        )
+                    },
                     onMarkerClick = { ong ->
                         // Navegar para o perfil da instituição
                         navController?.navigate("instituicao_perfil/${ong.id}")
@@ -270,18 +233,6 @@ fun HomeScreen(navController: NavHostController?) {
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
                 .padding(top = 12.dp, start = 16.dp, end = 16.dp)
-        )
-
-        // ===== Filtro de categorias =====
-        CategoryFilterRow(
-            categories = categories,
-            selectedCategories = selectedCategories,
-            onCategorySelected = { categoriaId ->
-                filtrarOngsPorCategoria(categoriaId)
-            },
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 84.dp)
         )
 
         // ===== Resultados =====
@@ -366,20 +317,43 @@ fun HomeScreen(navController: NavHostController?) {
         }
 
         // ===== Botão flutuante =====
-        FloatingActionButton(
-            onClick = { navController?.navigate("child_register") },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 16.dp + bottomReserved),
-            containerColor = Color(0xFF424242)
-        ) {
-            Icon(Icons.Filled.Face, contentDescription = "Usuários", tint = Color.White)
+        // Mostrar o FAB de criar criança somente para usuários (não para logins de criança)
+        if (authUser?.type == AuthType.USUARIO) {
+            FloatingActionButton(
+                onClick = { navController?.navigate("child_register") },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 16.dp + bottomReserved),
+                containerColor = Color(0xFF424242)
+            ) {
+                Icon(Icons.Filled.Face, contentDescription = "Usuários", tint = Color.White)
+            }
         }
 
         // ===== Barra inferior (overlay) =====
         Box(modifier = Modifier.align(Alignment.BottomCenter)) {
             // `BarraTarefas` já aplica navigationBarsPadding() internamente e define altura 64.dp
             BarraTarefas(navController = navController)
+        }
+
+        // Mostrar o card de criar filho apenas se: flag passada == true, usuário é do tipo USUARIO e não foi dismiss persistido
+        val isUsuario = authUser?.type == AuthType.USUARIO
+        if (shouldShowCreateChildCard && isUsuario && !createChildPromptDismissed) {
+            CreateChildPromptCard(
+                onCreate = {
+                    shouldShowCreateChildCard = false
+                    navController?.navigate("child_register")
+                },
+                onSkip = {
+                    // persiste o skip para não mostrar novamente
+                    prefs.edit().putBoolean("create_child_prompt_dismissed", true).apply()
+                    createChildPromptDismissed = true
+                    shouldShowCreateChildCard = false
+                },
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 24.dp)
+            )
         }
     }
 
@@ -402,6 +376,32 @@ fun HomeScreen(navController: NavHostController?) {
                 }
             }
         )
+    }
+}
+
+@Composable
+fun CreateChildPromptCard(onCreate: () -> Unit, onSkip: () -> Unit, modifier: Modifier = Modifier) {
+    // Paleta clara: fundo branco, acentos em amarelo/laranja
+    Card(
+        modifier = modifier,
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("Deseja cadastrar uma criança agora?", fontSize = 16.sp, color = Color.Black)
+            Spacer(Modifier.height(8.dp))
+            Text("Você pode adicionar dependentes para gerenciar inscrições e participar de atividades.", fontSize = 14.sp, color = Color.Gray)
+            Spacer(Modifier.height(16.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = onCreate, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000))) {
+                    Text("Criar filho", color = Color.White)
+                }
+                OutlinedButton(onClick = onSkip, colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFA000))) {
+                    Text("Pular")
+                }
+            }
+        }
     }
 }
 

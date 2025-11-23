@@ -45,9 +45,13 @@ class MainActivity : ComponentActivity() {
                         PerfilScreen(navController = navController)
                     }
 
-                    // Tela Home
-                    composable(NavRoutes.HOME) {
-                        HomeScreen(navController)
+                    // Tela Home (aceita argumento opcional showCreateChild)
+                    composable(
+                        route = "${NavRoutes.HOME}?showCreateChild={showCreateChild}",
+                        arguments = listOf(navArgument("showCreateChild") { type = NavType.BoolType; defaultValue = false })
+                    ) { backStackEntry ->
+                        val showCreateChild = backStackEntry.arguments?.getBoolean("showCreateChild") ?: false
+                        HomeScreen(navController = navController, showCreateChild = showCreateChild)
                     }
 
                     // Tela de Registro de Filho

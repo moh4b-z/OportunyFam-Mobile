@@ -69,7 +69,8 @@ fun RegistroScreen(navController: NavHostController) {
     val onRegistrationSuccess: (Usuario) -> Unit = { usuario ->
         scope.launch {
             authDataStore.saveAuthUser(usuario, AuthType.USUARIO)
-            navController.navigate("HomeScreen") {
+            // Navega para Home informando que deve mostrar o card de criar filho (apenas após registro)
+            navController.navigate("HomeScreen?showCreateChild=true") {
                 popUpTo("tela_registro") { inclusive = true }
             }
             isLoading.value = false
