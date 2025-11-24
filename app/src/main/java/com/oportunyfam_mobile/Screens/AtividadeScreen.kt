@@ -6,19 +6,27 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.clip
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
@@ -40,19 +48,14 @@ import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    // List state to allow programmatic scrolling to show newly created inscrição
+    val listState: LazyListState = rememberLazyListState()
 
     val atividadeViewModel: AtividadeViewModel = viewModel()
     val atividadeDetalheState by atividadeViewModel.atividadeDetalheState.collectAsState()
@@ -65,6 +68,8 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
     var criancasList by remember { mutableStateOf<List<CriancaMini>>(emptyList()) }
     var isLoadingCriancas by remember { mutableStateOf(false) }
     var inscricaoMessage by remember { mutableStateOf<String?>(null) }
+    // guarda o numero de aulas da atividade atual para calcular o índice do bloco 'Inscrições'
+    var currentAulasCount by remember { mutableStateOf(0) }
 
     val authDataStore = remember { AuthDataStore(context) }
 
@@ -133,8 +138,13 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                 }
                 is com.oportunyfam_mobile.ViewModel.AtividadeDetalheState.Success -> {
                     val atividade = (atividadeDetalheState as com.oportunyfam_mobile.ViewModel.AtividadeDetalheState.Success).atividade
-                    AtividadeDetailContent(atividade = atividade, inscricoesState = inscricoesState, onInscrever = {
+                    AtividadeDetailContent(
+                        atividade = atividade,
+                        inscricoesState = inscricoesState,
+                        onInscrever = {
                             // Ao clicar no botão de inscrever: carregar crianças e abrir diálogo
+                            // captura o número de aulas para o scroll target
+                            currentAulasCount = atividade.aulas.size
                             coroutineScope.launch {
                                 isLoadingCriancas = true
                                 val list = loadCriancasDoUsuario()
@@ -142,86 +152,134 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                                 isLoadingCriancas = false
                                 showInscreverDialog = true
                             }
-                        })
-                    }
+                        },
+                        listState = listState
+                    )
                 }
             }
+        }
 
-            // Diálogo de seleção de criança e criação de inscrição
-            if (showInscreverDialog) {
-                AlertDialog(
-                    onDismissRequest = { showInscreverDialog = false },
-                    title = { Text("Escolha a criança") },
-                    text = {
+        // Diálogo de seleção de criança e criação de inscrição
+        if (showInscreverDialog) {
+            androidx.compose.ui.window.Dialog(onDismissRequest = { showInscreverDialog = false }) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .wrapContentHeight()
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        // Header com cor do app
+                        val headerBrush = Brush.horizontalGradient(listOf(Color(0xFFFFA000), Color(0xFFFFD27A)))
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(headerBrush), contentAlignment = Alignment.Center) {
+                            Text(text = "Escolha a criança", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         if (isLoadingCriancas) {
-                            Column { CircularProgressIndicator() }
+                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                         } else if (criancasList.isEmpty()) {
-                            Text("Nenhuma criança disponível. Cadastre uma criança primeiro.")
+                            Text("Nenhuma criança disponível. Cadastre uma criança primeiro.", modifier = Modifier.padding(12.dp))
                         } else {
-                            Column {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                 criancasList.forEach { c ->
-                                    TextButton(onClick = {
-                                        // criar inscricao
-                                        showInscreverDialog = false
-                                        inscricaoMessage = null
+                                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))) {
+                                        Row(modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            // avatar placeholder
+                                            Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFD27A)), contentAlignment = Alignment.Center) {
+                                                Text(text = c.nome.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = c.nome,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 14.sp,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                            }
+                                            Button(onClick = {
+                                                // criar inscricao
+                                                showInscreverDialog = false
+                                                inscricaoMessage = null
 
-                                        // Determinar id_responsavel: se usuário logado for USUARIO, envia id_responsavel
-                                        coroutineScope.launch {
-                                            val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
-                                            val idResponsavel = if (auth?.type == com.oportunyfam_mobile.data.AuthType.USUARIO) {
-                                                // Use the relation id from the mini object (id_responsavel) as backend expects
-                                                c.id_responsavel
-                                            } else null
+                                                coroutineScope.launch {
+                                                    val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
+                                                    val idResponsavel = if (auth?.type == com.oportunyfam_mobile.data.AuthType.USUARIO) c.id_responsavel else null
 
-                                            Log.d("AtividadeScreen", "🔔 Criando inscrição -> crianca_id=${c.id_crianca}, atividadeId=$atividadeId, idResponsavel=$idResponsavel")
+                                                    Log.d("AtividadeScreen", "🔔 Criando inscrição -> crianca_id=${c.id_crianca}, atividadeId=$atividadeId, idResponsavel=$idResponsavel")
 
-                                            val request = InscricaoRequest(id_crianca = c.id_crianca, id_atividade = atividadeId, id_responsavel = idResponsavel)
+                                                    val request = InscricaoRequest(id_crianca = c.id_crianca, id_atividade = atividadeId, id_responsavel = idResponsavel)
 
-                                            RetrofitFactory().getInscricaoService().criarInscricao(request).enqueue(object: Callback<com.oportunyfam_mobile.model.InscricaoCriadaResponse> {
-                                                override fun onResponse(call: Call<com.oportunyfam_mobile.model.InscricaoCriadaResponse>, response: Response<com.oportunyfam_mobile.model.InscricaoCriadaResponse>) {
-                                                    Log.d("AtividadeScreen", "Inscrição response code=${response.code()}")
-                                                    if (response.isSuccessful) {
-                                                        inscricaoMessage = "Inscrição solicitada com sucesso"
-                                                        inscricaoViewModel.buscarInscricoesPorAtividade(atividadeId)
-                                                    } else {
-                                                        inscricaoMessage = "Erro ao inscrever: ${response.code()}"
-                                                        Log.e("AtividadeScreen", "Erro ao inscrever: ${response.errorBody()?.string()}")
-                                                    }
+                                                    RetrofitFactory().getInscricaoService().criarInscricao(request).enqueue(object: Callback<com.oportunyfam_mobile.model.InscricaoCriadaResponse> {
+                                                        override fun onResponse(call: Call<com.oportunyfam_mobile.model.InscricaoCriadaResponse>, response: Response<com.oportunyfam_mobile.model.InscricaoCriadaResponse>) {
+                                                            Log.d("AtividadeScreen", "Inscrição response code=${response.code()}")
+                                                            if (response.isSuccessful) {
+                                                                inscricaoMessage = "Inscrição solicitada com sucesso"
+                                                                inscricaoViewModel.buscarInscricoesPorAtividade(atividadeId)
+                                                                // scroll to the Inscrições block so user sees the new pending card
+                                                                coroutineScope.launch {
+                                                                    // target index: aulas.size + 3 (header,aulas header,aulas N,detalhes,inscricoes)
+                                                                    val target = currentAulasCount + 3
+                                                                    delay(300)
+                                                                    try {
+                                                                        listState.animateScrollToItem(target)
+                                                                    } catch (_: Exception) { /* ignore */ }
+                                                                }
+                                                            } else {
+                                                                inscricaoMessage = "Erro ao inscrever: ${response.code()}"
+                                                                Log.e("AtividadeScreen", "Erro ao inscrever: ${response.errorBody()?.string()}")
+                                                            }
+                                                        }
+
+                                                        override fun onFailure(call: Call<com.oportunyfam_mobile.model.InscricaoCriadaResponse>, t: Throwable) {
+                                                            inscricaoMessage = "Falha na conexão"
+                                                            Log.e("AtividadeScreen", "Falha criar inscricao", t)
+                                                        }
+                                                    })
                                                 }
 
-                                                override fun onFailure(call: Call<com.oportunyfam_mobile.model.InscricaoCriadaResponse>, t: Throwable) {
-                                                    inscricaoMessage = "Falha na conexão"
-                                                    Log.e("AtividadeScreen", "Falha criar inscricao", t)
-                                                }
-                                            })
+                                            }) {
+                                                Text("Inscrever")
+                                            }
                                         }
-
-                                    }) { Text(text = c.nome) }
+                                    }
                                 }
                             }
                         }
-                    },
-                    confirmButton = {
-                        TextButton(onClick = { showInscreverDialog = false }) { Text("Fechar") }
-                    }
-                )
-            }
 
-            // Mostrar mensagem de resultado
-            inscricaoMessage?.let { msg ->
-                LaunchedEffect(msg) {
-                    delay(3000)
-                    inscricaoMessage = null
-                }
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
-                    Snackbar { Text(msg) }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        TextButton(onClick = { showInscreverDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("Fechar", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                    }
                 }
             }
+        }
+
+        // Mostrar mensagem de resultado (snackbar)
+        inscricaoMessage?.let { msg ->
+            LaunchedEffect(msg) {
+                delay(3000)
+                inscricaoMessage = null
+            }
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+                Snackbar { Text(msg) }
+            }
+        }
     }
 }
 
 @Composable
-fun AtividadeDetailContent(atividade: AtividadeResponse, inscricoesState: com.oportunyfam_mobile.ViewModel.InscricoesState, onInscrever: () -> Unit) {
+fun AtividadeDetailContent(atividade: AtividadeResponse, inscricoesState: com.oportunyfam_mobile.ViewModel.InscricoesState, onInscrever: () -> Unit, listState: LazyListState) {
     val screenBg = Color(0xFFFFFFFF)
     val cardAccent = Color(0xFFFFF3E0)
     val primaryButton = Color(0xFFFFA000)
@@ -231,7 +289,8 @@ fun AtividadeDetailContent(atividade: AtividadeResponse, inscricoesState: com.op
             .fillMaxSize()
             .background(color = screenBg),
         contentPadding = PaddingValues(bottom = 96.dp, top = 0.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        state = listState
     ) {
         // Header
         item {
