@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,7 +24,8 @@ import com.oportunyfam_mobile.model.Crianca
 @Composable
 fun ChildCard(
     child: Crianca,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onDelete: () -> Unit = {}
 ) {
     Card(
         modifier = Modifier
@@ -116,13 +118,23 @@ fun ChildCard(
                 }
             }
 
-            // Ícone de chevron
-            Icon(
-                imageVector = Icons.Default.ChevronRight,
-                contentDescription = "Ver detalhes",
-                tint = Color(0xFFFFAF25),
-                modifier = Modifier.size(24.dp)
-            )
+            // Ações: deleção e chevron
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onDelete) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Excluir criança",
+                        tint = Color.Red
+                    )
+                }
+
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Ver detalhes",
+                    tint = Color(0xFFFFAF25),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
         }
     }
 }

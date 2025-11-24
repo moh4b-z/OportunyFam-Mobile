@@ -238,11 +238,29 @@ fun PerfilScreen(navController: NavHostController?) {
                         item {
                             when (selectedTab) {
                                 "Informações" -> InformacoesTab(usuario = usuario, crianca = crianca, isCrianca = isCrianca)
-                                "Crianças" -> PerfilTabs(selectedTab = "Crianças", criancas = criancas, onChildClick = onChildSelected)
-                                "Responsáveis" -> PerfilTabs(selectedTab = "Responsáveis", criancas = emptyList())
-                            }
-                        }
-                    }
+                                "Crianças" -> PerfilTabs(selectedTab = "Crianças", criancas = criancas, onChildClick = onChildSelected, onChildDelete = { mini ->
+                                    // Delete handler for child mini: call API and remove from list on success
+                                    scope.launch {
+                                        try {
+                                            val delResp = withContext(Dispatchers.IO) {
+                                                RetrofitFactory().getCriancaService().deletar(mini.crianca_id).execute()
+                                            }
+                                            if (delResp.isSuccessful) {
+                                                // remove local
+                                                criancas = criancas.filterNot { it.crianca_id == mini.crianca_id }
+                                                Log.d(TAG, "Criança deletada: ${mini.crianca_id}")
+                                            } else {
+                                                Log.e(TAG, "Falha ao deletar criança: ${delResp.code()}")
+                                            }
+                                        } catch (e: Exception) {
+                                            Log.e(TAG, "Erro ao deletar criança: ${e.message}", e)
+                                        }
+                                    }
+                                })
+                                 "Responsáveis" -> PerfilTabs(selectedTab = "Responsáveis", criancas = emptyList())
+                             }
+                         }
+                     }
                 }
 
                 // Foto de perfil sobreposta (filha do Box) — esta chamada está dentro do BoxScope, então Modifier.align funciona
@@ -278,7 +296,37 @@ fun PerfilScreen(navController: NavHostController?) {
     }
 
     if (showChildDetail) {
-        ChildDetailDialog(child = crianca, onDismiss = { showChildDetail = false })
+        ChildDetailDialog(child = crianca, onDismiss = { showChildDetail = false }, onStartConversation = {
+            // Create conversation with this child and navigate to chat
+            scope.launch {
+                try {
+                    val pessoaAtual = when {
+                        usuario != null -> usuario!!.pessoa_id
+                        crianca != null -> crianca!!.pessoa_id
+                        else -> 0
+                    }
+
+                    val otherPessoaId = crianca?.pessoa_id ?: 0
+
+                    val participantes = listOf(pessoaAtual, otherPessoaId)
+                    val resp = withContext(Dispatchers.IO) {
+                        RetrofitFactory().getConversaService().criar(com.oportunyfam_mobile.model.ConversaRequest(participantes))
+                    }
+                    if (resp.isSuccessful) {
+                        val conversa = resp.body()?.conversa
+                        val conversaId = conversa?.id ?: resp.code() // fallback
+                        val nomeContato = java.net.URLEncoder.encode(crianca?.nome ?: "", "UTF-8")
+                        val pId = pessoaAtual
+                        navController?.navigate("${com.oportunyfam_mobile.MainActivity.CHAT}/$conversaId/$nomeContato/$pId")
+                        showChildDetail = false
+                    } else {
+                        Log.e(TAG, "Erro ao criar/abrir conversa: ${resp.code()}")
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Exceção criar conversa: ${e.message}", e)
+                }
+            }
+        })
     }
 }
 

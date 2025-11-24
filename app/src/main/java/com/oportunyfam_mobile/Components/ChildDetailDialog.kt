@@ -25,7 +25,8 @@ import com.oportunyfam_mobile.model.Crianca
 @Composable
 fun ChildDetailDialog(
     child: Crianca?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onStartConversation: (() -> Unit)? = null
 ) {
     if (child == null) return
 
@@ -240,6 +241,19 @@ fun ChildDetailDialog(
 
                     // Botão Fechar
                     item {
+                        if (onStartConversation != null) {
+                            Button(
+                                onClick = { onStartConversation() },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(48.dp)
+                                    .padding(top = 8.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1976D2))
+                            ) {
+                                Text(text = "Iniciar conversa", color = Color.White, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                         Button(
                             onClick = onDismiss,
                             modifier = Modifier

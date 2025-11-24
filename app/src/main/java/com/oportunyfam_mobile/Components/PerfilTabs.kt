@@ -14,7 +14,12 @@ import androidx.compose.ui.unit.dp
 import com.oportunyfam_mobile.model.Crianca
 
 @Composable
-fun PerfilTabs(selectedTab: String, criancas: List<Crianca>, onChildClick: (Crianca) -> Unit = {}) {
+fun PerfilTabs(
+    selectedTab: String,
+    criancas: List<Crianca>,
+    onChildClick: (Crianca) -> Unit = {},
+    onChildDelete: (Crianca) -> Unit = {}
+) {
     when (selectedTab) {
         "Informações" -> {
             // nothing here; parent shows InformacoesTab
@@ -29,7 +34,7 @@ fun PerfilTabs(selectedTab: String, criancas: List<Crianca>, onChildClick: (Cria
                 // Render as vertical list so it composes well inside the parent LazyColumn
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     criancas.forEach { crianca ->
-                        ChildCard(child = crianca, onClick = { onChildClick(crianca) })
+                        ChildCard(child = crianca, onClick = { onChildClick(crianca) }, onDelete = { onChildDelete(crianca) })
                     }
                 }
             }
