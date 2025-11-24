@@ -51,7 +51,10 @@ fun StatusCriancaScreen(navController: NavHostController?) {
         if (auth?.type == com.oportunyfam_mobile.data.AuthType.USUARIO) {
             val usuarioId = (auth.user as? Usuario)?.usuario_id
             try {
-                val resp = RetrofitFactory().getUsuarioService().buscarPorId(usuarioId ?: 0).execute()
+                // network on IO
+                val resp = withContext(Dispatchers.IO) {
+                    RetrofitFactory().getUsuarioService().buscarPorId(usuarioId ?: 0).execute()
+                }
                 if (resp.isSuccessful) {
                     val usuario = resp.body()?.usuario
                     val mini = usuario?.criancas_dependentes ?: emptyList()
@@ -88,9 +91,12 @@ fun StatusCriancaScreen(navController: NavHostController?) {
         // Para cada criança, buscar inscricoes
         val mapInscr = mutableMapOf<Int, List<InscricaoDetalhada>>()
         val activityIds = mutableSetOf<Int>()
+        // run network ops in parallel using coroutines if desired
         childrenList.forEach { c ->
             try {
-                val resp = RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(c.crianca_id).execute()
+                val resp = withContext(Dispatchers.IO) {
+                    RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(c.crianca_id).execute()
+                }
                 if (resp.isSuccessful) {
                     val list = resp.body()?.inscricoes ?: emptyList()
                     mapInscr[c.crianca_id] = list
@@ -108,7 +114,9 @@ fun StatusCriancaScreen(navController: NavHostController?) {
 
         // Buscar aulas relacionadas às atividades das inscrições (fallback: buscar todas aulas e filtrar)
         try {
-            val aulasResp = RetrofitFactory().getAtividadeService().buscarTodasAulas().execute()
+            val aulasResp = withContext(Dispatchers.IO) {
+                RetrofitFactory().getAtividadeService().buscarTodasAulas().execute()
+            }
             if (aulasResp.isSuccessful) {
                 val todas = aulasResp.body()?.aulas ?: emptyList()
                 aulasAgenda = todas.filter { activityIds.contains(it.id_atividade) }
@@ -139,7 +147,7 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Nenhuma criança cadastrada ainda.")
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { navController?.navigate(NavRoutes.CHILD_REGISTER) }) { Text("Cadastrar filho") }
+                        Button(onClick = { navController?.navigate(NavRoutes.CHILD_REGISTER) }) { Text("Cadastrar criança") }
                     }
                 }
                 return@Box
@@ -201,7 +209,9 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                                                             // recarregar lista de inscricoes para essa crianca
                                                             scope.launch {
                                                                 try {
-                                                                    val resp = RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(crianca.crianca_id).execute()
+                                                                    val resp = withContext(Dispatchers.IO) {
+                                                                        RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(crianca.crianca_id).execute()
+                                                                    }
                                                                     if (resp.isSuccessful) {
                                                                         inscricoesPorCrianca = inscricoesPorCrianca.toMutableMap().also { it[crianca.crianca_id] = resp.body()?.inscricoes ?: emptyList() }
                                                                     }
@@ -224,10 +234,14 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                                                             // deletar inscrição sugerida
                                                             scope.launch {
                                                                 try {
-                                                                    val call = RetrofitFactory().getInscricaoService().deletarInscricao(inscricao.inscricao_id).execute()
+                                                                    val call = withContext(Dispatchers.IO) {
+                                                                        RetrofitFactory().getInscricaoService().deletarInscricao(inscricao.inscricao_id).execute()
+                                                                    }
                                                                     if (call.isSuccessful) {
                                                                         // recarregar
-                                                                        val resp = RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(crianca.crianca_id).execute()
+                                                                        val resp = withContext(Dispatchers.IO) {
+                                                                            RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(crianca.crianca_id).execute()
+                                                                        }
                                                                         if (resp.isSuccessful) {
                                                                             inscricoesPorCrianca = inscricoesPorCrianca.toMutableMap().also { it[crianca.crianca_id] = resp.body()?.inscricoes ?: emptyList() }
                                                                         }

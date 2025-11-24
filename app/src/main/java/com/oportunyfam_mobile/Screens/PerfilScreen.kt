@@ -27,7 +27,9 @@ import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
 import com.oportunyfam_mobile.model.Crianca
 import com.oportunyfam_mobile.model.Usuario
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "PerfilScreen"
 
@@ -42,7 +44,7 @@ fun PerfilScreen(navController: NavHostController?) {
     var usuario by remember { mutableStateOf<Usuario?>(null) }
     var crianca by remember { mutableStateOf<Crianca?>(null) }
     var isCrianca by remember { mutableStateOf(false) }
-    var filhos by remember { mutableStateOf<List<Crianca>>(emptyList()) }
+    var criancas by remember { mutableStateOf<List<Crianca>>(emptyList()) }
     var reloadTrigger by remember { mutableIntStateOf(0) }
 
     // Estados de UI
@@ -51,10 +53,25 @@ fun PerfilScreen(navController: NavHostController?) {
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf("Informações") }
 
+    // Handlers para salvar após editar (declarados aqui para evitar warnings de escopo)
+    val handleChildSave: (Crianca) -> Unit = { updatedChild ->
+        crianca = updatedChild
+        showEditDialog = false
+        snackbarMessage = "Perfil atualizado"
+        showSnackbar = true
+    }
+
+    val handleUserSave: (Usuario) -> Unit = { updatedUsuario ->
+        usuario = updatedUsuario
+        showEditDialog = false
+        snackbarMessage = "Perfil atualizado"
+        showSnackbar = true
+    }
+
     // Carregar dados do perfil
     LaunchedEffect(reloadTrigger) {
         Log.d(TAG, "🔄 Carregando perfil (trigger=$reloadTrigger)...")
-        val authData = authDataStore.loadAuthUser()
+        val authData = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
 
         if (authData != null) {
             Log.d(TAG, "✅ Tipo de usuário: ${authData.type}")
@@ -62,56 +79,45 @@ fun PerfilScreen(navController: NavHostController?) {
             when (authData.type) {
                 AuthType.USUARIO -> {
                     isCrianca = false
-                    usuario = authData.user as? Usuario
-                    Log.d(TAG, "👤 Usuário carregado: ${usuario?.nome}")
+                    // start from what's in the auth store, but refresh from backend to get full data
+                    val authUsuario = authData.user as? Usuario
+                    usuario = authUsuario
+                    Log.d(TAG, "👤 Usuário carregado (do auth store): ${usuario?.nome}")
 
-                    // Buscar filhos: a API não possui listarPorUsuario; obter via Usuario.buscarPorId e usar criancas_dependentes
-                    usuario?.usuario_id?.let { usuarioId ->
+                    // Buscar filhos via endpoint de usuário (buscarPorId) — executar em IO
+                    val usuarioId = authUsuario?.usuario_id
+                    if (usuarioId != null) {
                         try {
-                            RetrofitFactory().getUsuarioService().buscarPorId(usuarioId).enqueue(
-                                object : retrofit2.Callback<com.oportunyfam_mobile.model.UsuarioResponse> {
-                                    override fun onResponse(
-                                        call: retrofit2.Call<com.oportunyfam_mobile.model.UsuarioResponse>,
-                                        response: retrofit2.Response<com.oportunyfam_mobile.model.UsuarioResponse>
-                                    ) {
-                                        if (response.isSuccessful) {
-                                            val usuarioResp = response.body()?.usuario
-                                            // Update the local usuario state on the main thread so Compose recomposes
-                                            scope.launch {
-                                                usuario = usuarioResp
-                                                val miniList = usuarioResp?.criancas_dependentes ?: emptyList()
-                                                filhos = miniList.map { mini ->
-                                                    Crianca(
-                                                        crianca_id = mini.id_crianca,
-                                                        pessoa_id = mini.id_pessoa,
-                                                        nome = mini.nome,
-                                                        email = null,
-                                                        foto_perfil = null,
-                                                        data_nascimento = "",
-                                                        idade = 0,
-                                                        criado_em = "",
-                                                        atualizado_em = null,
-                                                        sexo = null,
-                                                        atividades_matriculadas = emptyList(),
-                                                        conversas = emptyList()
-                                                    )
-                                                }
-                                            }
-                                         } else {
-                                             Log.e(TAG, "Erro ao buscar usuario para filhos: ${response.code()}")
-                                         }
-                                    }
-
-                                    override fun onFailure(
-                                        call: retrofit2.Call<com.oportunyfam_mobile.model.UsuarioResponse>,
-                                        t: Throwable
-                                    ) {
-                                        Log.e(TAG, "Erro ao buscar filhos (usuario)", t)
-                                    }
+                            val resp = withContext(Dispatchers.IO) {
+                                RetrofitFactory().getUsuarioService().buscarPorId(usuarioId).execute()
+                            }
+                            if (resp.isSuccessful) {
+                                val usuarioResp = resp.body()?.usuario
+                                // Atualiza estado na main thread (já estamos no LaunchedEffect)
+                                usuario = usuarioResp
+                                val miniList = usuarioResp?.criancas_dependentes ?: emptyList()
+                                criancas = miniList.map { mini ->
+                                    Crianca(
+                                        crianca_id = mini.id_crianca,
+                                        pessoa_id = mini.id_pessoa,
+                                        nome = mini.nome,
+                                        email = null,
+                                        foto_perfil = null,
+                                        data_nascimento = "",
+                                        idade = 0,
+                                        criado_em = "",
+                                        atualizado_em = null,
+                                        sexo = null,
+                                        atividades_matriculadas = emptyList(),
+                                        conversas = emptyList()
+                                    )
                                 }
-                            )
+                                Log.d(TAG, "👶 Crianças carregadas (via usuario): ${criancas.size}")
+                            } else {
+                                Log.e(TAG, "Erro ao buscar usuario para crianças: ${resp.code()}")
+                            }
                         } catch (e: Exception) {
-                            Log.e(TAG, "Erro ao buscar filhos", e)
+                            Log.e(TAG, "Erro ao buscar crianças", e)
                         }
                     }
                 }
@@ -165,7 +171,7 @@ fun PerfilScreen(navController: NavHostController?) {
                             // Tabs
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                                 TabButton(text = "Informações", isSelected = selectedTab == "Informações", onClick = { selectedTab = "Informações" })
-                                TabButton(text = if (isCrianca) "Responsáveis" else "Filhos", isSelected = selectedTab == if (isCrianca) "Responsáveis" else "Filhos", onClick = { selectedTab = if (isCrianca) "Responsáveis" else "Filhos" })
+                                TabButton(text = if (isCrianca) "Responsáveis" else "Crianças", isSelected = selectedTab == if (isCrianca) "Responsáveis" else "Crianças", onClick = { selectedTab = if (isCrianca) "Responsáveis" else "Crianças" })
                             }
 
                             Spacer(Modifier.height(24.dp))
@@ -174,8 +180,8 @@ fun PerfilScreen(navController: NavHostController?) {
                         item {
                             when (selectedTab) {
                                 "Informações" -> InformacoesTab(usuario = usuario, crianca = crianca, isCrianca = isCrianca)
-                                "Filhos" -> PerfilTabs(selectedTab = "Filhos", filhos = filhos)
-                                "Responsáveis" -> PerfilTabs(selectedTab = "Responsáveis", filhos = emptyList())
+                                "Crianças" -> PerfilTabs(selectedTab = "Crianças", criancas = criancas)
+                                "Responsáveis" -> PerfilTabs(selectedTab = "Responsáveis", criancas = emptyList())
                             }
                         }
                     }
@@ -204,21 +210,6 @@ fun PerfilScreen(navController: NavHostController?) {
 
     // Edit dialog (usuario ou criança) - mantém compatibilidade: botão superior abre editor correto
     if (showEditDialog) {
-        // handlers nameados para evitar warnings estáticos
-        val handleChildSave: (com.oportunyfam_mobile.model.Crianca) -> Unit = { updatedChild ->
-            crianca = updatedChild
-            showEditDialog = false
-            snackbarMessage = "Perfil atualizado"
-            showSnackbar = true
-        }
-
-        val handleUserSave: (com.oportunyfam_mobile.model.Usuario) -> Unit = { updatedUsuario ->
-            usuario = updatedUsuario
-            showEditDialog = false
-            snackbarMessage = "Perfil atualizado"
-            showSnackbar = true
-        }
-
         if (isCrianca) {
             EditChildDialog(crianca = crianca, onDismiss = { showEditDialog = false }, onSave = handleChildSave)
         } else if (usuario != null) {

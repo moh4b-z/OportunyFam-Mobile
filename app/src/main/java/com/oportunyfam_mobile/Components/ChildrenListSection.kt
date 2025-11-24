@@ -17,7 +17,6 @@ import com.oportunyfam_mobile.Service.UsuarioService
 import com.oportunyfam_mobile.model.Crianca
 import com.oportunyfam_mobile.model.CriancaMini
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
@@ -27,7 +26,7 @@ fun ChildrenListSection(
     onChildClick: (Crianca) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var crianças by remember { mutableStateOf<List<Crianca>>(emptyList()) }
+    var criancas by remember { mutableStateOf<List<Crianca>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -60,7 +59,7 @@ fun ChildrenListSection(
                         conversas = emptyList()
                     )
                 }
-                crianças = criancasList
+                criancas = criancasList
             } else {
                 errorMessage = "Erro ao carregar crianças"
                 Log.e("ChildrenList", "Erro usuario: ${response.code()}")
@@ -74,13 +73,13 @@ fun ChildrenListSection(
     }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp)
-    ) {
-        // Título
+         modifier = modifier
+             .fillMaxWidth()
+             .padding(horizontal = 16.dp, vertical = 12.dp)
+     ) {
+         // Título
         Text(
-            text = "Meus Filhos",
+            text = "Minhas Crianças",
             fontSize = 18.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -110,7 +109,7 @@ fun ChildrenListSection(
                 )
             }
 
-            crianças.isEmpty() -> {
+            criancas.isEmpty() -> {
                 // Lista vazia
                 Text(
                     text = "Nenhuma criança cadastrada ainda",
@@ -126,7 +125,7 @@ fun ChildrenListSection(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(0.dp)
                 ) {
-                    items(crianças) { child ->
+                    items(criancas) { child ->
                         ChildCard(
                             child = child,
                             onClick = { onChildClick(child) }

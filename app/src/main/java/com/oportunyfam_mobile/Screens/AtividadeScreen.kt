@@ -164,7 +164,7 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                         if (isLoadingCriancas) {
                             Column { CircularProgressIndicator() }
                         } else if (criancasList.isEmpty()) {
-                            Text("Nenhuma criança disponível. Cadastre um filho primeiro.")
+                            Text("Nenhuma criança disponível. Cadastre uma criança primeiro.")
                         } else {
                             Column {
                                 criancasList.forEach { c ->

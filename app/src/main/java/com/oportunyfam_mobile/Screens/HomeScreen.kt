@@ -576,7 +576,7 @@ fun CreateChildPromptCard(onCreate: () -> Unit, onSkip: () -> Unit, modifier: Mo
             Spacer(Modifier.height(16.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Button(onClick = onCreate, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFA000))) {
-                    Text("Criar filho", color = Color.White)
+                    Text("Criar criança", color = Color.White)
                 }
                 OutlinedButton(onClick = onSkip, colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFFFA000))) {
                     Text("Pular")
@@ -591,4 +591,3 @@ fun CreateChildPromptCard(onCreate: () -> Unit, onSkip: () -> Unit, modifier: Mo
 fun HomeScreenPreview() {
     HomeScreen(navController = null)
 }
-
