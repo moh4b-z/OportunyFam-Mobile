@@ -330,7 +330,9 @@ fun PerfilOngScreen(navController: NavHostController?, instituicaoId: Int = 0) {
                                 }
                             } else {
                                 items(atividades) { atividade ->
-                                    AtividadeCard(atividade = atividade)
+                                    AtividadeCard(atividade = atividade, onClick = {
+                                        navController?.navigate("atividade/${atividade.atividade_id}")
+                                    })
                                 }
                             }
                         }
@@ -382,12 +384,13 @@ private fun LoadingScreen(message: String = "Carregando...") {
 }
 
 @Composable
-fun AtividadeCard(atividade: AtividadeResponse) {
+fun AtividadeCard(atividade: AtividadeResponse, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 100.dp)
-            .padding(horizontal = 0.dp),
+            .padding(horizontal = 0.dp)
+            .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {

@@ -105,6 +105,13 @@ class MainActivity : ComponentActivity() {
                             initialQuery = query
                         )
                     }
+                    composable(
+                        route = "atividade/{atividadeId}",
+                        arguments = listOf(navArgument("atividadeId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val atividadeId = backStackEntry.arguments?.getInt("atividadeId") ?: 0
+                        com.oportunyfam_mobile.Screens.AtividadeScreen(navController = navController, atividadeId = atividadeId)
+                    }
                 }
             }
         }
