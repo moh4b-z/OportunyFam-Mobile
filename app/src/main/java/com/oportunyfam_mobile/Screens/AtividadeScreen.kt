@@ -41,6 +41,7 @@ import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.model.AtividadeResponse
 import com.oportunyfam_mobile.model.CriancaMini
 import com.oportunyfam_mobile.model.InscricaoRequest
+import com.oportunyfam_mobile.model.MatriculaRequest
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -68,6 +69,8 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
     var criancasList by remember { mutableStateOf<List<CriancaMini>>(emptyList()) }
     var isLoadingCriancas by remember { mutableStateOf(false) }
     var inscricaoMessage by remember { mutableStateOf<String?>(null) }
+    var showParticiparDialog by remember { mutableStateOf(false) }
+    var aulaToParticipateId by remember { mutableStateOf<Int?>(null) }
     // guarda o numero de aulas da atividade atual para calcular o índice do bloco 'Inscrições'
     var currentAulasCount by remember { mutableStateOf(0) }
 
@@ -151,6 +154,17 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                                 criancasList = list
                                 isLoadingCriancas = false
                                 showInscreverDialog = true
+                            }
+                        },
+                        onParticipar = { aulaId ->
+                            // triggered from child composable when user taps "Participar"
+                            coroutineScope.launch {
+                                aulaToParticipateId = aulaId
+                                isLoadingCriancas = true
+                                val list = loadCriancasDoUsuario()
+                                criancasList = list
+                                isLoadingCriancas = false
+                                showParticiparDialog = true
                             }
                         },
                         listState = listState
@@ -265,6 +279,129 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
             }
         }
 
+        // Diálogo para participar de uma aula (selecionar criança)
+        if (showParticiparDialog) {
+            androidx.compose.ui.window.Dialog(onDismissRequest = { showParticiparDialog = false }) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .wrapContentHeight()
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        val headerBrush = Brush.horizontalGradient(listOf(Color(0xFFFFA000), Color(0xFFFFD27A)))
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(headerBrush), contentAlignment = Alignment.Center) {
+                            Text(text = "Quem vai participar?", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        if (isLoadingCriancas) {
+                            Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                        } else if (criancasList.isEmpty()) {
+                            Text("Nenhuma criança disponível. Cadastre uma criança primeiro.", modifier = Modifier.padding(12.dp))
+                        } else {
+                            Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                criancasList.forEach { c ->
+                                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(8.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF8E1))) {
+                                        Row(modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                                            Box(modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(Color(0xFFFFD27A)), contentAlignment = Alignment.Center) {
+                                                Text(text = c.nome.take(1).uppercase(), color = Color.White, fontWeight = FontWeight.Bold)
+                                            }
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(text = c.nome, fontWeight = FontWeight.Bold, fontSize = 14.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                            }
+                                            Button(onClick = {
+                                                // flow: find existing inscricao for this child & activity; if not found, create it; then create matricula
+                                                showParticiparDialog = false
+                                                inscricaoMessage = null
+                                                coroutineScope.launch {
+                                                    val aulaId = aulaToParticipateId ?: return@launch
+                                                    var inscricaoId: Int? = null
+                                                    // try to find in inscricoesState
+                                                    if (inscricoesState is com.oportunyfam_mobile.ViewModel.InscricoesState.Success) {
+                                                        val inscritos = (inscricoesState as com.oportunyfam_mobile.ViewModel.InscricoesState.Success).inscricoes
+                                                        val found = inscritos.find { it.crianca_id == c.id_crianca }
+                                                        if (found != null) {
+                                                            inscricaoId = found.inscricao_id
+                                                        }
+                                                    }
+
+                                                    // if not found, create inscrição synchronously
+                                                    if (inscricaoId == null) {
+                                                        try {
+                                                            val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
+                                                            val idResponsavel = if (auth?.type == com.oportunyfam_mobile.data.AuthType.USUARIO) c.id_responsavel else null
+                                                            val req = InscricaoRequest(id_crianca = c.id_crianca, id_atividade = atividadeId, id_responsavel = idResponsavel)
+                                                            val resp = withContext(Dispatchers.IO) { RetrofitFactory().getInscricaoService().criarInscricao(req).execute() }
+                                                            if (resp.isSuccessful) {
+                                                                // InscricaoCriadaResponse.inscricao geralmente tem .id (InscricaoSimples)
+                                                                inscricaoId = resp.body()?.inscricao?.id
+                                                            } else {
+                                                                Log.e("AtividadeScreen", "Erro criando inscrição para matricula: ${resp.code()}")
+                                                            }
+                                                        } catch (e: Exception) {
+                                                            Log.e("AtividadeScreen", "Erro criar inscricao: ${e.message}", e)
+                                                        }
+                                                    }
+
+                                                    if (inscricaoId == null) {
+                                                        inscricaoMessage = "Não foi possível obter/criar inscrição"
+                                                        return@launch
+                                                    }
+
+                                                    // create Matricula
+                                                    if (inscricaoId != null) {
+                                                        val finalInscricaoId = inscricaoId
+                                                        try {
+                                                            val matriculaReq = MatriculaRequest(id_inscricao_atividade = finalInscricaoId, id_aula_atividade = aulaId, presente = false, nota_observacao = "")
+                                                            val matResp = withContext(Dispatchers.IO) { RetrofitFactory().getMatriculaService().criarMatricula(matriculaReq).execute() }
+                                                            if (matResp.isSuccessful) {
+                                                                inscricaoMessage = "Participação registrada com sucesso"
+                                                                // refresh data so UI reflects new matrícula/participação
+                                                                try {
+                                                                    atividadeViewModel.buscarAtividadePorId(atividadeId)
+                                                                    inscricaoViewModel.buscarInscricoesPorAtividade(atividadeId)
+                                                                } catch (_: Exception) { }
+                                                                // clear selection
+                                                                aulaToParticipateId = null
+                                                            } else {
+                                                                inscricaoMessage = "Erro ao registrar participação: ${matResp.code()}"
+                                                                Log.e("AtividadeScreen", "Erro criar matricula: ${matResp.errorBody()?.string()}")
+                                                            }
+                                                        } catch (e: Exception) {
+                                                            inscricaoMessage = "Falha na conexão"
+                                                            Log.e("AtividadeScreen", "Falha criar matricula", e)
+                                                        }
+                                                    } else {
+                                                        inscricaoMessage = "Não foi possível obter/criar inscrição"
+                                                    }
+                                                }
+                                            }) {
+                                                Text("Participar")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        TextButton(onClick = { showParticiparDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("Fechar", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                    }
+                }
+            }
+        }
+
         // Mostrar mensagem de resultado (snackbar)
         inscricaoMessage?.let { msg ->
             LaunchedEffect(msg) {
@@ -279,7 +416,13 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
 }
 
 @Composable
-fun AtividadeDetailContent(atividade: AtividadeResponse, inscricoesState: com.oportunyfam_mobile.ViewModel.InscricoesState, onInscrever: () -> Unit, listState: LazyListState) {
+fun AtividadeDetailContent(
+    atividade: AtividadeResponse,
+    inscricoesState: com.oportunyfam_mobile.ViewModel.InscricoesState,
+    onInscrever: () -> Unit,
+    onParticipar: (Int) -> Unit,
+    listState: LazyListState
+) {
     val screenBg = Color(0xFFFFFFFF)
     val cardAccent = Color(0xFFFFF3E0)
     val primaryButton = Color(0xFFFFA000)
@@ -371,10 +514,19 @@ fun AtividadeDetailContent(atividade: AtividadeResponse, inscricoesState: com.op
                     }
 
                     // Status indicator
-                    Text(text = if (isPast) "Encerrada" else (statusText.ifEmpty { "Ativa" }), color = if (isPast) Color(0xFF9E9E9E) else primaryButton, fontWeight = FontWeight.Bold)
-                }
-            }
-        }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(text = if (isPast) "Encerrada" else (statusText.ifEmpty { "Ativa" }), color = if (isPast) Color(0xFF9E9E9E) else primaryButton, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        // If the class is in the future, allow joining (create matricula)
+                        if (!isPast) {
+                            Button(onClick = { onParticipar(aula.aula_id) }, colors = ButtonDefaults.buttonColors(containerColor = primaryButton)) {
+                                Text("Participar", color = Color.White)
+                            }
+                        }
+                     }
+                 }
+             }
+         }
 
         // Detalhes da atividade
         item {
