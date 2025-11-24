@@ -3,6 +3,7 @@ package com.oportunyfam_mobile.Components
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -54,6 +55,7 @@ fun RegistroOutlinedTextField(
     modifier: Modifier = Modifier.fillMaxWidth(),
     readOnly: Boolean = false,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
     supportingText: @Composable () -> Unit = {}
 ) {
     OutlinedTextField(
@@ -67,6 +69,7 @@ fun RegistroOutlinedTextField(
         visualTransformation = visualTransformation,
         readOnly = readOnly,
         keyboardOptions = keyboardOptions,
+        keyboardActions = keyboardActions,
         enabled = !readOnly,
         colors = OutlinedTextFieldDefaults.colors(
             focusedBorderColor = PrimaryColor,

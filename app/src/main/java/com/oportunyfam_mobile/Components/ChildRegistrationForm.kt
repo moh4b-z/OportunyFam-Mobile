@@ -1,7 +1,6 @@
 package com.oportunyfam_mobile.Components
 
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -10,29 +9,34 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.oportunyfam_mobile.data.AuthDataStore
+import com.oportunyfam_mobile.model.Usuario
 import java.util.regex.Pattern
 import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.model.CriancaRequest
-import com.oportunyfam_mobile.Utils.convertDataParaBackendFormat
 import kotlinx.coroutines.launch
-import java.util.Calendar
+import java.util.Locale
 
 data class ChildRegistration(
     val name: String,
-    val age: Int?,
+    val data_nascimento: String,
     val cpf: String,
     val sex: String,
     val email: String,
@@ -53,7 +57,8 @@ fun ChildRegistrationForm(
     val coroutineScope = rememberCoroutineScope()
 
     var name by remember { mutableStateOf("") }
-    var ageText by remember { mutableStateOf("") }
+    // Use TextFieldValue to control cursor/selection during mask insertion
+    var dataNascimentoValue by remember { mutableStateOf(TextFieldValue(text = "")) }
     var cpf by remember { mutableStateOf("") }
     var isCpfValidated by remember { mutableStateOf(false) }
     var sex by remember { mutableStateOf("") }
@@ -66,7 +71,13 @@ fun ChildRegistrationForm(
 
     val sexOptions = listOf("Masculino", "Feminino", "Outro", "Prefiro não dizer")
 
-    val isStep1Valid = name.isNotBlank() && email.isNotBlank() && isCpfValidated && sex.isNotBlank()
+    // dataNascimento input uses Brazilian format DD/MM/YYYY; validate and convert before submit
+    val datePatternInput = Pattern.compile("\\d{2}/\\d{2}/\\d{4}")
+    val isDataValida = dataNascimentoValue.text.isNotBlank() && datePatternInput.matcher(dataNascimentoValue.text).matches()
+
+    val focusManager = LocalFocusManager.current
+
+    val isStep1Valid = name.isNotBlank() && email.isNotBlank() && isCpfValidated && sex.isNotBlank() && isDataValida
     val isPasswordValid = password.length >= 6
     val isFormValid = isStep1Valid && isPasswordValid
 
@@ -80,14 +91,40 @@ fun ChildRegistrationForm(
 
         coroutineScope.launch {
             try {
-                val ageInt = ageText.toIntOrNull() ?: 0
-                // Converter idade para data de nascimento aproximada
-                val calendar = Calendar.getInstance()
-                calendar.add(Calendar.YEAR, -ageInt)
-                val ano = calendar.get(Calendar.YEAR)
-                val mes = calendar.get(Calendar.MONTH) + 1
-                val dia = calendar.get(Calendar.DAY_OF_MONTH)
-                val dataNascimento = String.format("%04d-%02d-%02d", ano, mes, dia)
+                // Convert DD/MM/YYYY -> YYYY-MM-DD with semantic validation
+                val parts = dataNascimentoValue.text.trim().split('/')
+                if (parts.size != 3) {
+                    Toast.makeText(context, "Data de nascimento inválida.", Toast.LENGTH_SHORT).show()
+                    isLoading = false
+                    return@launch
+                }
+                val dia = parts[0].toIntOrNull()
+                val mes = parts[1].toIntOrNull()
+                val ano = parts[2].toIntOrNull()
+                if (dia == null || mes == null || ano == null) {
+                    Toast.makeText(context, "Data de nascimento inválida.", Toast.LENGTH_SHORT).show()
+                    isLoading = false
+                    return@launch
+                }
+                // Validate ranges
+                if (ano < 1900 || ano > 2100 || mes !in 1..12) {
+                    Toast.makeText(context, "Data de nascimento inválida.", Toast.LENGTH_SHORT).show()
+                    isLoading = false
+                    return@launch
+                }
+                val maxDay = when (mes) {
+                    1,3,5,7,8,10,12 -> 31
+                    4,6,9,11 -> 30
+                    2 -> if ((ano % 4 == 0 && ano % 100 != 0) || (ano % 400 == 0)) 29 else 28
+                    else -> 31
+                }
+                if (dia < 1 || dia > maxDay) {
+                    Toast.makeText(context, "Data de nascimento inválida.", Toast.LENGTH_SHORT).show()
+                    isLoading = false
+                    return@launch
+                }
+
+                val dataNascimento = String.format(Locale.US, "%04d-%02d-%02d", ano, mes, dia)
 
                 // Converter sexo para ID
                 val idSexo = when (sex) {
@@ -97,6 +134,10 @@ fun ChildRegistrationForm(
                     else -> 4
                 }
 
+                // Get id_usuario from AuthDataStore (responsável que está cadastrando)
+                val authWrapper = withContext(Dispatchers.IO) { AuthDataStore(context).loadAuthUser() }
+                val idUsuario = (authWrapper?.user as? Usuario)?.usuario_id ?: 0
+
                 val criancaRequest = CriancaRequest(
                     nome = name.trim(),
                     email = email.trim(),
@@ -104,7 +145,8 @@ fun ChildRegistrationForm(
                     cpf = cpf,
                     data_nascimento = dataNascimento,
                     id_sexo = idSexo,
-                    foto_perfil = ""
+                    foto_perfil = "",
+                    id_usuario = idUsuario
                 )
 
                 val criancaService = RetrofitFactory().getCriancaService()
@@ -122,7 +164,7 @@ fun ChildRegistrationForm(
                         android.util.Log.d("ChildReg", "✓ Criança criada: ${crianca.nome}")
                         onSubmit(ChildRegistration(
                             name = name.trim(),
-                            age = ageInt,
+                            data_nascimento = dataNascimento,
                             cpf = cpf,
                             sex = sex,
                             email = email.trim(),
@@ -138,7 +180,7 @@ fun ChildRegistrationForm(
 
                         // Limpar campos
                         name = ""
-                        ageText = ""
+                        dataNascimentoValue = TextFieldValue("")
                         cpf = ""
                         isCpfValidated = false
                         sex = ""
@@ -178,21 +220,41 @@ fun ChildRegistrationForm(
                 label = "Nome completo",
                 leadingIcon = { Icon(Icons.Default.AccountCircle, contentDescription = null, tint = Color(0x9E000000)) },
                 readOnly = false,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 supportingText = { Text("Nome completo") }
             )
         }
 
-        // Idade
+        // Data de nascimento (DD/MM/YYYY) - masked input
         item {
-            RegistroOutlinedTextField(
-                value = ageText,
-                onValueChange = { ageText = it.filter { char -> char.isDigit() } },
-                label = "Idade",
-                leadingIcon = { Icon(Icons.Default.Info, contentDescription = null, tint = Color(0x9E000000)) },
-                readOnly = false,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                supportingText = { Text("Idade") }
+            // Data: use explicit OutlinedTextField with TextFieldValue to keep cursor position
+            OutlinedTextField(
+                value = dataNascimentoValue,
+                onValueChange = { newValue ->
+                    // Allow only digits, auto-insert '/'
+                    val raw = newValue.text
+                    val digits = raw.filter { it.isDigit() }
+                    val limited = if (digits.length > 8) digits.substring(0, 8) else digits
+                    val sb = StringBuilder()
+                    for (i in limited.indices) {
+                        sb.append(limited[i])
+                        if (i == 1 || i == 3) sb.append('/')
+                    }
+                    val formatted = sb.toString()
+                    // Place cursor at end so the next digit appears after the slash correctly
+                    dataNascimentoValue = TextFieldValue(text = formatted, selection = androidx.compose.ui.text.TextRange(formatted.length))
+                },
+                label = { Text("Data de nascimento (DD/MM/YYYY)") },
+                leadingIcon = { Icon(Icons.Default.CalendarToday, contentDescription = null, tint = Color(0x9E000000)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                modifier = Modifier.fillMaxWidth(),
+                supportingText = { Text("Data de nascimento") }
             )
+            if (dataNascimentoValue.text.isNotBlank() && !isDataValida) {
+                Text(text = "Formato inválido. Use DD/MM/YYYY", color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(start = 16.dp))
+            }
         }
 
         // CPF com validação igual ao Registro
@@ -230,7 +292,8 @@ fun ChildRegistrationForm(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = sexExpanded) },
                     modifier = Modifier
                         .menuAnchor()
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                 )
                 ExposedDropdownMenu(
                     expanded = sexExpanded,
@@ -257,7 +320,8 @@ fun ChildRegistrationForm(
                 label = "E-mail",
                 leadingIcon = { Icon(Icons.Default.Email, contentDescription = null, tint = Color(0x9E000000)) },
                 readOnly = false,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 supportingText = { Text("E-mail") }
             )
         }
@@ -280,6 +344,8 @@ fun ChildRegistrationForm(
                 },
                 visualTransformation = if (showPassword) androidx.compose.ui.text.input.VisualTransformation.None else PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { if (isFormValid) submitForm() }),
                 supportingText = {
                     if (password.length > 0 && password.length < 6) {
                         Text("A senha deve ter no mínimo 6 caracteres.", color = MaterialTheme.colorScheme.error)
@@ -325,7 +391,7 @@ fun ChildRegistrationForm(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Cadastrar Filho",
+                            text = "Cadastrar Criança",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

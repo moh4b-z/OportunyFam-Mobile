@@ -11,10 +11,12 @@ import retrofit2.http.*
 interface CriancaService {
 
     // POST /v1/oportunyfam/criancas
+    @Headers("Content-Type: application/json")
     @POST("criancas")
     fun criar(@Body crianca: CriancaRequest): Call<CriancaResponse>
 
     // PUT /v1/oportunyfam/criancas/:id - aceita campos parciais como mapa
+    @Headers("Content-Type: application/json")
     @PUT("criancas/{id}")
     fun atualizar(@Path("id") id: Int, @Body fields: Map<String, @JvmSuppressWildcards Any?>): Call<CriancaResponse>
 

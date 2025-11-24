@@ -50,7 +50,8 @@ data class CriancaRequest(
     val senha: String?,
     val cpf: String,
     val data_nascimento: String,
-    val id_sexo: Int
+    val id_sexo: Int,
+    val id_usuario: Int
 )
 
 data class CriancaMini(

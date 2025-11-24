@@ -30,6 +30,7 @@ fun RegisterChildScreen(
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.Start
         ) {
+            Spacer(modifier = Modifier.height(24.dp))
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -48,7 +49,7 @@ fun RegisterChildScreen(
                 }
 
                 Text(
-                    text = "Cadastrar Filho",
+                    text = "Cadastrar Criança",
                     style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                     modifier = Modifier.padding(start = 8.dp),
                     textAlign = TextAlign.Start
