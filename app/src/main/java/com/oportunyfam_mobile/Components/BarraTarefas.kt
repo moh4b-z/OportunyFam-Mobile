@@ -58,6 +58,26 @@ fun BarraTarefas(
             )
         )
 
+        // Item Status Criança
+        NavigationBarItem(
+            selected = currentRoute == "StatusCrianca",
+            onClick = { navController?.navigate("StatusCrianca") },
+            icon = {
+                NavItemContent(
+                    icon = Icons.Filled.CalendarToday,
+                    label = "Agenda",
+                    isSelected = currentRoute == "StatusCrianca"
+                )
+            },
+            colors = NavigationBarItemDefaults.colors(
+                selectedIconColor = Color.White,
+                selectedTextColor = Color.White,
+                indicatorColor = Color.Transparent,
+                unselectedIconColor = Color(0xFF5A3E1B),
+                unselectedTextColor = Color(0xFF5A3E1B)
+            )
+        )
+
         // Item Conversas
         NavigationBarItem(
             selected = currentRoute == "ConversasScreen",

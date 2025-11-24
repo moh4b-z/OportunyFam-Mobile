@@ -63,6 +63,11 @@ class MainActivity : ComponentActivity() {
                     composable(NavRoutes.CONVERSAS) {
                         ConversasScreen(navController)
                     }
+
+                    // Tela de Status da Criança
+                    composable(NavRoutes.STATUS_CRIANCA) {
+                        com.oportunyfam_mobile.Screens.StatusCriancaScreen(navController = navController)
+                    }
                     // Tela de Perfil da ONG/Instituição
                     composable(
                         route = "instituicao_perfil/{instituicao_id}",
@@ -136,6 +141,9 @@ class MainActivity : ComponentActivity() {
         // Telas de comunicação
         const val CONVERSAS = "ConversasScreen"
         const val CHAT = "ChatScreen"
+
+        // Status das crianças
+        const val STATUS_CRIANCA = "StatusCrianca"
 
         // Outras telas
         const val ATIVIDADES = "AtividadesScreen"
