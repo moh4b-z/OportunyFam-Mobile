@@ -30,7 +30,8 @@ data class AtividadeSimples(
     val faixa_etaria_max: Int,
     val gratuita: Boolean,
     val preco: String,
-    val ativo: Boolean
+    val ativo: Boolean,
+    val foto: String? = null,
 )
 
 // Response para lista de atividades (com detalhes completos)
@@ -65,7 +66,8 @@ data class AtividadeResponse(
     val instituicao_foto: String?,
     val cidade: String,
     val estado: String,
-    val aulas: List<AulaDetalhe>
+    val aulas: List<AulaDetalhe>,
+    val foto: String? = null,
 )
 
 // Detalhes de uma aula dentro da atividade

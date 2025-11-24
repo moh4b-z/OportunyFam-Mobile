@@ -46,8 +46,8 @@ fun ChildrenListSection(
                 val criancasList = criancasMini.map { mini ->
                     // Preenche campos obrigatórios com valores padrão quando não disponíveis
                     Crianca(
-                        crianca_id = mini.crianca_id,
-                        pessoa_id = 0,
+                        crianca_id = mini.id_crianca,
+                        pessoa_id = mini.id_pessoa,
                         nome = mini.nome,
                         email = null,
                         foto_perfil = null,

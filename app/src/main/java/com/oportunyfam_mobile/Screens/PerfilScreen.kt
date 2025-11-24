@@ -82,8 +82,8 @@ fun PerfilScreen(navController: NavHostController?) {
                                                 val miniList = usuarioResp?.criancas_dependentes ?: emptyList()
                                                 filhos = miniList.map { mini ->
                                                     Crianca(
-                                                        crianca_id = mini.crianca_id,
-                                                        pessoa_id = 0,
+                                                        crianca_id = mini.id_crianca,
+                                                        pessoa_id = mini.id_pessoa,
                                                         nome = mini.nome,
                                                         email = null,
                                                         foto_perfil = null,

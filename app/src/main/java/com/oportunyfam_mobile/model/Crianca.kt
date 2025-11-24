@@ -54,6 +54,8 @@ data class CriancaRequest(
 )
 
 data class CriancaMini(
-    val crianca_id: Int,
+    val id_crianca: Int,
+    val id_responsavel: Int,
     val nome: String,
+    val id_pessoa: Int
 )
