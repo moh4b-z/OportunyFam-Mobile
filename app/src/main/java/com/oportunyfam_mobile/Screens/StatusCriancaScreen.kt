@@ -88,24 +88,45 @@ fun StatusCriancaScreen(navController: NavHostController?) {
 
         criancas = childrenList
 
-        // Para cada criança, buscar inscricoes
+        // Para cada criança, buscar inscricoes; se endpoint específico não retornar tudo, tentar fallback buscando todas e filtrando
         val mapInscr = mutableMapOf<Int, List<InscricaoDetalhada>>()
         val activityIds = mutableSetOf<Int>()
-        // run network ops in parallel using coroutines if desired
         childrenList.forEach { c ->
             try {
+                Log.d("StatusCriancaScreen", "🔎 Buscando inscrições para criança id=${c.crianca_id}")
                 val resp = withContext(Dispatchers.IO) {
                     RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(c.crianca_id).execute()
                 }
+
+                var list: List<InscricaoDetalhada> = emptyList()
+
                 if (resp.isSuccessful) {
-                    val list = resp.body()?.inscricoes ?: emptyList()
-                    mapInscr[c.crianca_id] = list
-                    list.forEach { activityIds.add(it.atividade_id) }
-                } else {
-                    mapInscr[c.crianca_id] = emptyList()
+                    list = resp.body()?.inscricoes ?: emptyList()
+                    Log.d("StatusCriancaScreen", "✅ Endpoint específico retornou ${list.size} inscrições para crianca ${c.crianca_id}")
                 }
+
+                // Se não retornou nada ou não foi successful, tentar fallback: buscar todas e filtrar por crianca_id
+                if (list.isEmpty()) {
+                    try {
+                        Log.d("StatusCriancaScreen", "⚠️ Fallback: buscando todas as inscrições para filtrar por criança ${c.crianca_id}")
+                        val allResp = withContext(Dispatchers.IO) { RetrofitFactory().getInscricaoService().buscarTodasInscricoes().execute() }
+                        if (allResp.isSuccessful) {
+                            val todas = allResp.body()?.inscricoes ?: emptyList()
+                            list = todas.filter { it.crianca_id == c.crianca_id }
+                            Log.d("StatusCriancaScreen", "✅ Fallback encontrou ${list.size} inscrições para crianca ${c.crianca_id}")
+                        } else {
+                            Log.w("StatusCriancaScreen", "❌ Fallback buscarTodasInscricoes falhou: ${allResp.code()}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("StatusCriancaScreen", "Erro no fallback buscarTodasInscricoes: ${e.message}", e)
+                    }
+                }
+
+                mapInscr[c.crianca_id] = list
+                list.forEach { activityIds.add(it.atividade_id) }
+
             } catch (e: Exception) {
-                Log.e("StatusCriancaScreen", "Erro ao buscar inscrições: ${e.message}", e)
+                Log.e("StatusCriancaScreen", "Erro ao buscar inscrições para crianca ${c.crianca_id}: ${e.message}", e)
                 mapInscr[c.crianca_id] = emptyList()
             }
         }
@@ -206,7 +227,7 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                                                         Button(onClick = {
                                                             // confirmar inscrição: atualizar status de 1 -> 3
                                                             inscricaoViewModel.atualizarStatusInscricao(inscricao.inscricao_id, 3, inscricao.atividade_id)
-                                                            // recarregar lista de inscricoes para essa crianca
+                                                            // recarregar lista de inscricoes para essa crianca e recomputar aulasAgenda
                                                             scope.launch {
                                                                 try {
                                                                     val resp = withContext(Dispatchers.IO) {
@@ -214,6 +235,22 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                                                                     }
                                                                     if (resp.isSuccessful) {
                                                                         inscricoesPorCrianca = inscricoesPorCrianca.toMutableMap().also { it[crianca.crianca_id] = resp.body()?.inscricoes ?: emptyList() }
+                                                                        // recompute activityIds across all children
+                                                                        val activityIdsNow = inscricoesPorCrianca.values.flatten().map { it.atividade_id }.toSet()
+                                                                        try {
+                                                                            val aulasResp = withContext(Dispatchers.IO) {
+                                                                                RetrofitFactory().getAtividadeService().buscarTodasAulas().execute()
+                                                                            }
+                                                                            if (aulasResp.isSuccessful) {
+                                                                                val todas = aulasResp.body()?.aulas ?: emptyList()
+                                                                                aulasAgenda = todas.filter { activityIdsNow.contains(it.id_atividade) }
+                                                                            } else {
+                                                                                aulasAgenda = emptyList()
+                                                                            }
+                                                                        } catch (e: Exception) {
+                                                                            Log.e("StatusCriancaScreen", "Erro ao recomputar aulasAgenda: ${e.message}", e)
+                                                                            aulasAgenda = emptyList()
+                                                                        }
                                                                     }
                                                                 } catch (e: Exception) {
                                                                     Log.e("StatusCriancaScreen", "Erro ao recarregar inscrições: ${e.message}", e)
@@ -238,12 +275,27 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                                                                         RetrofitFactory().getInscricaoService().deletarInscricao(inscricao.inscricao_id).execute()
                                                                     }
                                                                     if (call.isSuccessful) {
-                                                                        // recarregar
+                                                                        // recarregar inscrições para a criança e recomputar aulasAgenda
                                                                         val resp = withContext(Dispatchers.IO) {
                                                                             RetrofitFactory().getInscricaoService().buscarInscricoesPorCrianca(crianca.crianca_id).execute()
                                                                         }
                                                                         if (resp.isSuccessful) {
                                                                             inscricoesPorCrianca = inscricoesPorCrianca.toMutableMap().also { it[crianca.crianca_id] = resp.body()?.inscricoes ?: emptyList() }
+                                                                            val activityIdsNow = inscricoesPorCrianca.values.flatten().map { it.atividade_id }.toSet()
+                                                                            try {
+                                                                                val aulasResp = withContext(Dispatchers.IO) {
+                                                                                    RetrofitFactory().getAtividadeService().buscarTodasAulas().execute()
+                                                                                }
+                                                                                if (aulasResp.isSuccessful) {
+                                                                                    val todas = aulasResp.body()?.aulas ?: emptyList()
+                                                                                    aulasAgenda = todas.filter { activityIdsNow.contains(it.id_atividade) }
+                                                                                } else {
+                                                                                    aulasAgenda = emptyList()
+                                                                                }
+                                                                            } catch (e: Exception) {
+                                                                                Log.e("StatusCriancaScreen", "Erro ao recomputar aulasAgenda: ${e.message}", e)
+                                                                                aulasAgenda = emptyList()
+                                                                            }
                                                                         }
                                                                     }
                                                                 } catch (e: Exception) {
