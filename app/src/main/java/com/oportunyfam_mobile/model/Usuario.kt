@@ -46,3 +46,13 @@ data class UsuarioRequest(
     val cidade: String,
     val estado: String
 )
+
+data class UsuarioMini(
+    val usuario_id: Int,
+    val pessoa_id: Int,
+    val nome: String,
+    val foto_perfil: String?,
+    val email: String,
+    val telefone: String?,
+    val id_responsavel: Int
+)

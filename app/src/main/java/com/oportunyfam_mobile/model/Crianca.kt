@@ -40,7 +40,8 @@ data class Crianca(
     val atualizado_em: String?,
     val sexo: String?,
     val atividades_matriculadas: List<Any> = emptyList(),
-    val conversas: List<Any> = emptyList()
+    val conversas: List<ConversaInstituicao> = emptyList(),
+    val responsaveis: List<UsuarioMini> = emptyList()
 )
 
 data class CriancaRequest(
