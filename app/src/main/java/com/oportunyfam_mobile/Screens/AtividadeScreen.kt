@@ -30,9 +30,7 @@ import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.ViewModel.AtividadeViewModel
 import com.oportunyfam_mobile.ViewModel.InscricaoViewModel
 import com.oportunyfam_mobile.data.AuthDataStore
-import com.oportunyfam_mobile.model.AulaDetalhe
 import com.oportunyfam_mobile.model.AtividadeResponse
-import com.oportunyfam_mobile.model.Crianca
 import com.oportunyfam_mobile.model.CriancaMini
 import com.oportunyfam_mobile.model.InscricaoRequest
 import kotlinx.coroutines.Dispatchers
@@ -64,14 +62,14 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
 
     // Estados para inscrever
     var showInscreverDialog by remember { mutableStateOf(false) }
-    var criancasList by remember { mutableStateOf<List<Crianca>>(emptyList()) }
+    var criancasList by remember { mutableStateOf<List<CriancaMini>>(emptyList()) }
     var isLoadingCriancas by remember { mutableStateOf(false) }
     var inscricaoMessage by remember { mutableStateOf<String?>(null) }
 
     val authDataStore = remember { AuthDataStore(context) }
 
     // Função suspensa para carregar as crianças do usuário (executada em coroutine)
-    suspend fun loadCriancasDoUsuario(): List<Crianca> {
+    suspend fun loadCriancasDoUsuario(): List<CriancaMini> {
         return withContext(Dispatchers.IO) {
             try {
                 val auth = authDataStore.loadAuthUser()
@@ -79,33 +77,27 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                     (auth.user as? com.oportunyfam_mobile.model.Usuario)?.usuario_id
                 } else null
 
-                if (usuarioId == null) return@withContext emptyList<Crianca>()
+                if (usuarioId == null) return@withContext emptyList<CriancaMini>()
 
                 val resp = RetrofitFactory().getUsuarioService().buscarPorId(usuarioId).execute()
                 if (resp.isSuccessful) {
                     val usuarioResp = resp.body()?.usuario
                     val miniList = usuarioResp?.criancas_dependentes ?: emptyList()
+                    // Map to CriancaMini so we keep id_responsavel available
                     return@withContext miniList.map { mini ->
-                        Crianca(
-                            crianca_id = mini.id_crianca,
-                            pessoa_id = mini.id_pessoa,
+                        CriancaMini(
+                            id_crianca = mini.id_crianca,
+                            id_responsavel = mini.id_responsavel,
                             nome = mini.nome,
-                            email = null,
-                            foto_perfil = null,
-                            data_nascimento = "",
-                            idade = 0,
-                            criado_em = "",
-                            atualizado_em = null,
-                            sexo = null,
-                            atividades_matriculadas = emptyList(),
-                            conversas = emptyList()
+                            foto_perfil = mini.foto_perfil,
+                            id_pessoa = mini.id_pessoa
                         )
                     }
                 }
             } catch (e: Exception) {
                 Log.e("AtividadeScreen", "Erro ao carregar criancas: ${e.message}", e)
             }
-            return@withContext emptyList<Crianca>()
+            return@withContext emptyList<CriancaMini>()
         }
     }
 
@@ -177,23 +169,29 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                                         coroutineScope.launch {
                                             val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
                                             val idResponsavel = if (auth?.type == com.oportunyfam_mobile.data.AuthType.USUARIO) {
-                                                (auth.user as? com.oportunyfam_mobile.model.Usuario)?.usuario_id
+                                                // Use the relation id from the mini object (id_responsavel) as backend expects
+                                                c.id_responsavel
                                             } else null
 
-                                            val request = InscricaoRequest(id_crianca = c.crianca_id, id_atividade = atividadeId, id_responsavel = idResponsavel)
+                                            Log.d("AtividadeScreen", "🔔 Criando inscrição -> crianca_id=${c.id_crianca}, atividadeId=$atividadeId, idResponsavel=$idResponsavel")
+
+                                            val request = InscricaoRequest(id_crianca = c.id_crianca, id_atividade = atividadeId, id_responsavel = idResponsavel)
 
                                             RetrofitFactory().getInscricaoService().criarInscricao(request).enqueue(object: Callback<com.oportunyfam_mobile.model.InscricaoCriadaResponse> {
                                                 override fun onResponse(call: Call<com.oportunyfam_mobile.model.InscricaoCriadaResponse>, response: Response<com.oportunyfam_mobile.model.InscricaoCriadaResponse>) {
+                                                    Log.d("AtividadeScreen", "Inscrição response code=${response.code()}")
                                                     if (response.isSuccessful) {
                                                         inscricaoMessage = "Inscrição solicitada com sucesso"
                                                         inscricaoViewModel.buscarInscricoesPorAtividade(atividadeId)
                                                     } else {
                                                         inscricaoMessage = "Erro ao inscrever: ${response.code()}"
+                                                        Log.e("AtividadeScreen", "Erro ao inscrever: ${response.errorBody()?.string()}")
                                                     }
                                                 }
 
                                                 override fun onFailure(call: Call<com.oportunyfam_mobile.model.InscricaoCriadaResponse>, t: Throwable) {
                                                     inscricaoMessage = "Falha na conexão"
+                                                    Log.e("AtividadeScreen", "Falha criar inscricao", t)
                                                 }
                                             })
                                         }
