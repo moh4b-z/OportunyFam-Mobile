@@ -1,6 +1,5 @@
 package com.oportunyfam_mobile.Components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -59,7 +58,7 @@ fun ChildDetailDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Detalhes do Filho",
+                        text = "Detalhes da Criança",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -273,8 +272,7 @@ private fun formatarData(data: String): String {
         } else {
             data
         }
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         data
     }
 }
-

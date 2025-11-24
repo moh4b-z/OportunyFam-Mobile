@@ -22,6 +22,7 @@ import com.oportunyfam_mobile.Components.EditChildDialog
 import com.oportunyfam_mobile.Components.PerfilTopBar
 import com.oportunyfam_mobile.Components.PerfilPhoto
 import com.oportunyfam_mobile.Components.PerfilTabs
+import com.oportunyfam_mobile.Components.ChildDetailDialog
 import com.oportunyfam_mobile.Service.RetrofitFactory
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
@@ -52,6 +53,8 @@ fun PerfilScreen(navController: NavHostController?) {
     var snackbarMessage by remember { mutableStateOf("") }
     var showEditDialog by remember { mutableStateOf(false) }
     var selectedTab by remember { mutableStateOf("Informações") }
+    // State to show child full-detail dialog
+    var showChildDetail by remember { mutableStateOf(false) }
 
     // Handlers para salvar após editar (declarados aqui para evitar warnings de escopo)
     val handleChildSave: (Crianca) -> Unit = { updatedChild ->
@@ -66,6 +69,31 @@ fun PerfilScreen(navController: NavHostController?) {
         showEditDialog = false
         snackbarMessage = "Perfil atualizado"
         showSnackbar = true
+    }
+
+    // Handler when a child mini card is selected: fetch full details and open detail dialog
+    val onChildSelected: (Crianca) -> Unit = { mini ->
+        scope.launch {
+            try {
+                Log.d(TAG, "🔎 Carregando detalhes da criança id=${mini.crianca_id}...")
+                val resp = withContext(Dispatchers.IO) {
+                    RetrofitFactory().getCriancaService().buscarPorId(mini.crianca_id).execute()
+                }
+                if (resp.isSuccessful) {
+                    val full = resp.body()?.crianca
+                    if (full != null) {
+                        Log.d(TAG, "✅ Criança carregada: id=${full.crianca_id}, foto=${full.foto_perfil}")
+                        crianca = full
+                        showEditDialog = false
+                        showChildDetail = true
+                    }
+                } else {
+                    Log.e(TAG, "Erro ao carregar criança completa: ${resp.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Exceção ao carregar criança: ${e.message}", e)
+            }
+        }
     }
 
     // Carregar dados do perfil
@@ -147,25 +175,54 @@ fun PerfilScreen(navController: NavHostController?) {
         colors = listOf(Color(0xFFFFA000), Color(0xFFFFD27A))
     )
 
+    // === UI ===
     Box(modifier = Modifier.fillMaxSize()) {
-        // Aplica statusBarsPadding para garantir que nada fique preso na parte superior
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .background(brush = gradient)
-            .statusBarsPadding()
-            .padding(top = 8.dp) // pequeno espaçamento extra para evitar que a topbar/foto fiquem muito próximos da status bar
+        // Background + top column
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(brush = gradient)
+                .statusBarsPadding()
+                .padding(top = 8.dp) // pequeno espaçamento
         ) {
+            // Top bar
             PerfilTopBar(navController = navController, onEdit = { showEditDialog = true }, onLogout = { onLogout() })
 
             // Conteúdo principal: card com foto e tabs
-            Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                Card(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.85f).align(Alignment.BottomCenter), colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)) {
-                    LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(top = 80.dp, start = 16.dp, end = 16.dp, bottom = 100.dp)) {
+            Box(modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(0.85f)
+                        .align(Alignment.BottomCenter),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
+                ) {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(top = 80.dp, start = 16.dp, end = 16.dp, bottom = 100.dp)
+                    ) {
+                        // Header: nome, email e tabs
                         item {
-                            // Nome e email
-                            Text(text = if (isCrianca) crianca?.nome ?: "Criança" else usuario?.nome ?: "Usuário", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.Black, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                            Text(
+                                text = if (isCrianca) crianca?.nome ?: "Criança" else usuario?.nome ?: "Usuário",
+                                fontSize = 24.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
                             Spacer(Modifier.height(4.dp))
-                            Text(text = if (isCrianca) crianca?.email ?: "" else usuario?.email ?: "", fontSize = 14.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                            Text(
+                                text = if (isCrianca) crianca?.email ?: "" else usuario?.email ?: "",
+                                fontSize = 14.sp,
+                                color = Color.Gray,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
                             Spacer(Modifier.height(24.dp))
 
                             // Tabs
@@ -177,30 +234,33 @@ fun PerfilScreen(navController: NavHostController?) {
                             Spacer(Modifier.height(24.dp))
                         }
 
+                        // Conteúdo da aba selecionada
                         item {
                             when (selectedTab) {
                                 "Informações" -> InformacoesTab(usuario = usuario, crianca = crianca, isCrianca = isCrianca)
-                                "Crianças" -> PerfilTabs(selectedTab = "Crianças", criancas = criancas)
+                                "Crianças" -> PerfilTabs(selectedTab = "Crianças", criancas = criancas, onChildClick = onChildSelected)
                                 "Responsáveis" -> PerfilTabs(selectedTab = "Responsáveis", criancas = emptyList())
                             }
                         }
                     }
                 }
 
-                // Foto de perfil sobreposta (centralizada no topo do card)
-                // reduzir o offset negativo para não invadir a status bar quando usamos statusBarsPadding
-                Box(modifier = Modifier.align(Alignment.TopCenter).offset(y = (-8).dp)) {
+                // Foto de perfil sobreposta (filha do Box) — esta chamada está dentro do BoxScope, então Modifier.align funciona
+                Box(modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-8).dp)
+                ) {
                     PerfilPhoto(usuario = usuario, crianca = crianca, isUploading = false)
                 }
             }
 
-            // Barra inferior: adiciona navigationBarsPadding para garantir que fique acima da nav bar do sistema
+            // Barra inferior fixa dentro da Column (abaixo do conteúdo principal)
             Box(modifier = Modifier.fillMaxWidth().navigationBarsPadding()) {
                 BarraTarefas(navController = navController)
             }
         }
 
-        // Snackbar colocado aqui (fora do Column) para poder usar Modifier.align do Box
+        // Snackbar sobreposto ao resto da UI
         if (showSnackbar) {
             Snackbar(modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 100.dp), action = {
                 TextButton(onClick = { showSnackbar = false }) { Text("OK") }
@@ -208,13 +268,17 @@ fun PerfilScreen(navController: NavHostController?) {
         }
     }
 
-    // Edit dialog (usuario ou criança) - mantém compatibilidade: botão superior abre editor correto
+    // Dialogs (fora do Column/Box)
     if (showEditDialog) {
         if (isCrianca) {
             EditChildDialog(crianca = crianca, onDismiss = { showEditDialog = false }, onSave = handleChildSave)
         } else if (usuario != null) {
             EditarPerfilDialog(usuario = usuario!!, onDismiss = { showEditDialog = false }, onSave = handleUserSave, usuarioService = RetrofitFactory().getUsuarioService(), scope = scope)
         }
+    }
+
+    if (showChildDetail) {
+        ChildDetailDialog(child = crianca, onDismiss = { showChildDetail = false })
     }
 }
 

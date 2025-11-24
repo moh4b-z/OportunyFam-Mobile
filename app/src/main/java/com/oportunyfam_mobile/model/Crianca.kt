@@ -58,5 +58,6 @@ data class CriancaMini(
     val id_crianca: Int,
     val id_responsavel: Int,
     val nome: String,
+    val foto_perfil: String? = null,
     val id_pessoa: Int
 )

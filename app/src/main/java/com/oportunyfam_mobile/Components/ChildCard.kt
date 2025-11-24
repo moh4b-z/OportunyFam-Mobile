@@ -1,6 +1,5 @@
 package com.oportunyfam_mobile.Components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -97,19 +96,7 @@ fun ChildCard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = "${child.idade} anos",
-                            fontSize = 12.sp,
-                            color = Color.Gray
-                        )
-
                         if (!child.sexo.isNullOrEmpty()) {
-                            Text(
-                                text = "•",
-                                fontSize = 12.sp,
-                                color = Color.Gray
-                            )
-
                             Text(
                                 text = child.sexo,
                                 fontSize = 12.sp,
@@ -139,4 +126,3 @@ fun ChildCard(
         }
     }
 }
-
