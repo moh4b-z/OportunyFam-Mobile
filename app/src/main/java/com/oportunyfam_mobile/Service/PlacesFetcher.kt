@@ -43,13 +43,63 @@ suspend fun fetchPlacesFromGoogle(
         val service = retrofit.create(PlacesService::class.java)
 
         val locationParam = "${lat},${lon}"
-        // Se um filtro foi especificado, usar apenas ele; caso contrário, buscar todos os tipos
+        val resultsAccum = mutableListOf<OngMapMarker>()
+
+        // Se o filtro for especificamente "ngo", buscar por palavras-chave
+        if (typeFilter == "ngo") {
+            val ongKeywords = listOf("ONG", "NGO", "instituto social", "assistência social", "projeto social", "instituição beneficente")
+            for (keyword in ongKeywords) {
+                try {
+                    val response = service.nearbySearch(locationParam, 5000, null, keyword, apiKey)
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        body?.results?.forEach { r: PlaceResult ->
+                            val latR = r.geometry.location.lat
+                            val lngR = r.geometry.location.lng
+                            if (resultsAccum.none { it.placeId == r.place_id }) {
+                                resultsAccum.add(
+                                    OngMapMarker(
+                                        id = r.place_id.hashCode(),
+                                        nome = r.name,
+                                        latitude = latR,
+                                        longitude = lngR,
+                                        categorias = emptyList(),
+                                        descricao = r.vicinity ?: "",
+                                        endereco = r.vicinity ?: "",
+                                        telefone = "",
+                                        email = "",
+                                        isExternal = true,
+                                        placeId = r.place_id,
+                                        types = listOf("ngo")
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (_: Exception) {
+                    // ignore keyword errors and continue
+                }
+            }
+            return@withContext resultsAccum.distinctBy { it.placeId }
+        }
+
+        // Se um filtro foi especificado, usar apenas ele; caso contrário, buscar todos os tipos relevantes
         val typesToQuery = if (typeFilter != null) {
             listOf(typeFilter)
         } else {
-            listOf("school", "library", "gym", "point_of_interest")
+            listOf(
+                "school",                    // Escolas
+                "library",                   // Bibliotecas
+                "gym",                       // Academias
+                "community_center",          // Centros comunitários
+                "park",                      // Parques
+                "stadium",                   // Centros esportivos/estádios
+                "child_care_agency",         // Creches e cuidados infantis
+                "church",                    // Igrejas/templos (muitos têm programas sociais)
+                "local_government_office",   // Órgãos públicos com programas sociais
+                "point_of_interest"          // Pontos de interesse gerais
+            )
         }
-        val resultsAccum = mutableListOf<OngMapMarker>()
 
         for (t in typesToQuery) {
             try {
@@ -79,6 +129,45 @@ suspend fun fetchPlacesFromGoogle(
                 }
             } catch (_: Exception) {
                 // ignore per-type errors and continue
+            }
+        }
+
+        // Buscar especificamente por ONGs e instituições sociais usando keywords
+        // (Google Places não tem tipo específico para NGO/ONG)
+        if (typeFilter == null || typeFilter == "point_of_interest") {
+            val ongKeywords = listOf("ONG", "NGO", "instituto social", "assistência social", "projeto social")
+            for (keyword in ongKeywords) {
+                try {
+                    val response = service.nearbySearch(locationParam, 5000, null, keyword, apiKey)
+                    if (response.isSuccessful) {
+                        val body = response.body()
+                        body?.results?.forEach { r: PlaceResult ->
+                            val latR = r.geometry.location.lat
+                            val lngR = r.geometry.location.lng
+                            // Verificar se já existe para evitar duplicatas
+                            if (resultsAccum.none { it.placeId == r.place_id }) {
+                                resultsAccum.add(
+                                    OngMapMarker(
+                                        id = r.place_id.hashCode(),
+                                        nome = r.name,
+                                        latitude = latR,
+                                        longitude = lngR,
+                                        categorias = emptyList(),
+                                        descricao = r.vicinity ?: "",
+                                        endereco = r.vicinity ?: "",
+                                        telefone = "",
+                                        email = "",
+                                        isExternal = true,
+                                        placeId = r.place_id,
+                                        types = listOf("ngo") // Tipo customizado para ONGs
+                                    )
+                                )
+                            }
+                        }
+                    }
+                } catch (_: Exception) {
+                    // ignore keyword errors and continue
+                }
             }
         }
 

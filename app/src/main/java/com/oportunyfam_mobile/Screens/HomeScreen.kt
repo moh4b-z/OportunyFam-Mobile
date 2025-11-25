@@ -35,7 +35,6 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.*
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Components.SearchBar
-import com.oportunyfam_mobile.Components.Category
 import com.oportunyfam_mobile.Components.OngMapMarkers
 import com.oportunyfam_mobile.model.OngMapMarker
 import com.oportunyfam_mobile.Service.LocationManager
@@ -113,10 +112,17 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
 
     val categories = remember {
         listOf(
+            PlaceCategory("ngo", "ONGs", Color(0xFFFFA000)),
             PlaceCategory("school", "Escolas", Color(0xFF4ECDC4)),
             PlaceCategory("library", "Bibliotecas", Color(0xFF6C5CE7)),
             PlaceCategory("gym", "Academias", Color(0xFFFF6B6B)),
-            PlaceCategory("point_of_interest", "Pontos de Interesse", Color(0xFFFFD93D))
+            PlaceCategory("community_center", "Centros Comunitários", Color(0xFF26A69A)),
+            PlaceCategory("park", "Parques", Color(0xFF66BB6A)),
+            PlaceCategory("stadium", "Centros Esportivos", Color(0xFFEF5350)),
+            PlaceCategory("child_care_agency", "Creches", Color(0xFFAB47BC)),
+            PlaceCategory("church", "Igrejas/Templos", Color(0xFF5C6BC0)),
+            PlaceCategory("local_government_office", "Órgãos Públicos", Color(0xFF8D6E63)),
+            PlaceCategory("point_of_interest", "Outros Locais", Color(0xFFFFD93D))
         )
     }
 
