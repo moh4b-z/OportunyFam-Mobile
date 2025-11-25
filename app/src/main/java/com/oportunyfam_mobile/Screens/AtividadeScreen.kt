@@ -70,9 +70,13 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
     var isLoadingCriancas by remember { mutableStateOf(false) }
     var inscricaoMessage by remember { mutableStateOf<String?>(null) }
     var showParticiparDialog by remember { mutableStateOf(false) }
+    var showChildSuggestDialog by remember { mutableStateOf(false) }
     var aulaToParticipateId by remember { mutableStateOf<Int?>(null) }
     // guarda o numero de aulas da atividade atual para calcular o índice do bloco 'Inscrições'
     var currentAulasCount by remember { mutableStateOf(0) }
+    // tipo de auth carregado (USUARIO ou CRIANCA) — usado para ajustar mensagens de UI
+    var currentAuthType by remember { mutableStateOf<com.oportunyfam_mobile.data.AuthType?>(null) }
+    var currentChildId by remember { mutableStateOf<Int?>(null) }
 
     val authDataStore = remember { AuthDataStore(context) }
 
@@ -110,6 +114,27 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
     }
 
     LaunchedEffect(atividadeId) {
+        // load auth type once for dialog messaging
+        try {
+            val a = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
+            currentAuthType = a?.type
+            // if logged as CRIANCA, try to extract crianca_id
+            if (a?.type == com.oportunyfam_mobile.data.AuthType.CRIANCA) {
+                val cri = when (a.user) {
+                    is com.oportunyfam_mobile.model.Crianca -> a.user as com.oportunyfam_mobile.model.Crianca
+                    else -> try {
+                        com.google.gson.Gson().toJson(a.user).let { com.google.gson.Gson().fromJson(it, com.oportunyfam_mobile.model.Crianca::class.java) }
+                    } catch (_: Exception) { null }
+                }
+                currentChildId = cri?.crianca_id
+            }
+            Log.d("AtividadeScreen", "LaunchedEffect loaded auth: type=${a?.type} user=${a?.user} childId=$currentChildId")
+        } catch (ex: Exception) {
+            currentAuthType = null
+            currentChildId = null
+            Log.e("AtividadeScreen", "Erro loading auth in LaunchedEffect: ${ex.message}")
+        }
+
         atividadeViewModel.buscarAtividadePorId(atividadeId)
         inscricaoViewModel.buscarInscricoesPorAtividade(atividadeId)
     }
@@ -157,17 +182,56 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
                             }
                         },
                         onParticipar = { aulaId ->
-                            // triggered from child composable when user taps "Participar"
-                            coroutineScope.launch {
+                            // If logged as CRIANCA, open special suggest dialog; otherwise open child selection dialog
+                            if (currentAuthType == com.oportunyfam_mobile.data.AuthType.CRIANCA) {
                                 aulaToParticipateId = aulaId
-                                isLoadingCriancas = true
-                                val list = loadCriancasDoUsuario()
-                                criancasList = list
-                                isLoadingCriancas = false
-                                showParticiparDialog = true
+                                showChildSuggestDialog = true
+                            } else {
+                                coroutineScope.launch {
+                                    aulaToParticipateId = aulaId
+                                    isLoadingCriancas = true
+                                    val list = loadCriancasDoUsuario()
+                                    criancasList = list
+                                    isLoadingCriancas = false
+                                    showParticiparDialog = true
+                                }
                             }
                         },
-                        listState = listState
+                        onSuggest = { aulaId ->
+                            // existing suggestion flow uses atividade.atividade_id; leave as is
+                            inscricaoMessage = null
+                            coroutineScope.launch {
+                                try {
+                                    val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
+                                    val criancaId = when (auth?.user) {
+                                        is com.oportunyfam_mobile.model.Crianca -> (auth.user as com.oportunyfam_mobile.model.Crianca).crianca_id
+                                        else -> try {
+                                            com.google.gson.Gson().toJson(auth?.user).let { com.google.gson.Gson().fromJson(it, com.oportunyfam_mobile.model.Crianca::class.java) }?.crianca_id
+                                        } catch (e: Exception) { null }
+                                    }
+
+                                    if (criancaId == null) {
+                                        inscricaoMessage = "Não foi possível identificar a criança logada"
+                                        return@launch
+                                    }
+
+                                    val req = InscricaoRequest(id_crianca = criancaId, id_atividade = atividade.atividade_id, id_responsavel = null)
+                                    val resp = withContext(Dispatchers.IO) { RetrofitFactory().getInscricaoService().criarInscricao(req).execute() }
+                                    if (resp.isSuccessful) {
+                                        inscricaoMessage = "Sugestão de inscrição enviada ao responsável"
+                                        inscricaoViewModel.buscarInscricoesPorAtividade(atividade.atividade_id)
+                                    } else {
+                                        inscricaoMessage = "Erro ao sugerir inscrição: ${resp.code()}"
+                                    }
+                                } catch (e: Exception) {
+                                    inscricaoMessage = "Falha na conexão"
+                                    Log.e("AtividadeScreen", "Erro sugerir inscrição: ${e.message}", e)
+                                }
+                            }
+                        },
+                        listState = listState,
+                        currentAuthType = currentAuthType,
+                        currentChildId = currentChildId
                     )
                 }
             }
@@ -402,6 +466,76 @@ fun AtividadeScreen(navController: NavHostController?, atividadeId: Int) {
             }
         }
 
+        // Diálogo especial para participação de CRIANCA (sugestão de inscrição)
+        if (showChildSuggestDialog) {
+            androidx.compose.ui.window.Dialog(onDismissRequest = { showChildSuggestDialog = false }) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth(0.95f)
+                        .wrapContentHeight()
+                        .padding(8.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        val headerBrush = Brush.horizontalGradient(listOf(Color(0xFFFFA000), Color(0xFFFFD27A)))
+                        Box(modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(headerBrush), contentAlignment = Alignment.Center) {
+                            Text(text = "Sugestão de Participação", color = Color.White, fontWeight = FontWeight.Bold)
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text("Você está logado como uma criança. Sua participação nesta atividade será sugerida ao responsável.", modifier = Modifier.padding(12.dp))
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Button(onClick = {
+                            // fluxo de sugestão de inscrição para CRIANCA
+                            showChildSuggestDialog = false
+                            inscricaoMessage = null
+                            coroutineScope.launch {
+                                try {
+                                    val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
+                                    val criancaId = when (auth?.user) {
+                                        is com.oportunyfam_mobile.model.Crianca -> (auth.user as com.oportunyfam_mobile.model.Crianca).crianca_id
+                                        else -> try {
+                                            com.google.gson.Gson().toJson(auth?.user).let { com.google.gson.Gson().fromJson(it, com.oportunyfam_mobile.model.Crianca::class.java) }?.crianca_id
+                                        } catch (e: Exception) { null }
+                                    }
+
+                                    if (criancaId == null) {
+                                        inscricaoMessage = "Não foi possível identificar a criança logada"
+                                        return@launch
+                                    }
+
+                                    val req = InscricaoRequest(id_crianca = criancaId, id_atividade = atividadeId, id_responsavel = null)
+                                    val resp = withContext(Dispatchers.IO) { RetrofitFactory().getInscricaoService().criarInscricao(req).execute() }
+                                    if (resp.isSuccessful) {
+                                        inscricaoMessage = "Sugestão de inscrição enviada ao responsável"
+                                        inscricaoViewModel.buscarInscricoesPorAtividade(atividadeId)
+                                    } else {
+                                        inscricaoMessage = "Erro ao sugerir inscrição: ${resp.code()}"
+                                    }
+                                } catch (e: Exception) {
+                                    inscricaoMessage = "Falha na conexão"
+                                    Log.e("AtividadeScreen", "Erro sugerir inscrição: ${e.message}", e)
+                                }
+                            }
+                        }) {
+                            Text("Sugerir Participação")
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+                        TextButton(onClick = { showChildSuggestDialog = false }, modifier = Modifier.fillMaxWidth()) { Text("Fechar", textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth()) }
+                    }
+                }
+            }
+        }
+
         // Mostrar mensagem de resultado (snackbar)
         inscricaoMessage?.let { msg ->
             LaunchedEffect(msg) {
@@ -421,7 +555,10 @@ fun AtividadeDetailContent(
     inscricoesState: com.oportunyfam_mobile.ViewModel.InscricoesState,
     onInscrever: () -> Unit,
     onParticipar: (Int) -> Unit,
-    listState: LazyListState
+    onSuggest: (Int) -> Unit,
+    listState: LazyListState,
+    currentAuthType: com.oportunyfam_mobile.data.AuthType?,
+    currentChildId: Int?
 ) {
     val screenBg = Color(0xFFFFFFFF)
     val cardAccent = Color(0xFFFFF3E0)
@@ -519,8 +656,24 @@ fun AtividadeDetailContent(
                         Spacer(modifier = Modifier.height(8.dp))
                         // If the class is in the future, allow joining (create matricula)
                         if (!isPast) {
-                            Button(onClick = { onParticipar(aula.aula_id) }, colors = ButtonDefaults.buttonColors(containerColor = primaryButton)) {
-                                Text("Participar", color = Color.White)
+                            // If logged as CRIANCA and the logged child is already enrolled, hide the participate button
+                            val childAlreadyEnrolled = currentChildId != null && (inscricoesState is com.oportunyfam_mobile.ViewModel.InscricoesState.Success && (inscricoesState.inscricoes.any { it.crianca_id == currentChildId && it.atividade_id == atividade.atividade_id }))
+
+                            if (currentAuthType == com.oportunyfam_mobile.data.AuthType.CRIANCA) {
+                                if (!childAlreadyEnrolled) {
+                                    // For children: clicking will open special suggest dialog via onParticipar
+                                    Button(onClick = { onParticipar(aula.aula_id) }, colors = ButtonDefaults.buttonColors(containerColor = primaryButton)) {
+                                        Text("Participar", color = Color.White)
+                                    }
+                                } else {
+                                    // show small label indicating already enrolled
+                                    Text(text = "Inscrito", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                }
+                            } else {
+                                // For users: direct participate (choose child)
+                                Button(onClick = { onParticipar(aula.aula_id) }, colors = ButtonDefaults.buttonColors(containerColor = primaryButton)) {
+                                    Text("Participar", color = Color.White)
+                                }
                             }
                         }
                      }

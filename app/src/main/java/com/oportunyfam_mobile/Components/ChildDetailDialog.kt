@@ -156,7 +156,7 @@ fun ChildDetailDialog(
                                     fontWeight = FontWeight.SemiBold
                                 )
                                 Text(
-                                    text = "${child.idade} anos",
+                                    text = child.idade?.let { "${it} anos" } ?: "Não informado",
                                     fontSize = 16.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.Black
@@ -202,7 +202,7 @@ fun ChildDetailDialog(
                     }
 
                     // CPF
-                    if (!child.email.isNullOrEmpty()) {
+                    if (!child.data_nascimento.isNullOrEmpty()) {
                         item {
                             Column {
                                 Text(
@@ -275,7 +275,8 @@ fun ChildDetailDialog(
     }
 }
 
-private fun formatarData(data: String): String {
+private fun formatarData(data: String?): String {
+    if (data.isNullOrBlank()) return "Não informado"
     return try {
         val partes = data.split("-", "T", " ")
         if (partes.size >= 3) {

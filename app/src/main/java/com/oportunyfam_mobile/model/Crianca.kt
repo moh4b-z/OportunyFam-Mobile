@@ -32,15 +32,15 @@ data class Crianca(
     val crianca_id: Int,
     val pessoa_id: Int,
     val nome: String,
-    val email: String?,
-    val foto_perfil: String?,
-    val data_nascimento: String,
-    val idade: Int,
-    val criado_em: String,
-    val atualizado_em: String?,
-    val sexo: String?,
+    val email: String? = null,
+    val foto_perfil: String? = null,
+    val data_nascimento: String? = null,
+    val idade: Int? = null,
+    val criado_em: String? = null,
+    val atualizado_em: String? = null,
+    val sexo: String? = null,
     val atividades_matriculadas: List<Any> = emptyList(),
-    val conversas: List<ConversaInstituicao> = emptyList(),
+    val conversas: List<Any> = emptyList(),
     val responsaveis: List<UsuarioMini> = emptyList()
 )
 

@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.gson.Gson
 import com.oportunyfam_mobile.Components.AgendaHorizontal
 import com.oportunyfam_mobile.Components.BarraTarefas
 import com.oportunyfam_mobile.Service.RetrofitFactory
@@ -40,11 +41,14 @@ fun StatusCriancaScreen(navController: NavHostController?) {
     var aulasAgenda by remember { mutableStateOf<List<AulaDetalhada>>(emptyList()) }
     var criancas by remember { mutableStateOf<List<Crianca>>(emptyList()) }
     var inscricoesPorCrianca by remember { mutableStateOf<Map<Int, List<InscricaoDetalhada>>>(emptyMap()) }
+    var currentAuthType by remember { mutableStateOf<com.oportunyfam_mobile.data.AuthType?>(null) }
 
     // Carrega dados iniciais
     LaunchedEffect(Unit) {
         isLoading = true
         val auth = withContext(Dispatchers.IO) { authDataStore.loadAuthUser() }
+        currentAuthType = auth?.type
+        Log.d("StatusCriancaScreen", "Auth loaded in LaunchedEffect: type=${auth?.type} user=${auth?.user}")
 
         // Obter lista de crianças dependendo do tipo
         val childrenList = mutableListOf<Crianca>()
@@ -81,10 +85,19 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                 Log.e("StatusCriancaScreen", "Erro ao buscar usuário: ${e.message}", e)
             }
         } else if (auth?.type == com.oportunyfam_mobile.data.AuthType.CRIANCA) {
-            (auth.user as? Crianca)?.let { child ->
-                childrenList.add(child)
+            var child: Crianca? = null
+            when (auth.user) {
+                is Crianca -> child = auth.user as Crianca
+                else -> try {
+                    child = Gson().toJson(auth.user).let { Gson().fromJson(it, Crianca::class.java) }
+                } catch (e: Exception) {
+                    Log.e("StatusCriancaScreen", "Erro ao desserializar auth.user para Crianca: ${e.message}", e)
+                }
             }
+            child?.let { childrenList.add(it) }
         }
+
+        Log.d("StatusCriancaScreen", "Loaded childrenList size=${childrenList.size} for authType=$currentAuthType")
 
         criancas = childrenList
 
@@ -168,7 +181,10 @@ fun StatusCriancaScreen(navController: NavHostController?) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text("Nenhuma criança cadastrada ainda.")
                         Spacer(modifier = Modifier.height(12.dp))
-                        Button(onClick = { navController?.navigate(NavRoutes.CHILD_REGISTER) }) { Text("Cadastrar criança") }
+                        // show register button only for USUARIO
+                        if (currentAuthType == com.oportunyfam_mobile.data.AuthType.USUARIO) {
+                            Button(onClick = { navController?.navigate(NavRoutes.CHILD_REGISTER) }) { Text("Cadastrar criança") }
+                        }
                     }
                 }
                 return@Box
