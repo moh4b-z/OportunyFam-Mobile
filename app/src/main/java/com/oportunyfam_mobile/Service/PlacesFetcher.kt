@@ -11,7 +11,12 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-suspend fun fetchPlacesFromGoogle(context: Context, lat: Double, lon: Double): List<OngMapMarker> = withContext(Dispatchers.IO) {
+suspend fun fetchPlacesFromGoogle(
+    context: Context,
+    lat: Double,
+    lon: Double,
+    typeFilter: String? = null
+): List<OngMapMarker> = withContext(Dispatchers.IO) {
     try {
         val appInfo = try {
             context.packageManager.getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
@@ -38,7 +43,12 @@ suspend fun fetchPlacesFromGoogle(context: Context, lat: Double, lon: Double): L
         val service = retrofit.create(PlacesService::class.java)
 
         val locationParam = "${lat},${lon}"
-        val typesToQuery = listOf("school", "library", "gym", "point_of_interest")
+        // Se um filtro foi especificado, usar apenas ele; caso contrário, buscar todos os tipos
+        val typesToQuery = if (typeFilter != null) {
+            listOf(typeFilter)
+        } else {
+            listOf("school", "library", "gym", "point_of_interest")
+        }
         val resultsAccum = mutableListOf<OngMapMarker>()
 
         for (t in typesToQuery) {
@@ -61,7 +71,8 @@ suspend fun fetchPlacesFromGoogle(context: Context, lat: Double, lon: Double): L
                                 telefone = "",
                                 email = "",
                                 isExternal = true,
-                                placeId = r.place_id
+                                placeId = r.place_id,
+                                types = listOf(t) // Armazenar o tipo para filtro
                             )
                         )
                     }

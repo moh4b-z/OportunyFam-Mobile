@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -104,13 +105,18 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
     var isLoadingExternalMarkers by remember { mutableStateOf(false) }
     var lastLoadedPosition by remember { mutableStateOf<LatLng?>(null) }
 
-    // Definir as categorias disponíveis
+    // Estado para filtro de categoria selecionada
+    var selectedCategoryType by remember { mutableStateOf<String?>(null) }
+
+    // Definir as categorias disponíveis (baseadas nos tipos do Google Places)
+    data class PlaceCategory(val id: String, val displayName: String, val color: Color)
+
     val categories = remember {
         listOf(
-            Category(1, "Jiu Jitsu", Color(0xFFFF6B6B)),
-            Category(2, "T.I", Color(0xFF4ECDC4)),
-            Category(3, "Centro Cultural", Color(0xFFFFD93D)),
-            Category(4, "Biblioteca", Color(0xFF6C5CE7))
+            PlaceCategory("school", "Escolas", Color(0xFF4ECDC4)),
+            PlaceCategory("library", "Bibliotecas", Color(0xFF6C5CE7)),
+            PlaceCategory("gym", "Academias", Color(0xFFFF6B6B)),
+            PlaceCategory("point_of_interest", "Pontos de Interesse", Color(0xFFFFD93D))
         )
     }
 
@@ -144,34 +150,41 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
     }
 
     // Função para carregar lugares externos em uma posição específica
-    suspend fun loadExternalMarkers(lat: Double, lon: Double) {
+    suspend fun loadExternalMarkers(lat: Double, lon: Double, typeFilter: String? = null) {
         if (isLoadingExternalMarkers) return
 
-        // Verificar se já carregamos recentemente nesta posição (evitar requisições desnecessárias)
-        val currentPos = LatLng(lat, lon)
-        lastLoadedPosition?.let { lastPos ->
-            val distance = FloatArray(1)
-            android.location.Location.distanceBetween(
-                lastPos.latitude, lastPos.longitude,
-                currentPos.latitude, currentPos.longitude,
-                distance
-            )
-            // Se a distância for menor que 500 metros, não recarregar
-            if (distance[0] < 500) return
+        // Se houver filtro, sempre recarregar (não verificar distância)
+        // Se não houver filtro, verificar se já carregamos recentemente nesta posição
+        if (typeFilter == null) {
+            val currentPos = LatLng(lat, lon)
+            lastLoadedPosition?.let { lastPos ->
+                val distance = FloatArray(1)
+                android.location.Location.distanceBetween(
+                    lastPos.latitude, lastPos.longitude,
+                    currentPos.latitude, currentPos.longitude,
+                    distance
+                )
+                // Se a distância for menor que 500 metros, não recarregar
+                if (distance[0] < 500) return
+            }
+            lastLoadedPosition = currentPos
         }
 
         isLoadingExternalMarkers = true
         try {
-            val newMarkers = com.oportunyfam_mobile.Service.fetchPlacesFromGoogle(context, lat, lon)
+            val newMarkers = com.oportunyfam_mobile.Service.fetchPlacesFromGoogle(context, lat, lon, typeFilter)
 
-            // Mesclar com marcadores existentes, evitando duplicatas
-            val existingIds = externalMarkers.map { it.placeId }.toSet()
-            val uniqueNewMarkers = newMarkers.filter { it.placeId !in existingIds }
-
-            externalMarkers = externalMarkers + uniqueNewMarkers
-            lastLoadedPosition = currentPos
-
-            android.util.Log.d("HomeScreen", "Carregados ${uniqueNewMarkers.size} novos marcadores externos na posição ($lat, $lon)")
+            if (typeFilter != null) {
+                // Se houver filtro, substituir marcadores ao invés de mesclar
+                externalMarkers = newMarkers
+                android.util.Log.d("HomeScreen", "Carregados ${newMarkers.size} marcadores do tipo '$typeFilter' na posição ($lat, $lon)")
+            } else {
+                // Mesclar com marcadores existentes, evitando duplicatas
+                val existingIds = externalMarkers.map { it.placeId }.toSet()
+                val uniqueNewMarkers = newMarkers.filter { it.placeId !in existingIds }
+                externalMarkers = externalMarkers + uniqueNewMarkers
+                android.util.Log.d("HomeScreen", "Carregados ${uniqueNewMarkers.size} novos marcadores externos na posição ($lat, $lon)")
+            }
         } catch (e: Exception) {
             android.util.Log.e("HomeScreen", "Erro ao carregar marcadores externos: ${e.message}", e)
         } finally {
@@ -261,6 +274,12 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
         }
     }
 
+    // Recarregar marcadores quando a categoria selecionada mudar
+    LaunchedEffect(selectedCategoryType) {
+        val center = cameraPositionState.position.target
+        loadExternalMarkers(center.latitude, center.longitude, selectedCategoryType)
+    }
+
     // marcadores que devem ser exibidos no mapa: se houver resultados da busca, mostramos apenas eles + externos;
     // caso contrário mostramos todas as instituições da API + externos
     val displayedMarkers by remember(searchResults, apiMarkers, externalMarkers) {
@@ -315,9 +334,9 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                     val center = cameraPositionState.position.target
                     android.util.Log.d("HomeScreen", "Mapa parou de mover em (${center.latitude}, ${center.longitude})")
 
-                    // Carregar novos marcadores externos
+                    // Carregar novos marcadores externos com o filtro atual
                     coroutineScope.launch {
-                        loadExternalMarkers(center.latitude, center.longitude)
+                        loadExternalMarkers(center.latitude, center.longitude, selectedCategoryType)
                     }
                 }
             }
@@ -364,11 +383,62 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                 .padding(top = 12.dp, start = 16.dp, end = 16.dp)
         )
 
+        // ===== Filtros de Categoria =====
+        Card(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 68.dp, start = 16.dp, end = 16.dp)
+                .fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+            shape = RoundedCornerShape(12.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(8.dp)
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Botão "Todos"
+                FilterChip(
+                    selected = selectedCategoryType == null,
+                    onClick = {
+                        selectedCategoryType = null
+                    },
+                    label = { Text("Todos") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = Color(0xFFFFA000),
+                        selectedLabelColor = Color.White,
+                        containerColor = Color.LightGray.copy(alpha = 0.3f),
+                        labelColor = Color.DarkGray
+                    )
+                )
+
+                // Botões de categoria
+                categories.forEach { category ->
+                    FilterChip(
+                        selected = selectedCategoryType == category.id,
+                        onClick = {
+                            selectedCategoryType = if (selectedCategoryType == category.id) null else category.id
+                        },
+                        label = { Text(category.displayName) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = category.color,
+                            selectedLabelColor = Color.White,
+                            containerColor = Color.LightGray.copy(alpha = 0.3f),
+                            labelColor = Color.DarkGray
+                        )
+                    )
+                }
+            }
+        }
+
         // ===== Resultados =====
         if (searchResults.isNotEmpty()) {
             Column(
                 modifier = Modifier
-                    .padding(top = 100.dp)
+                    .padding(top = 128.dp)
                     .fillMaxWidth()
                     .align(Alignment.TopCenter)
             ) {
@@ -408,7 +478,7 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                 CircularProgressIndicator(
                     modifier = Modifier
                         .align(Alignment.Center)
-                        .padding(top = 90.dp)
+                        .padding(top = 140.dp)
                 )
             }
 
@@ -416,7 +486,7 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 100.dp)
+                        .padding(top = 128.dp)
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
                         .background(Color.White.copy(alpha = 0.9f))

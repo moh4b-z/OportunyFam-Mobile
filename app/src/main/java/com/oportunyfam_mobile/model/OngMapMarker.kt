@@ -14,5 +14,7 @@ data class OngMapMarker(
     // Novo: indica se o marcador veio de uma fonte externa (Google Places). Se true, clicar deve abrir a ficha/mini-aba.
     val isExternal: Boolean = false,
     // Quando é externo, pode conter placeId do Google Places para abrir no Maps
-    val placeId: String? = null
+    val placeId: String? = null,
+    // Tipos do Google Places (school, library, gym, etc) para filtro
+    val types: List<String> = emptyList()
 )
