@@ -308,37 +308,53 @@ fun PerfilScreen(navController: NavHostController?) {
     }
 
     if (showChildDetail) {
-        ChildDetailDialog(child = crianca, onDismiss = { showChildDetail = false }, onStartConversation = {
-            // Create conversation with this child and navigate to chat
-            scope.launch {
-                try {
-                    val pessoaAtual = when {
-                        usuario != null -> usuario!!.pessoa_id
-                        crianca != null -> crianca!!.pessoa_id
-                        else -> 0
-                    }
+        ChildDetailDialog(
+            child = crianca,
+            onDismiss = { showChildDetail = false },
+            onStartConversation = {
+                // Create conversation with this child and navigate to chat
+                scope.launch {
+                    try {
+                        val pessoaAtual = when {
+                            usuario != null -> usuario!!.pessoa_id
+                            crianca != null -> crianca!!.pessoa_id
+                            else -> 0
+                        }
 
-                    val otherPessoaId = crianca?.pessoa_id ?: 0
+                        val otherPessoaId = crianca?.pessoa_id ?: 0
 
-                    val participantes = listOf(pessoaAtual, otherPessoaId)
-                    val resp = withContext(Dispatchers.IO) {
-                        RetrofitFactory().getConversaService().criar(com.oportunyfam_mobile.model.ConversaRequest(participantes))
+                        val participantes = listOf(pessoaAtual, otherPessoaId)
+                        val resp = withContext(Dispatchers.IO) {
+                            RetrofitFactory().getConversaService().criar(com.oportunyfam_mobile.model.ConversaRequest(participantes))
+                        }
+                        if (resp.isSuccessful) {
+                            val conversa = resp.body()?.conversa
+                            val conversaId = conversa?.id ?: resp.code() // fallback
+                            val nomeContato = java.net.URLEncoder.encode(crianca?.nome ?: "", "UTF-8")
+                            val pId = pessoaAtual
+                            navController?.navigate("${com.oportunyfam_mobile.MainActivity.CHAT}/$conversaId/$nomeContato/$pId")
+                            showChildDetail = false
+                        } else {
+                            Log.e(TAG, "Erro ao criar/abrir conversa: ${resp.code()}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Exceção criar conversa: ${e.message}", e)
                     }
-                    if (resp.isSuccessful) {
-                        val conversa = resp.body()?.conversa
-                        val conversaId = conversa?.id ?: resp.code() // fallback
-                        val nomeContato = java.net.URLEncoder.encode(crianca?.nome ?: "", "UTF-8")
-                        val pId = pessoaAtual
-                        navController?.navigate("${com.oportunyfam_mobile.MainActivity.CHAT}/$conversaId/$nomeContato/$pId")
-                        showChildDetail = false
-                    } else {
-                        Log.e(TAG, "Erro ao criar/abrir conversa: ${resp.code()}")
-                    }
-                } catch (e: Exception) {
-                    Log.e(TAG, "Exceção criar conversa: ${e.message}", e)
                 }
+            },
+            onChildUpdated = { updatedChild: Crianca ->
+                // Atualizar a criança na lista e fechar o diálogo
+                crianca = updatedChild
+                criancas = criancas.map { criancaItem ->
+                    if (criancaItem.crianca_id == updatedChild.crianca_id) updatedChild else criancaItem
+                }
+                showChildDetail = false
+                snackbarMessage = "Criança atualizada com sucesso"
+                showSnackbar = true
+                // Recarregar dados
+                reloadTrigger++
             }
-        })
+        )
     }
 }
 
