@@ -607,15 +607,48 @@ fun AtividadeDetailContent(
                             )
                         }
 
-                        Button(
-                            onClick = onInscrever,
-                            colors = ButtonDefaults.buttonColors(containerColor = primaryButton, contentColor = Color.White),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier
-                                .padding(start = 12.dp)
-                                .height(44.dp)
-                        ) {
-                            Text(text = "Inscrever")
+                        // Verificar se a criança logada já está inscrita
+                        val childAlreadyEnrolled = currentChildId != null &&
+                            (inscricoesState is com.oportunyfam_mobile.ViewModel.InscricoesState.Success &&
+                            (inscricoesState.inscricoes.any { it.crianca_id == currentChildId && it.atividade_id == atividade.atividade_id }))
+
+                        if (currentAuthType == com.oportunyfam_mobile.data.AuthType.CRIANCA && childAlreadyEnrolled) {
+                            // Se a criança já está inscrita, mostrar status ao invés do botão
+                            Card(
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+                                modifier = Modifier.padding(start = 12.dp)
+                            ) {
+                                Text(
+                                    text = "Já inscrito",
+                                    color = Color(0xFF2E7D32),
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            }
+                        } else if (currentAuthType == com.oportunyfam_mobile.data.AuthType.CRIANCA && !childAlreadyEnrolled) {
+                            // Criança não inscrita - botão de sugerir inscrição
+                            Button(
+                                onClick = { onSuggest(atividade.atividade_id) },
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3), contentColor = Color.White),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .padding(start = 12.dp)
+                                    .height(44.dp)
+                            ) {
+                                Text(text = "Sugerir")
+                            }
+                        } else {
+                            // Usuário normal - pode inscrever várias crianças
+                            Button(
+                                onClick = onInscrever,
+                                colors = ButtonDefaults.buttonColors(containerColor = primaryButton, contentColor = Color.White),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier
+                                    .padding(start = 12.dp)
+                                    .height(44.dp)
+                            ) {
+                                Text(text = "Inscrever")
+                            }
                         }
                     }
                 }
@@ -656,18 +689,31 @@ fun AtividadeDetailContent(
                         Spacer(modifier = Modifier.height(8.dp))
                         // If the class is in the future, allow joining (create matricula)
                         if (!isPast) {
-                            // If logged as CRIANCA and the logged child is already enrolled, hide the participate button
-                            val childAlreadyEnrolled = currentChildId != null && (inscricoesState is com.oportunyfam_mobile.ViewModel.InscricoesState.Success && (inscricoesState.inscricoes.any { it.crianca_id == currentChildId && it.atividade_id == atividade.atividade_id }))
+                            // If logged as CRIANCA and the logged child is already enrolled, check both inscription and matricula
+                            val childAlreadyEnrolled = currentChildId != null && (inscricoesState is com.oportunyfam_mobile.ViewModel.InscricoesState.Success &&
+                                (inscricoesState.inscricoes.any { it.crianca_id == currentChildId && it.atividade_id == atividade.atividade_id }))
+
+                            // Verificar se a criança já está matriculada NESTA AULA específica (em iram_participar, foram ou ausentes)
+                            val childAlreadyMatriculada = currentChildId != null && (
+                                aula.iram_participar?.any { it.crianca_id == currentChildId } == true ||
+                                aula.foram?.any { it.crianca_id == currentChildId } == true ||
+                                aula.ausentes?.any { it.crianca_id == currentChildId } == true
+                            )
 
                             if (currentAuthType == com.oportunyfam_mobile.data.AuthType.CRIANCA) {
-                                if (!childAlreadyEnrolled) {
-                                    // For children: clicking will open special suggest dialog via onParticipar
+                                if (childAlreadyMatriculada) {
+                                    // Se já está matriculada nesta aula específica
+                                    Text(text = "Participando", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                } else if (childAlreadyEnrolled) {
+                                    // Se está inscrita na atividade mas não nesta aula - pode participar
                                     Button(onClick = { onParticipar(aula.aula_id) }, colors = ButtonDefaults.buttonColors(containerColor = primaryButton)) {
                                         Text("Participar", color = Color.White)
                                     }
                                 } else {
-                                    // show small label indicating already enrolled
-                                    Text(text = "Inscrito", color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
+                                    // Não está inscrita - precisa sugerir inscrição primeiro
+                                    Button(onClick = { onSuggest(atividade.atividade_id) }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))) {
+                                        Text("Sugerir", color = Color.White)
+                                    }
                                 }
                             } else {
                                 // For users: direct participate (choose child)
