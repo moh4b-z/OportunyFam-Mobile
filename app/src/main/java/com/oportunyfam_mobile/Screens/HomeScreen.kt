@@ -100,6 +100,10 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
 
+    // Estados para controlar carregamento dinâmico ao mover o mapa
+    var isLoadingExternalMarkers by remember { mutableStateOf(false) }
+    var lastLoadedPosition by remember { mutableStateOf<LatLng?>(null) }
+
     // Definir as categorias disponíveis
     val categories = remember {
         listOf(
@@ -139,6 +143,42 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
         }
     }
 
+    // Função para carregar lugares externos em uma posição específica
+    suspend fun loadExternalMarkers(lat: Double, lon: Double) {
+        if (isLoadingExternalMarkers) return
+
+        // Verificar se já carregamos recentemente nesta posição (evitar requisições desnecessárias)
+        val currentPos = LatLng(lat, lon)
+        lastLoadedPosition?.let { lastPos ->
+            val distance = FloatArray(1)
+            android.location.Location.distanceBetween(
+                lastPos.latitude, lastPos.longitude,
+                currentPos.latitude, currentPos.longitude,
+                distance
+            )
+            // Se a distância for menor que 500 metros, não recarregar
+            if (distance[0] < 500) return
+        }
+
+        isLoadingExternalMarkers = true
+        try {
+            val newMarkers = com.oportunyfam_mobile.Service.fetchPlacesFromGoogle(context, lat, lon)
+
+            // Mesclar com marcadores existentes, evitando duplicatas
+            val existingIds = externalMarkers.map { it.placeId }.toSet()
+            val uniqueNewMarkers = newMarkers.filter { it.placeId !in existingIds }
+
+            externalMarkers = externalMarkers + uniqueNewMarkers
+            lastLoadedPosition = currentPos
+
+            android.util.Log.d("HomeScreen", "Carregados ${uniqueNewMarkers.size} novos marcadores externos na posição ($lat, $lon)")
+        } catch (e: Exception) {
+            android.util.Log.e("HomeScreen", "Erro ao carregar marcadores externos: ${e.message}", e)
+        } finally {
+            isLoadingExternalMarkers = false
+        }
+    }
+
     // Carrega instituições da API e locais externos quando a tela inicia
     LaunchedEffect(Unit) {
         // carregar instituições da nossa API
@@ -166,11 +206,11 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
             apiMarkers = emptyList()
         }
 
-        // carregar places externos (se houver chave)
+        // carregar places externos na posição inicial
         try {
             val lat = userLocation?.latitude ?: initialLatLng.latitude
             val lon = userLocation?.longitude ?: initialLatLng.longitude
-            externalMarkers = com.oportunyfam_mobile.Service.fetchPlacesFromGoogle(context, lat, lon)
+            loadExternalMarkers(lat, lon)
         } catch (e: Exception) {
             e.printStackTrace()
             externalMarkers = emptyList()
@@ -265,8 +305,22 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
             uiSettings = MapUiSettings(zoomControlsEnabled = false),
             onMapLoaded = {
                 android.util.Log.d("HomeScreen", "GoogleMap onMapLoaded - hasLocationPermission=$hasLocationPermission")
-            }
+            },
+            onMapClick = { /* Opcional: esconder resultados de busca ao clicar no mapa */ }
         ) {
+            // Listener para carregar novos lugares quando o mapa parar de mover
+            LaunchedEffect(cameraPositionState.isMoving) {
+                if (!cameraPositionState.isMoving) {
+                    // Mapa parou de mover, carregar lugares na nova posição
+                    val center = cameraPositionState.position.target
+                    android.util.Log.d("HomeScreen", "Mapa parou de mover em (${center.latitude}, ${center.longitude})")
+
+                    // Carregar novos marcadores externos
+                    coroutineScope.launch {
+                        loadExternalMarkers(center.latitude, center.longitude)
+                    }
+                }
+            }
             // marcador do usuário
             if (userLocation != null) {
                 Marker(state = rememberMarkerState(position = userLocation!!), title = "Sua Localização")
@@ -370,6 +424,35 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
                     contentAlignment = Alignment.Center
                 ) {
                     Text("Nenhuma ONG encontrada.", color = Color.Gray)
+                }
+            }
+        }
+
+        // ===== Indicador de carregamento de marcadores externos =====
+        if (isLoadingExternalMarkers) {
+            Card(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 80.dp, end = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.95f)),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        color = Color(0xFFF69508),
+                        strokeWidth = 2.dp
+                    )
+                    Text(
+                        text = "Carregando locais...",
+                        fontSize = 12.sp,
+                        color = Color.DarkGray
+                    )
                 }
             }
         }
