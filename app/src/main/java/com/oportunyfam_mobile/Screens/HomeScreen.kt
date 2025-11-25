@@ -7,7 +7,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -22,9 +21,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,6 +48,7 @@ import retrofit2.Response
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.asPaddingValues
+import com.oportunyfam_mobile.R
 import com.oportunyfam_mobile.data.AuthDataStore
 import com.oportunyfam_mobile.data.AuthType
 import kotlinx.coroutines.Dispatchers
@@ -238,7 +240,10 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
 
     // Função de busca
     fun buscarInstituicoes(termo: String) {
-        if (termo.isBlank()) return
+        if (termo.isBlank()) {
+            searchResults = emptyList()
+            return
+        }
         isLoading = true
 
         RetrofitFactory().getInstituicaoService().buscarComFiltro(termo, 1, 20)
@@ -266,11 +271,17 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
             })
     }
 
-    // limpa resultados quando query ficar vazia
+    // Busca automática com delay de 1 segundo após digitar
     LaunchedEffect(query) {
         if (query.isBlank()) {
             searchResults = emptyList()
+            isLoading = false
+            return@LaunchedEffect
         }
+
+        // Delay de 1 segundo antes de fazer a busca
+        kotlinx.coroutines.delay(1000)
+        buscarInstituicoes(query)
     }
 
     // Atualizar posição da câmera quando a localização do usuário é obtida
@@ -442,37 +453,69 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
 
         // ===== Resultados =====
         if (searchResults.isNotEmpty()) {
-            Column(
+            Card(
                 modifier = Modifier
-                    .padding(top = 128.dp)
+                    .padding(top = 128.dp, start = 16.dp, end = 16.dp)
                     .fillMaxWidth()
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopCenter),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 200.dp)
-                        .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
-                        .background(Color.White.copy(alpha = 0.95f))
+                        .heightIn(max = 240.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    searchResults.forEach { ong ->
+                    searchResults.forEachIndexed { index, ong ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
                                     // Navegar para o perfil da instituição quando clicar no resultado
                                     navController?.navigate("instituicao_perfil/${ong.instituicao_id}")
+                                    // Limpar busca após navegar
+                                    query = ""
+                                    searchResults = emptyList()
                                 }
-                                .padding(16.dp)
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = ong.nome,
-                                fontSize = 16.sp,
-                                color = Color.Black
+                            // Ícone de localização
+                            Icon(
+                                painter = painterResource(id = R.drawable.mapa),
+                                contentDescription = null,
+                                tint = Color(0xFFFFA000),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = ong.nome,
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = Color(0xFF212121)
+                                )
+                                if (!ong.endereco?.logradouro.isNullOrBlank()) {
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = ong.endereco?.logradouro ?: "",
+                                        fontSize = 12.sp,
+                                        color = Color(0xFF757575),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+                        if (index < searchResults.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = Color.Gray.copy(alpha = 0.2f)
                             )
                         }
-                        HorizontalDivider(color = Color.Gray.copy(alpha = 0.3f))
                     }
                 }
             }
@@ -480,26 +523,75 @@ fun HomeScreen(navController: NavHostController?, showCreateChild: Boolean = fal
 
         // ===== Indicador de carregamento =====
         when {
-            isLoading -> {
-                CircularProgressIndicator(
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .padding(top = 140.dp)
-                )
-            }
-
-            searchResults.isEmpty() && query.isNotBlank() -> {
-                Box(
+            isLoading && query.isNotBlank() -> {
+                Card(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
-                        .padding(top = 128.dp)
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp))
-                        .background(Color.White.copy(alpha = 0.9f))
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                        .padding(top = 128.dp, start = 16.dp, end = 16.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
-                    Text("Nenhuma ONG encontrada.", color = Color.Gray)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = Color(0xFFFFA000),
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                text = "Buscando...",
+                                color = Color(0xFF757575),
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+            }
+
+            searchResults.isEmpty() && query.isNotBlank() && !isLoading -> {
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 128.dp, start = 16.dp, end = 16.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.mapa),
+                                contentDescription = null,
+                                tint = Color(0xFFBDBDBD),
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Text(
+                                text = "Nenhuma ONG encontrada",
+                                color = Color(0xFF757575),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
         }
