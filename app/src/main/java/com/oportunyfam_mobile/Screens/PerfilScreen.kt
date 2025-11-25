@@ -164,9 +164,11 @@ fun PerfilScreen(navController: NavHostController?) {
     fun onLogout() {
         scope.launch {
             authDataStore.logout()
-            navController?.navigate("login") {
-                popUpTo(0
-                )
+            navController?.navigate("registro") {
+                // Remove todas as telas anteriores da pilha
+                popUpTo(0) { inclusive = true }
+                // Garante que a tela de registro seja única na pilha
+                launchSingleTop = true
             }
         }
     }
