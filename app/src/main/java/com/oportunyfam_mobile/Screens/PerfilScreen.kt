@@ -238,26 +238,38 @@ fun PerfilScreen(navController: NavHostController?) {
                         item {
                             when (selectedTab) {
                                 "Informações" -> InformacoesTab(usuario = usuario, crianca = crianca, isCrianca = isCrianca)
-                                "Crianças" -> PerfilTabs(selectedTab = "Crianças", criancas = criancas, onChildClick = onChildSelected, onChildDelete = { mini ->
-                                    // Delete handler for child mini: call API and remove from list on success
-                                    scope.launch {
-                                        try {
-                                            val delResp = withContext(Dispatchers.IO) {
-                                                RetrofitFactory().getCriancaService().deletar(mini.crianca_id).execute()
+                                "Crianças" -> PerfilTabs(
+                                    selectedTab = "Crianças",
+                                    criancas = criancas,
+                                    onChildClick = onChildSelected,
+                                    onChildDelete = { mini ->
+                                        // Delete handler for child mini: call API and remove from list on success
+                                        scope.launch {
+                                            try {
+                                                val delResp = withContext(Dispatchers.IO) {
+                                                    RetrofitFactory().getCriancaService().deletar(mini.crianca_id).execute()
+                                                }
+                                                if (delResp.isSuccessful) {
+                                                    // remove local
+                                                    criancas = criancas.filterNot { it.crianca_id == mini.crianca_id }
+                                                    Log.d(TAG, "Criança deletada: ${mini.crianca_id}")
+                                                } else {
+                                                    Log.e(TAG, "Falha ao deletar criança: ${delResp.code()}")
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e(TAG, "Erro ao deletar criança: ${e.message}", e)
                                             }
-                                            if (delResp.isSuccessful) {
-                                                // remove local
-                                                criancas = criancas.filterNot { it.crianca_id == mini.crianca_id }
-                                                Log.d(TAG, "Criança deletada: ${mini.crianca_id}")
-                                            } else {
-                                                Log.e(TAG, "Falha ao deletar criança: ${delResp.code()}")
-                                            }
-                                        } catch (e: Exception) {
-                                            Log.e(TAG, "Erro ao deletar criança: ${e.message}", e)
                                         }
                                     }
-                                })
-                                 "Responsáveis" -> PerfilTabs(selectedTab = "Responsáveis", criancas = emptyList())
+                                )
+                                "Responsáveis" -> PerfilTabs(
+                                    selectedTab = "Responsáveis",
+                                    responsaveis = crianca?.responsaveis ?: emptyList(),
+                                    onResponsavelClick = { responsavel ->
+                                        // TODO: Implementar navegação para perfil do responsável ou abrir diálogo
+                                        Log.d(TAG, "Clicou no responsável: ${responsavel.nome}")
+                                    }
+                                )
                              }
                          }
                      }
