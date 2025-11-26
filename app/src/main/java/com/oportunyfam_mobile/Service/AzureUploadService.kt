@@ -149,6 +149,67 @@ object AzureBlobRetrofit {
         }
     }
 
+    /**
+     * Upload de áudio para Azure Blob Storage usando Autenticação de Token SAS.
+     *
+     * @param audioFile Arquivo de áudio a ser enviado
+     * @param storageAccount Nome da conta de storage do Azure
+     * @param sasToken O Token SAS para o container
+     * @param containerName Nome do container no Azure
+     * @return URL COMPLETA do áudio (sem o SAS Token) ou null em caso de erro
+     */
+    suspend fun uploadAudioToAzure(
+        audioFile: File,
+        storageAccount: String,
+        sasToken: String,
+        containerName: String
+    ): String? = withContext(Dispatchers.IO) {
+        // Gera um nome único para o blob usando UUID
+        val extension = audioFile.extension.ifEmpty { "m4a" }
+        val blobName = "audio_${UUID.randomUUID()}.$extension"
+
+        // 1. Cria a URL do recurso (URL que será armazenada no seu banco de dados)
+        val resourceUrl = "https://${storageAccount}.blob.core.windows.net/${containerName}/${blobName}"
+
+        // 2. Cria a URL de UPLOAD (URL do recurso + Token SAS como parâmetro de consulta)
+        val uploadUrlWithSas = "$resourceUrl?$sasToken"
+
+        println("📤 Iniciando upload de áudio para Azure Storage...")
+        println("🔗 Storage Account: $storageAccount")
+        println("📦 Container: $containerName")
+        println("📄 Blob Name: $blobName")
+
+        try {
+            val fileBytes = FileInputStream(audioFile).readBytes()
+            // Define o tipo MIME para áudio
+            val requestBody = fileBytes.toRequestBody("audio/mp4".toMediaTypeOrNull())
+
+            println("📊 Tamanho do arquivo de áudio: ${fileBytes.size} bytes")
+
+            val response = apiService.uploadFileSas(
+                uploadUrlWithSas = uploadUrlWithSas,
+                fileBytes = requestBody
+            )
+
+            if (response.isSuccessful) {
+                println("✅ Upload de áudio bem-sucedido para: $resourceUrl")
+                resourceUrl // Retorna a URL SEM o Token SAS
+            } else {
+                val errorBody = response.errorBody()?.string()
+                println("❌ Erro no upload do áudio: ${response.code()} - $errorBody")
+
+                if (response.code() == 403) {
+                    println("🚨 ERRO 403: Acesso Negado. Verifique se o Token SAS ainda é válido.")
+                }
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            println("❌ Erro ao fazer upload do áudio: ${e.message}")
+            null
+        }
+    }
+
     // A função generateSharedKeyAuth e outras que a usavam foram removidas, pois não são necessárias com SAS Token.
 
     // ========================================================

@@ -7,8 +7,17 @@ data class Mensagem(
     val criado_em: String,
     val atualizado_em: String?,
     val id_conversa: Int,
-    val id_pessoa: Int
+    val id_pessoa: Int,
+    val tipo: TipoMensagem = TipoMensagem.TEXTO,
+    val audio_url: String? = null,
+    val audio_duracao: Int? = null
 )
+
+enum class TipoMensagem {
+    TEXTO,
+    AUDIO,
+    IMAGEM
+}
 
 data class MensagemResponse(
     val status: Boolean,
@@ -27,7 +36,10 @@ data class MensagensResponse(
 data class MensagemRequest(
     val id_conversa: Int,
     val id_pessoa: Int,
-    val descricao: String
+    val descricao: String,
+    val tipo: String = "TEXTO",
+    val audio_url: String? = null,
+    val audio_duracao: Int? = null
 )
 
 data class MensagemAtualizarRequest(

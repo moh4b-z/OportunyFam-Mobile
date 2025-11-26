@@ -1,6 +1,7 @@
 package com.oportunyfam_mobile.Service
 
 import android.util.Log
+import com.google.firebase.database.ChildEventListener
 import com.oportunyfam_mobile.model.Mensagem
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -9,7 +10,6 @@ import com.google.firebase.database.FirebaseDatabase
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import kotlin.toString
 
 
 class FirebaseMensagemService {
@@ -31,7 +31,7 @@ class FirebaseMensagemService {
             .child(conversaId.toString())
             .child("mensagens")
 
-        val listener = object : com.google.firebase.database.ChildEventListener {
+        val listener = object : ChildEventListener {
             override fun onChildAdded(snapshot: DataSnapshot, previousChildName: String?) {
                 val mf = snapshot.getValue(MensagemFirebase::class.java) ?: return
                 trySend(FirebaseEvent("added", mf.toMensagem()))
@@ -64,7 +64,14 @@ class FirebaseMensagemService {
         criado_em = criado_em,
         atualizado_em = atualizado_em,
         id_conversa = id_conversa,
-        id_pessoa = id_pessoa
+        id_pessoa = id_pessoa,
+        tipo = try {
+            com.oportunyfam_mobile.model.TipoMensagem.valueOf(tipo)
+        } catch (e: IllegalArgumentException) {
+            com.oportunyfam_mobile.model.TipoMensagem.TEXTO
+        },
+        audio_url = audio_url,
+        audio_duracao = audio_duracao
     )
 
 
@@ -86,7 +93,10 @@ class FirebaseMensagemService {
                 criado_em = mensagem.criado_em,
                 atualizado_em = mensagem.atualizado_em,
                 id_conversa = mensagem.id_conversa,
-                id_pessoa = mensagem.id_pessoa
+                id_pessoa = mensagem.id_pessoa,
+                tipo = mensagem.tipo.name,
+                audio_url = mensagem.audio_url,
+                audio_duracao = mensagem.audio_duracao
             )
 
             mensagemRef.setValue(mensagemFirebase).await()
@@ -139,7 +149,10 @@ class FirebaseMensagemService {
                     criado_em = m.criado_em,
                     atualizado_em = m.atualizado_em,
                     id_conversa = m.id_conversa,
-                    id_pessoa = m.id_pessoa
+                    id_pessoa = m.id_pessoa,
+                    tipo = m.tipo.name,
+                    audio_url = m.audio_url,
+                    audio_duracao = m.audio_duracao
                 )
             }
 
@@ -164,5 +177,8 @@ data class MensagemFirebase(
     val criado_em: String = "",
     val atualizado_em: String? = null,
     val id_conversa: Int = 0,
-    val id_pessoa: Int = 0
+    val id_pessoa: Int = 0,
+    val tipo: String = "TEXTO",
+    val audio_url: String? = null,
+    val audio_duracao: Int? = null
 )

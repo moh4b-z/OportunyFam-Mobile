@@ -1,5 +1,8 @@
 package com.oportunyfam_mobile.Screens
 
+import android.Manifest
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,16 +19,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.oportunyfam_mobile.model.Mensagem
+import com.oportunyfam_mobile.Components.ChatMessage
+import com.oportunyfam_mobile.Components.ChatInputField
+import com.oportunyfam_mobile.Components.DateSeparator
 import com.oportunyfam_mobile.ViewModel.ChatViewModel
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -42,12 +48,40 @@ fun ChatScreen(
     pessoaIdAtual: Int,
     viewModel: ChatViewModel = viewModel()
 ) {
+    val context = LocalContext.current
     val mensagens by viewModel.mensagens.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     var currentMessage by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+
+    // Permissão de gravação de áudio
+    var hasRecordPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.RECORD_AUDIO
+            ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val recordPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        hasRecordPermission = isGranted
+        if (isGranted) {
+            viewModel.startAudioRecording()
+        }
+    }
+
+    // Estados de áudio
+    val isRecordingAudio by viewModel.isRecordingAudio.collectAsState()
+    val recordingDuration by viewModel.recordingDuration.collectAsState()
+    val isUploadingAudio by viewModel.isUploadingAudio.collectAsState()
+    val currentPlayingAudioUrl by viewModel.currentPlayingAudioUrl.collectAsState()
+    val isAudioPlaying by viewModel.isAudioPlaying.collectAsState()
+    val audioProgress by viewModel.audioProgress.collectAsState()
 
     // ✅ SEMPRE recarrega mensagens quando a tela aparece
     // Isso garante que o histórico seja carregado mesmo após sair e voltar
@@ -154,7 +188,16 @@ fun ChatScreen(
                                 items(mensagensDoDia, key = { it.id }) { mensagem ->
                                     ChatMessage(
                                         mensagem = mensagem,
-                                        isUser = mensagem.id_pessoa == pessoaIdAtual
+                                        isUser = mensagem.id_pessoa == pessoaIdAtual,
+                                        currentPlayingUrl = currentPlayingAudioUrl,
+                                        isAudioPlaying = isAudioPlaying,
+                                        audioProgress = audioProgress,
+                                        onPlayAudio = { audioUrl ->
+                                            viewModel.playAudio(audioUrl)
+                                        },
+                                        onSeekTo = { audioUrl, position ->
+                                            viewModel.seekToPosition(audioUrl, position)
+                                        }
                                     )
                                 }
                             }
@@ -173,7 +216,23 @@ fun ChatScreen(
                         currentMessage = ""
                     }
                 },
-                enabled = !isLoading
+                enabled = !isLoading,
+                isRecordingAudio = isRecordingAudio,
+                recordingDuration = recordingDuration,
+                isUploadingAudio = isUploadingAudio,
+                onStartRecording = {
+                    if (hasRecordPermission) {
+                        viewModel.startAudioRecording()
+                    } else {
+                        recordPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                    }
+                },
+                onStopRecording = {
+                    viewModel.stopAudioRecordingAndSend(conversaId, pessoaIdAtual)
+                },
+                onCancelRecording = {
+                    viewModel.cancelAudioRecording()
+                }
             )
         }
     }
@@ -237,132 +296,6 @@ fun ChatTopBar(nomeContato: String, onBackClick: () -> Unit) {
     )
 }
 
-@Composable
-fun ChatMessage(mensagem: Mensagem, isUser: Boolean) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 4.dp),
-        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
-    ) {
-        Card(
-            modifier = Modifier.widthIn(max = 280.dp),
-            shape = RoundedCornerShape(
-                topStart = 16.dp,
-                topEnd = 16.dp,
-                bottomStart = if (isUser) 16.dp else 4.dp,
-                bottomEnd = if (isUser) 4.dp else 16.dp
-            ),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isUser) Color(0xFFDCF8C6) else Color.White
-            ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp)
-            ) {
-                Text(
-                    text = mensagem.descricao,
-                    fontSize = 15.sp,
-                    color = Color.Black
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(
-                    horizontalArrangement = Arrangement.End,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = formatarHora(mensagem.criado_em),
-                        fontSize = 11.sp,
-                        color = Color.Gray
-                    )
-                    if (isUser) {
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = if (mensagem.visto) "✓✓" else "✓",
-                            fontSize = 11.sp,
-                            color = if (mensagem.visto) Color(0xFF4CAF50) else Color.Gray
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun ChatInputField(
-    currentMessage: String,
-    onMessageChange: (String) -> Unit,
-    onSendClick: () -> Unit,
-    enabled: Boolean
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = Color.White,
-        shadowElevation = 8.dp
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            OutlinedTextField(
-                value = currentMessage,
-                onValueChange = onMessageChange,
-                modifier = Modifier.weight(1f),
-                placeholder = { Text("Digite uma mensagem...", fontSize = 14.sp) },
-                shape = RoundedCornerShape(24.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color(0xFFFF6F00),
-                    unfocusedBorderColor = Color(0xFFE0E0E0)
-                ),
-                maxLines = 4,
-                enabled = enabled
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            FloatingActionButton(
-                onClick = onSendClick,
-                modifier = Modifier.size(48.dp),
-                containerColor = Color(0xFFFF6F00),
-                contentColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 4.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.Send,
-                    contentDescription = "Enviar",
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DateSeparator(data: String) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Surface(
-            color = Color(0xFFE0E0E0),
-            shape = RoundedCornerShape(12.dp),
-            shadowElevation = 1.dp
-        ) {
-            Text(
-                text = formatarDataSeparador(data),
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color(0xFF616161)
-            )
-        }
-    }
-}
-
 private fun extrairData(dataHora: String): String {
     return try {
         // Formato: "2025-11-08T21:45:33.000Z"
@@ -372,40 +305,6 @@ private fun extrairData(dataHora: String): String {
     }
 }
 
-private fun formatarDataSeparador(data: String): String {
-    return try {
-        val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-        val date = sdf.parse(data) ?: return data
-
-        val hoje = Date()
-        val ontem = Date(hoje.time - 24 * 60 * 60 * 1000)
-
-        val dataFormatada = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
-        val hojeFormatada = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(hoje)
-        val ontemFormatada = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(ontem)
-
-        when (dataFormatada) {
-            hojeFormatada -> "Hoje"
-            ontemFormatada -> "Ontem"
-            else -> SimpleDateFormat("dd 'de' MMMM", Locale("pt", "BR")).format(date)
-        }
-    } catch (e: Exception) {
-        data
-    }
-}
-
-private fun formatarHora(dataHora: String): String {
-    return try {
-        val partes = dataHora.split("T")
-        if (partes.size > 1) {
-            partes[1].substring(0, 5)
-        } else {
-            "Agora"
-        }
-    } catch (e: Exception) {
-        "Agora"
-    }
-}
 
 @Preview(showSystemUi = true)
 @Composable

@@ -29,7 +29,7 @@ object AzureConfig {
 
         // Tenta obter do BuildConfig (só funciona após Gradle sync)
         try {
-            val buildConfigClass = Class.forName("com.oportunyfam_mobile_ong.BuildConfig")
+            val buildConfigClass = Class.forName("com.oportunyfam_mobile.BuildConfig")
             val field = buildConfigClass.getField("AZURE_STORAGE_KEY")
             val key = field.get(null) as? String
             if (!key.isNullOrBlank()) {
@@ -82,4 +82,9 @@ object AzureConfig {
     const val STORAGE_ACCOUNT = "oportunyfamstorage"
     const val CONTAINER_PERFIL = "imagens-perfil"
     const val CONTAINER_PUBLICACOES = "imagens-publicacoes"
+
+    // Para mensagens (imagens e áudios)
+    const val CONTAINER_NAME = "imagens-perfil"  // Usa o mesmo container das imagens
+    val SAS_TOKEN: String
+        get() = getStorageKey() ?: ""
 }
