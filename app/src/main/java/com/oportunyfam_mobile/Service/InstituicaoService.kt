@@ -43,7 +43,7 @@ interface InstituicaoService {
     fun deletar(@Path("id") id: Int): Call<Unit>
 
     // GET - Busca com filtros e paginação
-    @GET("instituicoes")
+    @GET("instituicoes/search")
     fun buscarComFiltro(
         @Query("busca") termo: String?,
         @Query("pagina") pagina: Int?,
@@ -51,7 +51,7 @@ interface InstituicaoService {
     ): Call<InstituicaoListResponse>
 
     // GET - Busca por categorias (aceita lista de IDs em CSV)
-    @GET("instituicoes")
+    @GET("instituicoes/search")
     fun buscarPorCategorias(
         @Query("categorias") categorias: String,
         @Query("pagina") pagina: Int? = 1,
