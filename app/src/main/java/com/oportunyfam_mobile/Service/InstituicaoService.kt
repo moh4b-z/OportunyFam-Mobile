@@ -45,7 +45,7 @@ interface InstituicaoService {
     // GET - Busca com filtros e paginação
     @GET("instituicoes/search")
     fun buscarComFiltro(
-        @Query("busca") termo: String?,
+        @Query("nome") termo: String?,
         @Query("pagina") pagina: Int?,
         @Query("tamanho") tamanho: Int?
     ): Call<InstituicaoListResponse>
